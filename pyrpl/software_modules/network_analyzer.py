@@ -430,6 +430,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
 #                                        self.start_freq*np.ones(self.points)
 
         self.iq.amplitude = 0 # Set the amplitude at 0 before anything else to avoid glitch
+
         if self.auto_bandwidth:
             self._current_bandwidth = self.auto_rbw_value(self.frequencies[0]) # smallest non-zero bandwidth
         else:
@@ -461,10 +462,12 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         # to avoid reading it at every single point
         self.iq.frequency = self.frequencies[0]  # this triggers the NA acquisition
         self.iq.amplitude = self.amplitude  # Set the amplitude to non-zero at the last moment to avoid glitch
+
         if self.auto_amplitude:
             self.amplitude_list = np.zeros(self.points)
         else:
             self.amplitude_list = self.iq.amplitude
+
         self._time_last_point = timeit.default_timer()
         # pre-calculate transfer_function values for speed
         self._tf_values = self.transfer_function(self.frequencies)
