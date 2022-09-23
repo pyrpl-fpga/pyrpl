@@ -3,7 +3,7 @@ from .. import FilterModule
 from ...attributes import IntRegister, BoolRegister, ComplexProperty, \
     FloatProperty, StringProperty, CurveSelectProperty, \
     GainRegister, ConstantIntRegister, FloatAttributeListProperty, \
-    ComplexAttributeListProperty, BoolProperty
+    ComplexAttributeListProperty, BoolProperty, SelectProperty
 from ...widgets.module_widgets import IirWidget
 from ...modules import SignalLauncher
 
@@ -170,6 +170,12 @@ class IirComplexListProperty(IirFloatListProperty,
         return complex(re, im)
 
 
+class TfTypeProperty(SelectProperty):
+    def value_updated(self, module, value=None, appendix=[]):
+        super(TfTypeProperty, self).value_updated(module,
+                                                  value=value)
+        module._signal_launcher.update_plot.emit()
+
 class IIR(FilterModule):
     _signal_launcher = SignalLauncherIir
     iirfilter = None  # will be set by setup()
@@ -227,6 +233,7 @@ class IIR(FilterModule):
                        "plot_data_times_filter",
                        "plot_measurement",
                        "measure_transfer_function",
+                       "tf_type"
                        # for debugging
                        # "_setup_unity",
                        # "_setup_zero",
@@ -279,6 +286,16 @@ class IIR(FilterModule):
 
     overflow = OverflowProperty(doc="a string indicating the overflow status "
                                     "of the iir module")
+
+    tf_type = TfTypeProperty(default='final',
+                             options=['continuous',
+                                      'discrete',
+                                      'coefficients',
+                                       'rounded',
+                                       'final'],
+                                    doc="Type of transfer-function to use in "
+                                        "plot (see iir_theory for details)",
+                                    call_setup=False)
 
     data_curve = CurveSelectProperty(doc="NA curve id to use as a basis for "
                                          "the graphical filter design",
@@ -500,6 +517,10 @@ class IIR(FilterModule):
             self.iirfilter.inputfilter = self.inputfilter  # update model
             self._logger.debug("IIR anti-aliasing input filter set to: %s MHz",
                               self.iirfilter.inputfilter * 1e-6)
+            if any(np.real(self.poles)>0):
+                self._logger.warning("Pole with positive real part detected"
+                                     "filter will be unstable.")
+
             # connect the module
             #if input is not None:
             #    self.input = input
@@ -577,8 +598,7 @@ class IIR(FilterModule):
             getattr(self, bestname).select(bestmatch)
 
 
-    ### this function is pretty much obsolete now. use self.iirfilter.tf_...
-    def transfer_function(self, frequencies, extradelay=0, kind='final'):
+    def transfer_function_by_kind(self, frequencies, kind):
         """
         Returns a complex np.array containing the transfer function of the
         current IIR module setting for the given frequency array. The
@@ -591,12 +611,6 @@ class IIR(FilterModule):
         ----------
         frequencies: np.array or float
             Frequencies to compute the transfer function for
-        extradelay: float
-            External delay to add to the transfer function (in s). If zero,
-            only the delay for internal propagation from input to
-            output_signal is used. If the module is fed to analog inputs and
-            outputs, an extra delay of the order of 150 ns must be passed as
-            an argument for the correct delay modelisation.
         kind: str
             The IIR filter design is composed of a number of steps. Each
             step slightly modifies the transfer function to adapt it to
@@ -629,6 +643,37 @@ class IIR(FilterModule):
               at bit 48)
             - 'implemented': transfer function after rounding the
               coefficients to the precision of the fpga
+        :param frequencies:
+        :param kind:
+        :return:
+        """
+        try:
+            tf = getattr(self.iirfilter, 'tf_' + kind)(frequencies=frequencies)
+        except AttributeError:
+            # happens when no iir filter is created
+            tf = frequencies*0+1e-12
+        return tf
+
+    ### this function is pretty much obsolete now. use self.iirfilter.tf_...
+    def transfer_function(self, frequencies, extradelay=0):
+        """
+        Returns a complex np.array containing the transfer function of the
+        current IIR module setting for the given frequency array. The
+        best-possible estimation of delays is automatically performed for
+        all kinds of transfer function. The setting of 'bypass' is ignored
+        for this computation, i.e. the theoretical and measured transfer
+        functions can only agree if bypass is False.
+
+        Parameters
+        ----------
+        frequencies: np.array or float
+            Frequencies to compute the transfer function for
+        extradelay: float
+            External delay to add to the transfer function (in s). If zero,
+            only the delay for internal propagation from input to
+            output_signal is used. If the module is fed to analog inputs and
+            outputs, an extra delay of the order of 150 ns must be passed as
+            an argument for the correct delay modelisation.
 
         Returns
         -------
@@ -641,25 +686,184 @@ class IIR(FilterModule):
         # take average delay to be half the loops since this is the
         # expectation value for the delay (plus internal propagation delay)
         # module_delay = self._delay + self.loops / 2.0
-        self._logger.warning("iir.transfer_function is obsolete and will be "
-                             "deprecated. Use another function!")
-        try:
-            tf = getattr(self.iirfilter, 'tf_' + kind)(frequencies)
-        except AttributeError:
-            # happens when no iir filter is created
-            tf = frequencies*0+1e-12
-        # for f in [self.inputfilter]:  # only one filter at the moment
-        #    if f == 0:
-        #        continue
-        #    if f > 0:  # lowpass
-        #        tf /= (1.0 + 1j*frequencies/f)
-        #        module_delay += 2  # two cycles extra delay per lowpass
-        #    elif f < 0:  # highpass
-        #        tf /= (1.0 + 1j*f/frequencies)
-        #        # plus is correct here since f already has a minus sign
-        #        module_delay += 1  # one cycle extra delay per highpass
-        ## add delay
-        # delay = module_delay * 8e-9 / self._frequency_correction + extradelay
-        # tf *= np.exp(-1j*delay*frequencies*2*np.pi)
-        return tf
 
+        return self.iirfilter.tf_final(frequencies)
+
+    def simulate_filter_float(self, xs, biquad="all"):
+        """
+        plots the response of the iir filter to a time series xs (sampling time
+        is dt*loops
+        :param freq:
+        :return:
+        """
+        if biquad=='all':
+            coefs = self.coefficients
+        else:
+            coefs = [self.coefficients[biquad]]
+
+        ys = np.zeros(len(xs))
+        ys_biquad = np.zeros((len(coefs), 2))
+        for index in range(2, len(xs)):
+            for index_biquad, (b0, b1, _, _, a1, a2) in enumerate(coefs):
+                adder = -  a1 * ys_biquad[index_biquad, 0] - a2 * ys_biquad[index_biquad, 1]
+
+                y = b0 * xs[index] + b1 * xs[index - 1] + adder
+                ys[index] += y
+                ys_biquad[index_biquad, 1] = ys_biquad[index_biquad, 0]
+                ys_biquad[index_biquad, 0] = y
+        return ys
+
+    def simulate_filter_int(self, xs, biquad="all"):
+        """
+        plots the response of the iir filter to a time series xs (sampling time
+        is dt*loops
+        :param freq:
+        :return:
+        """
+        print("yo")
+
+        if biquad == 'all':
+            coefs = self.coefficients
+        else:
+            coefs = [self.coefficients[biquad]]
+        coefs = np.array(coefs)
+
+        coefs = np.asarray(coefs*(2**self._IIRSHIFT), dtype=np.int64)
+
+
+        if xs.dtype != int:
+            raise TypeError("expected an integer input array")
+
+        if any(xs > 2**13 - 1):
+            raise ValueError("input should not exceed 2**13 - 1 = 8191")
+
+        if any(xs < -2**13):
+            raise ValueError("input should not exceed -2**13 = -8192")
+
+
+
+        xs = xs*2**3 # pre-filters change the signal from 14 to 17 bits
+        xs = xs*2**(-self._IIRBITS + 17 + self._IIRSHIFT + 1)
+
+
+        ys = np.zeros(len(xs), dtype=np.int64)
+        ys_biquad = np.zeros((len(coefs), 2), dtype=np.int64)
+
+        for index in range(2, len(xs)):
+            for index_biquad, (b0, b1, _, _, a1, a2) in enumerate(coefs):
+                p_ay1 = self._product_sat(-a1, ys_biquad[index_biquad, 0])
+                p_ay2 = self._product_sat(-a2, ys_biquad[index_biquad, 1])
+                p_bx0 = self._product_sat(b0, xs[index])
+                p_bx1 = self._product_sat(b1, xs[index - 1])
+                y = self._saturate(p_ay1 + p_ay2 + p_bx0 + p_bx1, bits=self._IIRBITS)
+                ys[index] += y
+                ys_biquad[index_biquad, 1] = ys_biquad[index_biquad, 0]
+                ys_biquad[index_biquad, 0] = y
+
+        return ys//2**(self._IIRBITS - 14)
+
+
+    def measure_time_domain_response(self, freq, biquad='all'):
+        from pyrpl.async_utils import sleep, wait
+
+        if biquad=='all':
+            coefs = self.coefficients
+        else:
+            coefs = [self.coefficients[biquad]]
+        self.coefficients = coefs
+
+        with self.pyrpl.asgs.pop("iir_measurement") as asg:
+            asg.trigger_source = "off"
+            asg.frequency = freq
+            asg.amplitude = 1
+            asg.offset=0
+            asg.output_direct = 'off'
+
+            old_input = self.input
+            self.input = asg
+
+            with self.pyrpl.scopes.pop("iir_measurement") as scope:
+                scope.input1 = asg
+                scope.input2 = self
+                scope.trigger_source = "ch1_positive_edge"
+                scope.threshold = 0.01
+                scope.duration = 100./freq
+                times = scope.times
+                scope.rolling_mode = False
+
+                res = scope.single_async()
+                sleep(0.1)
+                asg.trigger_source = 'immediately'
+                sleep(0.1)
+                ch1, ch2 = wait(res)
+                self.input = old_input
+        self._setup()
+        return times, ch2
+
+    def plot_biquads_tf(self, axes=None, plot_experiment=True):
+        """Plots the transfer function of each biquad. if
+        plot_experiment is True, superimpose the measured transfer functions
+        (using the networkanalyzer)"""
+        freqs = np.logspace(1, 7, 1001)
+        z_all = np.zeros(len(freqs), dtype=complex)
+        axes = None
+        tfs = []
+        freqs_all = []
+        labels = []
+        for b0, b1, _, _, a1, a2 in self.coefficients:
+            if any((b0, b1, a1, a2)):
+                f, z = freqz((b0, b1), (1, a1, a2),
+                             worN=2 * np.pi * freqs * self.iirfilter.dt *
+                                  self.loops)
+                z_all += z
+                tfs.append(z)
+                freqs_all.append(freqs)
+                labels.append(f"b0={b0:.5f}, b1={b1:.5f}, a1={a1:.5f}, " \
+                               f"a2={a2:.5f}")
+                if plot_experiment:
+                    coeffs = np.zeros((5, 6))
+                    coeffs[:, 2] = 0
+                    coeffs[:, 3] = 1
+                    coeffs[0] = (b0, b1, 0., 1., a1, a2)
+                    self.coefficients = coeffs
+                    freqs_na, z_na = self.measure_transfer_function()
+                    tfs.append(z_na)
+                    freqs_all.append(freqs_na)
+                    labels.append("measured")
+        self._setup()
+        iir_theory.bodeplot(np.transpose([freqs_all, tfs, labels]))
+        return axes
+
+    def _digitize14bits(self, val):
+        """
+        digitize with a 14 bits resolution
+        :param val:
+        :return:
+        """
+        return int(np.floor(val*2**13))
+
+    def _product_sat(self, factor1_i, factor2_i):
+        result = (factor1_i*factor2_i)//(2**self._IIRSHIFT)
+        assert(np.abs(result - np.float64(factor1_i) * np.float64(
+            factor2_i)/(2**self._IIRSHIFT)) < 1)
+        return self._saturate(result, bits=self._IIRBITS)
+
+    def _saturate(self, val, bits):
+        if val > 2**bits - 1:
+            raise OverflowError(f"Overflox in saturate with {val} > {2**bits - 1}")
+        if val < -2 ** bits:
+                raise OverflowError(f"Overflox in saturate with {val} < {-2**bits}")
+        return val
+
+    def format_coefs_verilog(self):
+        n = 0
+        for b0, b1, _, _, a1, a2 in np.asarray(
+                        self.coefficients*2**self._IIRSHIFT, dtype=int):
+            print("iir_coefficients[", 2*n, "]<=", b0, ";")
+            n+=1
+            print("iir_coefficients[", 2*n, "]<=", b1, ";")
+            n+=1
+            print("iir_coefficients[", 2*n, "]<=", -a1, ";")
+            n+=1
+            print("iir_coefficients[", 2*n, "]<=", -a2, ";")
+            n+=1
