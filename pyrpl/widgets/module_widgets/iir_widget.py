@@ -172,6 +172,7 @@ class IirGraphWidget(QtWidgets.QGroupBox):
             self.plots[name].setLogMode(self.xlog, None)
             self.plots[name + '_phase'].setLogMode(self.xlog, None)
 
+
         # also set logscale for the xaxis
         # make scatter plots
         self.mag.setLogMode(x=self.xlog, y=None)
