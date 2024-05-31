@@ -37,7 +37,7 @@ import logging
 from qtpy import QtCore, QtWidgets
 import asyncio
 from asyncio import Future, iscoroutine, TimeoutError, get_event_loop, wait_for
-import quamash
+#import quamash
 import sys
 import nest_asyncio
 nest_asyncio.apply()
@@ -130,4 +130,5 @@ class Event(asyncio.Event):
     """
 
     def __init__(self):
-        super(Event, self).__init__(loop=LOOP)
+        super(Event, self).__init__()
+
