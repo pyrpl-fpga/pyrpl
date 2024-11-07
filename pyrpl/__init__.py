@@ -1,5 +1,7 @@
 from ._version import __version_info__, __version__
 
+import os, sys; sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 __author__ = "Leonhard Neuhaus <neuhaus@lkb.upmc.fr>"
 __license__ = "MIT License"
 

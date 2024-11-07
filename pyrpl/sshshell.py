@@ -50,7 +50,9 @@ class SshShell(object):
             username=self.user,
             password=self.password,
             port=self.sshport,
-            timeout=timeout)
+            timeout=timeout,
+            look_for_keys=False,
+            allow_agent=False)
         if shell:
             self.channel = self.ssh.invoke_shell()
         self.startscp()
