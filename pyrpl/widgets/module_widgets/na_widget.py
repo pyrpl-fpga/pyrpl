@@ -375,4 +375,4 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         except BaseException as e:
             self.parent_widget.module._logger.error(e)
         finally:
-            return super(GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)
+            return super(pg.GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)
