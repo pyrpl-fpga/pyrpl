@@ -9,6 +9,7 @@ import numpy as np
 import sys
 from ... import APP
 
+
 class MyGraphicsWindow(pg.GraphicsLayoutWidget):
     def __init__(self, title, parent):
         super().__init__(title)
@@ -25,7 +26,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
                         "Up/Down arrows; change the real part (width) of the current pole or zero. \n"
                         "Poles are represented by 'X', zeros by 'O', complex one have larger symbols than real ones.")
         self.doubleclicked = False
-        #APP.setDoubleClickInterval(300)  # default value (550) is fine
+        # APP.setDoubleClickInterval(300)  # default value (550) is fine
         self.mouse_clicked_timer = QtCore.QTimer()
         self.mouse_clicked_timer.setSingleShot(True)
         self.mouse_clicked_timer.setInterval(APP.doubleClickInterval())
@@ -55,7 +56,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         self.button = event.button()
         self.modifier = int(event.modifiers())
         it = self.getItem(0, 0)
-        pos = it.mapToScene(event.pos()) #  + it.vb.pos()
+        pos = it.mapToScene(event.pos())  #  + it.vb.pos()
         point = it.vb.mapSceneToView(pos)
         self.x, self.y = point.x(), point.y()
         if self.parent.xlog:

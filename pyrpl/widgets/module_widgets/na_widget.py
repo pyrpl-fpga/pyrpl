@@ -366,7 +366,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
             x, y = point.x(), point.y()
             x = 10 ** x
             new_z = -100 - 1.j * x
-            if modifier==QtCore.Qt.CTRL:
+            if modifier == QtCore.Qt.CTRL:
                 self.parent_widget.module.poles += [new_z]
                 self.parent_widget.attribute_widgets['poles'].set_selected(-1)
             if modifier == QtCore.Qt.SHIFT:
