@@ -43,11 +43,11 @@ requirements = ['scp',
                 #'ruamel.yaml' # temporarily disabled
                 'pandas',
                 'pyqtgraph',
-                'numpy>=1.9',
-                'paramiko>=2.0',
-                'nose>=1.0',
-                'PyQt5<=5.14',  # cannot be installed with pip, if in conda you can use conda install pyqt<5.15
-                'qtpy<=1.10',  # qtpy 1.11 contains breaking API changes related to pyqtSignals
+                'numpy',
+                'paramiko',
+                'nose',
+                'PyQt5',  # cannot be installed with pip, if in conda you can use conda install pyqt<5.15
+                'qtpy',  # qtpy 1.11 contains breaking API changes related to pyqtSignals
                 'nbconvert',
                 'jupyter-client']
 
@@ -131,10 +131,11 @@ setup(name='pyrpl',
       author_email='neuhaus@lkb.upmc.fr',
       url='http://lneuhaus.github.io/pyrpl/',
       license='MIT',
-      classifiers=['Programming Language :: Python :: 2.7',
-                   'Programming Language :: Python :: 3.4',
-                   'Programming Language :: Python :: 3.5',
-                   'Programming Language :: Python :: 3.6',
+      classifiers=['Programming Language :: Python :: 3.9',
+                   'Programming Language :: Python :: 3.10',
+                   'Programming Language :: Python :: 3.11',
+                   'Programming Language :: Python :: 3.12',
+                   'Programming Language :: Python :: 3.13',
                    'Programming Language :: C',
                    'Natural Language :: English',
                    'Development Status :: 4 - Beta',
