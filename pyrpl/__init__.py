@@ -13,8 +13,8 @@ try:
     warnings.simplefilter("ignore", np.exceptions.VisibleDeprecationWarning)
     warnings.simplefilter("error", np.exceptions.ComplexWarning)
 except AttributeError:
-    warnings.simplefilter("ignore", np.VisibleDeprecationWarning)
-    warnings.simplefilter("error", np.ComplexWarning)
+    warnings.simplefilter("ignore", np.exceptions.VisibleDeprecationWarning)
+    warnings.simplefilter("error", np.exceptions.ComplexWarning)
     
 # former issue with IIR, now resolved
 #from scipy.signal import BadCoefficients
