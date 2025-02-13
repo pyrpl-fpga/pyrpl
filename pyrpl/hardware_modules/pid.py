@@ -147,6 +147,7 @@ from . import FilterModule
 from ..widgets.module_widgets import PidWidget
 from ..pyrpl_utils import sorted_dict
 
+
 class IValAttribute(FloatProperty):
     """
     Attribute for integrator value
@@ -256,27 +257,26 @@ class Pid(FilterModule):
 
     _GAINBITS = 24  # Register(0x20C)
 
-    ival = IValAttribute(min=-4, max=4, increment= 8. / 2**16, doc="Current "
-            "value of the integrator memory (i.e. pid output voltage offset)")
+    ival = IValAttribute(min=-4, max=4, increment=8. / 2**16, doc="Current "
+            "value of the integrator memory (i.e.pid output voltage offset)")
 
-    setpoint = FloatRegister(0x104, bits=14, norm= 2 **13,
+    setpoint = FloatRegister(0x104, bits=14, norm=2**13,
                              doc="pid setpoint [volts]")
 
-    min_voltage = FloatRegister(0x124, bits=14, norm= 2 **13,
+    min_voltage = FloatRegister(0x124, bits=14, norm=2**13,
                                 doc="minimum output signal [volts]")
-    max_voltage = FloatRegister(0x128, bits=14, norm= 2 **13,
+    max_voltage = FloatRegister(0x128, bits=14, norm=2**13,
                                 doc="maximum output signal [volts]")
 
-    p = GainRegister(0x108, bits=_GAINBITS, norm= 2 **_PSR,
-                      doc="pid proportional gain [1]")
-    i = GainRegister(0x10C, bits=_GAINBITS, norm= 2 **_ISR * 2.0 * np.pi *
-                                                  8e-9,
-                      doc="pid integral unity-gain frequency [Hz]")
-    #d = GainRegister(0x110, bits=_GAINBITS, norm= 2 ** _DSR /( 2.0 *np. pi *
-    #                                                        8e-9),
-    #                  invert=True,
-    #                  doc="pid derivative unity-gain frequency [Hz]. Off
-    # when 0.")
+    p = GainRegister(0x108, bits=_GAINBITS, norm=2**_PSR,
+                     doc="pid proportional gain [1]")
+    i = GainRegister(0x10C, bits=_GAINBITS, 
+                     norm=2**_ISR * 2.0 * np.pi * 8e-9,
+                     doc="pid integral unity-gain frequency [Hz]")
+    d = GainRegister(0x110, bits=_GAINBITS, 
+                     norm=2**_DSR / (2.0 * np.pi * 8e-9),
+                     invert=True,
+                     doc="pid derivative unity-gain frequency [Hz]. Off when 0.")
 
     pause_gains = SelectRegister(0x12C,
                                  options=sorted_dict(
@@ -437,12 +437,12 @@ class Pid(FilterModule):
         # proportional (delay in self._delay included)
         tf += p
         # derivative action with one cycle of extra delay
-        # if self.d != 0:
-        #    tf += frequencies*1j/self.d \
-        #          * np.exp(-1j * 8e-9 * self._frequency_correction *
-        #                   frequencies * 2 * np.pi)
+        if self.d != 0:
+           tf += frequencies*1j/self.d \
+                 * np.exp(-1j * 8e-9 * self._frequency_correction *
+                          frequencies * 2 * np.pi)
         # add delay
-        delay = 0 # module_delay * 8e-9 / self._frequency_correction
+        delay = module_delay * 8e-9 / self._frequency_correction
         tf *= np.exp(-1j * delay * frequencies * 2 * np.pi)
         return tf
 

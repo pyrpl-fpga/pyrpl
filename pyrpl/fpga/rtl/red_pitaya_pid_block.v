@@ -269,31 +269,24 @@ reg signed  [39-DSR-1: 0] kd_reg        ;
 reg signed  [39-DSR-1: 0] kd_reg_r      ;
 reg signed  [39-DSR  : 0] kd_reg_s      ;
 
-generate 
-	if (DERIVATIVE == 1) begin
-		wire  [15+GAINBITS-1: 0] kd_mult;
-		reg   [15+GAINBITS-DSR-1: 0] kd_reg;
-		reg   [15+GAINBITS-DSR-1: 0] kd_reg_r;
-		reg   [15+GAINBITS-DSR  : 0] kd_reg_s;
-		always @(posedge clk_i) begin
-		   if (rstn_i == 1'b0) begin
-		      kd_reg   <= {15+GAINBITS-DSR{1'b0}};
-		      kd_reg_r <= {15+GAINBITS-DSR{1'b0}};
-		      kd_reg_s <= {15+GAINBITS-DSR+1{1'b0}};
-		   end
-		   else begin
-		      kd_reg   <= kd_mult[15+GAINBITS-1:DSR] ;
-		      kd_reg_r <= kd_reg;
-		      kd_reg_s <= $signed(kd_reg) - $signed(kd_reg_r); //this is the end result
-		   end
-		end
-        assign kd_mult = (pause_d==1'b1) ? $signed({15+GAINBITS-1{1'b0}}) : $signed(error) * $signed(set_kd);
-	end
-	else begin
-		wire [15+GAINBITS-DSR:0] kd_reg_s;
-		assign kd_reg_s = {15+GAINBITS-DSR+1{1'b0}};
-	end
-endgenerate 
+wire  [15+GAINBITS-1: 0] kd_mult;
+reg   [15+GAINBITS-DSR-1: 0] kd_reg;
+reg   [15+GAINBITS-DSR-1: 0] kd_reg_r;
+reg   [15+GAINBITS-DSR  : 0] kd_reg_s;
+always @(posedge clk_i) begin
+   if (rstn_i == 1'b0) begin
+      kd_reg   <= {15+GAINBITS-DSR{1'b0}};
+      kd_reg_r <= {15+GAINBITS-DSR{1'b0}};
+      kd_reg_s <= {15+GAINBITS-DSR+1{1'b0}};
+   end
+   else begin
+      kd_reg   <= kd_mult[15+GAINBITS-1:DSR] ;
+      kd_reg_r <= kd_reg;
+      kd_reg_s <= $signed(kd_reg) - $signed(kd_reg_r); //this is the end result
+   end
+end
+   assign kd_mult = (pause_d==1'b1) ? $signed({15+GAINBITS-1{1'b0}}) : $signed(error) * $signed(set_kd);
+
 
 //---------------------------------------------------------------------------------
 //  Sum together - saturate output - 1 cycle delay

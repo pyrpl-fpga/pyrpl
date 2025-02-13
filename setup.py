@@ -37,10 +37,10 @@ version = _locals['__version__']
 #         if '#' not in line and line:
 #             requirements.append(line.strip())
 requirements = ['scp',
-                #'matplotlib', # optional requirementm, not needed for core
+                # 'matplotlib', # optional requirementm, not needed for core
                 'scipy',
                 'pyyaml',
-                #'ruamel.yaml' # temporarily disabled
+                # 'ruamel.yaml' # temporarily disabled
                 'pandas',
                 'pyqtgraph',
                 'numpy>=1.9',
