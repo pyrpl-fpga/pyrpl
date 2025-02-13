@@ -270,13 +270,13 @@ class Pid(FilterModule):
 
     p = GainRegister(0x108, bits=_GAINBITS, norm=2**_PSR,
                      doc="pid proportional gain [1]")
-    i = GainRegister(0x10C, bits=_GAINBITS, 
+    i = GainRegister(0x10C, bits=_GAINBITS,
                      norm=2**_ISR * 2.0 * np.pi * 8e-9,
                      doc="pid integral unity-gain frequency [Hz]")
-    d = GainRegister(0x110, bits=_GAINBITS, 
+    d = GainRegister(0x110, bits=_GAINBITS,
                      norm=2**_DSR / (2.0 * np.pi * 8e-9),
                      invert=True,
-                     doc="pid derivative unity-gain frequency [Hz]. Off when 0.")
+                     doc="pid derivative unity-gain frequency [Hz]. Off when 0")
 
     pause_gains = SelectRegister(0x12C,
                                  options=sorted_dict(
@@ -405,21 +405,21 @@ class Pid(FilterModule):
                            extradelay_s=0.0,
                            frequency_correction=1.0):
         return Pid._pid_transfer_function(frequencies,
-                                 p=p,
-                                 i=i,
-                                 d=d,
-                                 frequency_correction=frequency_correction)\
+                                          p=p,
+                                          i=i,
+                                          d=d,
+                                          frequency_correction=frequency_correction)\
             * Pid._filter_transfer_function(frequencies,
-                                 filter_values=filter_values,
-                                 frequency_correction=frequency_correction)\
+                                            filter_values=filter_values,
+                                            frequency_correction=frequency_correction)\
             * Pid._delay_transfer_function(frequencies,
-                                 module_delay_cycle=module_delay_cycle,
-                                 extradelay_s=extradelay_s,
-                                 frequency_correction=frequency_correction)
+                                           module_delay_cycle=module_delay_cycle,
+                                           extradelay_s=extradelay_s,
+                                           frequency_correction=frequency_correction)
 
     @classmethod
     def _pid_transfer_function(cls,
-                               frequencies, p, i, d=0,
+                               frequencies, p, i, d,
                                frequency_correction=1.):
         """
         returns the transfer function of a generic pid module
@@ -433,17 +433,14 @@ class Pid(FilterModule):
         # integrator with one cycle of extra delay
         tf = i / (frequencies * 1j) \
             * np.exp(-1j * 8e-9 * frequency_correction *
-                  frequencies * 2 * np.pi)
+                     frequencies * 2 * np.pi)
         # proportional (delay in self._delay included)
         tf += p
         # derivative action with one cycle of extra delay
-        if self.d != 0:
-           tf += frequencies*1j/self.d \
-                 * np.exp(-1j * 8e-9 * self._frequency_correction *
+        if d != 0:
+            tf += frequencies*1j/d \
+                 * np.exp(-1j * 8e-9 * frequency_correction *
                           frequencies * 2 * np.pi)
-        # add delay
-        delay = module_delay * 8e-9 / self._frequency_correction
-        tf *= np.exp(-1j * delay * frequencies * 2 * np.pi)
         return tf
 
     @classmethod
@@ -455,7 +452,9 @@ class Pid(FilterModule):
         """
         Transfer function of the eventual extradelay of a pid module
         """
-        delay = module_delay_cycle * 8e-9 / frequency_correction + extradelay_s
+        # factor 2 (1 delay for i and 1 for d)
+        delay = 2 * module_delay_cycle * 8e-9 / frequency_correction\
+            + extradelay_s
         frequencies = np.array(frequencies, dtype=complex)
         tf = np.ones(len(frequencies), dtype=complex)
         tf *= np.exp(-1j * delay * frequencies * 2 * np.pi)
