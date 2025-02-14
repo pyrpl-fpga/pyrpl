@@ -67,7 +67,7 @@ module red_pitaya_pid_block #(
    parameter     ISR = 32         ,//official redpitaya: 18
    parameter     DSR = 10         ,
    parameter     GAINBITS = 24    ,
-   parameter     DERIVATIVE = 0   , //disables differential gain if 0
+   //parameter     DERIVATIVE = 0   , //disables differential gain if 0
    
    //parameters for input pre-filter
    parameter     FILTERSTAGES = 4 ,
@@ -212,12 +212,12 @@ assign diff_dat_o = dat_i_filtered;
 //---------------------------------------------------------------------------------
 //  Proportional part - 1 cycle delay
 
-reg signed  [15+GAINBITS-PSR-1: 0] kp_reg        ;
-wire signed [15+GAINBITS-1: 0] kp_mult       ;
+reg  signed  [15+GAINBITS-PSR-1: 0] kp_reg        ;
+wire signed  [    15+GAINBITS-1: 0] kp_mult       ;
 
 always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
-      kp_reg  <= {15+GAINBITS-PSR{1'b0}};
+      kp_reg <= {15+GAINBITS-PSR{1'b0}};
    end
    else begin
       kp_reg <= kp_mult[15+GAINBITS-1:PSR] ;
@@ -233,11 +233,12 @@ assign kp_mult = (pause_p==1'b1) ? $signed({15+GAINBITS{1'b0}}) : $signed(error)
 //formerly
 //-localparam IBW = 64; //integrator bit-width. Over-represent the integral sum to record longterm drifts
 //-reg   [15+GAINBITS-1: 0] ki_mult  ;
+
 localparam IBW = ISR+16; //integrator bit-width. Over-represent the integral sum to record longterm drifts (overrepresented by 2 bits)
-reg signed  [16+GAINBITS-1: 0] ki_mult ;
-wire signed [IBW  : 0] int_sum       ;
-reg signed  [IBW-1: 0] int_reg       ;
-wire signed [IBW-ISR-1: 0] int_shr   ;
+reg  signed  [16+GAINBITS-1: 0] ki_mult       ;
+wire signed  [          IBW: 0] int_sum       ;
+reg  signed  [        IBW-1: 0] int_reg       ;
+wire signed      [IBW-ISR-1: 0] int_shr       ;
 
 always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
@@ -246,6 +247,7 @@ always @(posedge clk_i) begin
    end
    else begin
       ki_mult <= $signed(error) * $signed(set_ki) ;
+
       if (ival_write)
          int_reg <= { {IBW-16-ISR{set_ival[16-1]}},set_ival[16-1:0],{ISR{1'b0}}};
       else if (int_sum[IBW+1-1:IBW+1-2] == 2'b01) //normal positive saturation
@@ -262,17 +264,19 @@ assign int_shr = $signed(int_reg[IBW-1:ISR]) ;
 
 //---------------------------------------------------------------------------------
 //  Derivative - 2 cycles delay (but treat as 1 cycle because its not
-//  functional at the moment
+//  functional at the moment)
 
-wire signed [    39-1: 0] kd_mult       ;
-reg signed  [39-DSR-1: 0] kd_reg        ;
-reg signed  [39-DSR-1: 0] kd_reg_r      ;
-reg signed  [39-DSR  : 0] kd_reg_s      ;
+//wire signed [    39-1: 0] kd_mult       ;
+//reg signed  [39-DSR-1: 0] kd_reg        ;
+//reg signed  [39-DSR-1: 0] kd_reg_r      ;
+//reg signed  [39-DSR  : 0] kd_reg_s      ;
 
-wire  [15+GAINBITS-1: 0] kd_mult;
-reg   [15+GAINBITS-DSR-1: 0] kd_reg;
-reg   [15+GAINBITS-DSR-1: 0] kd_reg_r;
-reg   [15+GAINBITS-DSR  : 0] kd_reg_s;
+wire signed [15+GAINBITS-1: 0] kd_mult;
+reg  signed [15+GAINBITS-DSR-1: 0] kd_reg;
+reg  signed [15+GAINBITS-DSR-1: 0] kd_reg_r;
+reg  signed [15+GAINBITS-DSR  : 0] kd_reg_s;
+
+
 always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
       kd_reg   <= {15+GAINBITS-DSR{1'b0}};

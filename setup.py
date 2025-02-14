@@ -144,15 +144,15 @@ setup(name='pyrpl',
       keywords='RedPitaya DSP FPGA IIR PDH synchronous detection filter PID '
                'control lockbox servo feedback lock quantum optics',
       platforms='any',
-      packages=find_packages(), #['pyrpl'],
+      packages=find_packages(),  # ['pyrpl'],
       package_data={'pyrpl': ['fpga/*',
                               'monitor_server/*',
                               'config/*',
                               'widgets/images/*']},
       install_requires=requirements,
       # what were the others for? dont remember..
-      #setup_requires=requirements,
-      #requires=requirements,
+      # setup_requires=requirements,
+      # requires=requirements,
       # stuff for unitary test with pytest
       tests_require=['nose>=1.0'],
       # extras_require={'testing': ['pytest']},

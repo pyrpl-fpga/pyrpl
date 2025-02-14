@@ -1,7 +1,7 @@
 Copyright 1986-2015 Xilinx, Inc. All Rights Reserved.
 ------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2015.4 (win64) Build 1412921 Wed Nov 18 09:43:45 MST 2015
-| Date         : Thu Feb 13 11:49:47 2025
+| Date         : Fri Feb 14 14:53:42 2025
 | Host         : fontana running 64-bit major release  (build 9200)
 | Command      : report_timing_summary -file out/post_route_timing_summary.rpt
 | Design       : red_pitaya_top
@@ -429,7 +429,7 @@ Max Delay Paths
 Slack (MET) :             0.405ns  (required time - arrival time)
   Source:                 dac_rst_reg/C
                             (rising edge-triggered cell FDRE clocked by pll_dac_clk_1x  {rise@0.000ns fall@4.000ns period=8.000ns})
-  Destination:            oddr_dac_dat[13]/R
+  Destination:            oddr_dac_dat[3]/R
                             (falling edge-triggered cell ODDR clocked by pll_dac_clk_1x  {rise@0.000ns fall@4.000ns period=8.000ns})
   Path Group:             pll_dac_clk_1x
   Path Type:              Setup (Max at Slow Process Corner)
@@ -627,7 +627,7 @@ Max Delay Paths
 Slack (VIOLATED) :        -0.388ns  (required time - arrival time)
   Source:                 pwm[2]/v_r_reg[6]/C
                             (rising edge-triggered cell FDRE clocked by pll_pwm_clk  {rise@0.000ns fall@2.000ns period=4.000ns})
-  Destination:            pwm[0]/pwm_o_reg/D
+  Destination:            pwm[2]/pwm_o_reg/D
                             (rising edge-triggered cell FDRE clocked by pll_pwm_clk  {rise@0.000ns fall@2.000ns period=4.000ns})
   Path Group:             pll_pwm_clk
   Path Type:              Setup (Max at Slow Process Corner)
@@ -681,11 +681,11 @@ Slack (VIOLATED) :        -0.388ns  (required time - arrival time)
                                                       0.084     6.205 r  pll/pll/CLKOUT5
                          net (fo=1, routed)           1.594     7.799    pll_pwm_clk
     BUFGCTRL_X0Y2        BUFG (Prop_bufg_I_O)         0.091     7.890 r  bufg_pwm_clk/O
-                         net (fo=215, routed)         1.557     9.447    pwm[0]/clk
-    OLOGIC_X0Y47         FDRE                                         r  pwm[0]/pwm_o_reg/C
-                         clock pessimism              0.343     9.790    
-                         clock uncertainty           -0.063     9.727    
-    OLOGIC_X0Y47         FDRE (Setup_fdre_C_D)       -1.077     8.650    pwm[0]/pwm_o_reg
+                         net (fo=215, routed)         1.557     9.447    pwm[2]/clk
+    OLOGIC_X0Y2          FDRE                                         r  pwm[2]/pwm_o_reg/C
+                         clock pessimism              0.458     9.905    
+                         clock uncertainty           -0.063     9.842    
+    OLOGIC_X0Y2          FDRE (Setup_fdre_C_D)       -1.083     8.759    pwm[2]/pwm_o_reg
   -------------------------------------------------------------------
                          required time                          8.759    
                          arrival time                          -9.147    
