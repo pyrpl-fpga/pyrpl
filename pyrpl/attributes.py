@@ -548,7 +548,7 @@ class FloatRegister(IntRegister, FloatProperty):
             if value == 0:
                 return float(0)
             else:
-                return 1.0 / float(value) / self.norm
+                return 1.0 / (float(value) / self.norm)
         else:
             return float(value) / self.norm
 

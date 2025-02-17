@@ -275,7 +275,6 @@ class Pid(FilterModule):
                      doc="pid integral unity-gain frequency [Hz]")
     d = GainRegister(0x110, bits=_GAINBITS,
                      norm=2**_DSR / (2.0 * np.pi * 8e-9),
-                     invert=True,
                      doc="pid derivative unity-gain frequency [Hz]. Off when 0")
 
     pause_gains = SelectRegister(0x12C,
