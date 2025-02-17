@@ -229,7 +229,7 @@ class Pid(FilterModule):
                          "setpoint",
                          "p",
                          "i",
-                         #"d",
+                         "d",
                          "inputfilter",
                          "max_voltage",
                          "min_voltage",
