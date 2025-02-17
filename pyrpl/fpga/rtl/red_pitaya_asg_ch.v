@@ -93,6 +93,10 @@ wire              dac_npnt_sub_neg;
 reg   [  28-1: 0] dac_mult  ;
 reg   [  15-1: 0] dac_sum   ;
 
+reg   [14-1: 0] dac_rdat_d1;  // Pipeline register for read data
+reg   [15-1: 0] set_amp_d1;   // Pipeline register for amplitude
+reg   [28-1: 0] dac_mult_d1;  // Pipeline register for multiplication result
+
 // read
 always @(posedge dac_clk_i)
 begin
@@ -113,8 +117,11 @@ if (buf_we_i)  dac_buf[buf_addr_i] <= buf_wdata_i[14-1:0] ;
 // scale and offset
 always @(posedge dac_clk_i)
 begin
-   dac_mult <= $signed(dac_rdat) * $signed({1'b0,set_amp_i}) ;
-   dac_sum  <= $signed(dac_mult[28-1:13]) + $signed(set_dc_i) ;
+   dac_rdat_d1 <= dac_rdat; // Pipeline the read value
+   set_amp_d1  <= set_amp_i; // Pipeline the amplitude
+
+   dac_mult_d1 <= $signed(dac_rdat_d1) * $signed({1'b0, set_amp_d1}); // Delayed multiplication
+   dac_sum  <= $signed(dac_mult_d1[28-1:13]) + $signed(set_dc_i);
 
    // saturation
    if (set_zero_i)  dac_o <= 14'h0;
