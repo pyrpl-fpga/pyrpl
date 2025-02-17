@@ -234,7 +234,7 @@ assign kp_mult = (pause_p==1'b1) ? $signed({15+GAINBITS{1'b0}}) : $signed(error)
 //-localparam IBW = 64; //integrator bit-width. Over-represent the integral sum to record longterm drifts
 //-reg   [15+GAINBITS-1: 0] ki_mult  ;
 
-localparam IBW = ISR+16; //integrator bit-width. Over-represent the integral sum to record longterm drifts (overrepresented by 2 bits)
+localparam IBW = ISR+16; //(48) integrator bit-width. Over-represent the integral sum to record longterm drifts (overrepresented by 2 bits)
 reg  signed  [16+GAINBITS-1: 0] ki_mult       ;
 wire signed  [          IBW: 0] int_sum       ;
 reg  signed  [        IBW-1: 0] int_reg       ;
@@ -300,7 +300,7 @@ end
 // = max( 15+GAINBITS(24)-PSR(12) = 27, // from kp_reg
 //        IBW(48)-ISR(32) = 16,         // from int_shr
 //        39-DSR(10) = 29 but disabled)         // from kd_reg_s
-localparam MAXBW = 28; //17
+localparam MAXBW = 29; //17
 
 wire signed [   MAXBW-1: 0] pid_sum;
 reg signed  [   14-1: 0] pid_out;
