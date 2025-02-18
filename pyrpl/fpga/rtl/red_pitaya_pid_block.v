@@ -271,10 +271,10 @@ assign int_shr = $signed(int_reg[IBW-1:ISR]) ;
 //reg signed  [39-DSR-1: 0] kd_reg_r      ;
 //reg signed  [39-DSR  : 0] kd_reg_s      ;
 
-wire signed [15+GAINBITS-1: 0] kd_mult;
+wire signed [16+GAINBITS-1: 0] kd_mult;          // Extra bit for safety in multiplication
 reg  signed [15+GAINBITS-DSR-1: 0] kd_reg;
 reg  signed [15+GAINBITS-DSR-1: 0] kd_reg_r;
-reg  signed [15+GAINBITS-DSR  : 0] kd_reg_s;
+reg  signed [15+GAINBITS-DSR  : 0] kd_reg_s;     // Extra bit for subtraction safety
 
 
 always @(posedge clk_i) begin
@@ -284,12 +284,12 @@ always @(posedge clk_i) begin
       kd_reg_s <= {15+GAINBITS-DSR+1{1'b0}};
    end
    else begin
-      kd_reg   <= kd_mult[15+GAINBITS-1:DSR] ;
+      kd_reg   <= kd_mult[16+GAINBITS-1:DSR] ;
       kd_reg_r <= kd_reg;
       kd_reg_s <= $signed(kd_reg) - $signed(kd_reg_r); //this is the end result
    end
 end
-   assign kd_mult = (pause_d==1'b1) ? $signed({15+GAINBITS-1{1'b0}}) : $signed(error) * $signed(set_kd);
+   assign kd_mult = (pause_d==1'b1) ? $signed({16+GAINBITS-1{1'b0}}) : $signed(error) * $signed(set_kd);
 
 
 //---------------------------------------------------------------------------------
@@ -300,7 +300,7 @@ end
 // = max( 15+GAINBITS(24)-PSR(12) = 27, // from kp_reg
 //        IBW(48)-ISR(32) = 16,         // from int_shr
 //        39-DSR(10) = 29 but disabled)         // from kd_reg_s
-localparam MAXBW = 29; //17
+localparam MAXBW = 30; //17
 
 wire signed [   MAXBW-1: 0] pid_sum;
 reg signed  [   14-1: 0] pid_out;
