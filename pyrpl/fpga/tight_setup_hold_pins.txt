@@ -1,0 +1,48 @@
++====================+===================+===========================================================================================================================================================+
+| Launch Setup Clock | Launch Hold Clock | Pin                                                                                                                                                       |
++====================+===================+===========================================================================================================================================================+
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk4[4].iir/overflow_reg[0]/D                                                                                                                    |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk6[7].iq_2_outputs/na_sleep_remaining_reg[31]/D                                                                                                |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[31]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk6[7].iq_2_outputs/na_sleep_remaining_reg[25]/D                                                                                                |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[28]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[27]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk6[7].iq_2_outputs/na_averages_remaining_reg[25]/D                                                                                             |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[24]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[23]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[20]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[19]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk6[7].iq_2_outputs/na_averages_remaining_reg[7]/D                                                                                              |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[16]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[15]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_sleep_remaining_reg[5]/D                                                                                                           |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[12]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[11]/D                                                                                                       |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[6]/D                                                                                                        |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[31]/D                                                                                                          |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[7]/D                                                                                                        |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[5]/D                                                                                                        |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[8]/D                                                                                                        |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[28]/D                                                                                                          |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[27]/D                                                                                                          |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[4]/D                                                                                                        |
+| pll_adc_clk        | pll_adc_clk       | i_scope/sys_rdata_reg[28]/D                                                                                                                               |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[24]/D                                                                                                          |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[23]/D                                                                                                          |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/transaction_fifo_0/cnt_read_reg[4]/D             |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_averages_remaining_reg[3]/D                                                                                                        |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[11].GEN_REG_STATUS.ip_irpt_status_reg_reg[11]/D              |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[20]/D                                                                                                          |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[19]/D                                                                                                          |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[2]/D |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[14].GEN_REG_STATUS.ip_irpt_status_reg_reg[14]/D              |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[0]/D |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[1]/D |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[0].GEN_REG_STATUS.ip_irpt_status_reg_reg[0]/D                |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[4].GEN_REG_STATUS.ip_irpt_status_reg_reg[4]/D                |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[16]/D                                                                                                          |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[7].GEN_REG_STATUS.ip_irpt_status_reg_reg[7]/D                |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[5].GEN_REG_STATUS.ip_irpt_status_reg_reg[5]/D                |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[6].iq/na_sleep_remaining_reg[15]/D                                                                                                          |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[15].GEN_REG_STATUS.ip_irpt_status_reg_reg[15]/D              |
++--------------------+-------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+

@@ -1595,7 +1595,7 @@
       </spirit:componentInstance>
       <spirit:componentInstance>
         <spirit:instanceName>xadc</spirit:instanceName>
-        <spirit:componentRef spirit:library="ip" spirit:name="xadc_wiz" spirit:vendor="xilinx.com" spirit:version="3.2"/>
+        <spirit:componentRef spirit:library="ip" spirit:name="xadc_wiz" spirit:vendor="xilinx.com" spirit:version="3.3"/>
         <spirit:configurableElementValues>
           <spirit:configurableElementValue spirit:referenceId="bd:xciName">system_xadc_0</spirit:configurableElementValue>
           <spirit:configurableElementValue spirit:referenceId="XADC_STARUP_SELECTION">independent_adc</spirit:configurableElementValue>
