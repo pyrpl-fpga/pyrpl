@@ -6,6 +6,17 @@
 # Red Pitaya FPGA/SoC Makefile 
 #
 
+
+VIVADO_VER := $(shell vivado -version | head -n 1 | sed -e 's/ (/_/g' | sed -e 's/ /_/g' | sed -e 's/)//g')
+
+PARENT  = ../../..
+VITIS_VER = 2024.2
+DTG     = $(PARENT)/device-tree-xlnx-xilinx-v$(VITIS_VER)
+
+# Red Pitaya FPGA repo
+RP_VER  = Release-2024.3
+RPFPGA  = $(PARENT)/RedPitaya-FPGA
+
 # build results
 FPGA_BIN=out/red_pitaya.bin
 
