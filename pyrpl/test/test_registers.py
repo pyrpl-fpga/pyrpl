@@ -9,7 +9,7 @@ class TestRegisters(TestRedpitaya):
     """ This test verifies that all registers behave as expected.
 
     The test is not only useful to test the python interface,
-    but also checks that the fpga is not behaving stragely,
+    but also checks that the fpga is not behaving strangely,
     i.e. loosing data or writing the wrong data. Thus, it is the
     principal test to execute on new fpga designs. """
     def test_generator(self):

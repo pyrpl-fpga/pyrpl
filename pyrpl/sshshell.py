@@ -42,7 +42,7 @@ class SshShell(object):
         self.sshport=sshport
         self.user = user
         self.password = password
-        self.timeout= timeout
+        self.timeout = timeout
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(

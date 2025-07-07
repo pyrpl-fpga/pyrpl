@@ -37,7 +37,7 @@ class SignalLauncher(QtCore.QObject):
 
     A QObject that is connected to the widgets to update their value when
     attributes of a module change. Any timers needed to implement the module
-    functionality shoud be implemented here as well.
+    functionality should be implemented here as well.
     """
     update_attribute_by_name = QtCore.Signal(str, list)
     # The name of the property that has changed, the list is [new_value],
@@ -46,7 +46,7 @@ class SignalLauncher(QtCore.QObject):
     # SelectProperty,  list of new options
     refresh_filter_options = QtCore.Signal(str) # name of the
     # FilterProperty,  new options are contained in self.valid_frequencies()
-    change_ownership = QtCore.Signal() # The owner of the module  has
+    change_ownership = QtCore.Signal()  # The owner of the module  has
     # changed
 
     def __init__(self, module):
@@ -54,7 +54,7 @@ class SignalLauncher(QtCore.QObject):
         self.module = module
 
     def emit_signal_by_name(self, name, *args, **kwds):
-        """Emits signal "name" with the specfified args and kwds."""
+        """Emits signal "name" with the specified args and kwds."""
         signal = getattr(self, name)
         signal.emit(*args, **kwds)
 
@@ -66,9 +66,9 @@ class SignalLauncher(QtCore.QObject):
         for key in dir(self.__class__):
             val = getattr(self, key)
 
-            try: #for qtpy > 1.9.0
+            try:  # for qtpy > 1.9.0
                 signal = QtCore.SignalInstance
-            except AttributeError: #for qtpy <= 1.9.0
+            except AttributeError:  # for qtpy <= 1.9.0
                 signal = QtCore.pyqtBoundSignal
             if isinstance(val, signal, ) and hasattr(widget,
                                                     key):
