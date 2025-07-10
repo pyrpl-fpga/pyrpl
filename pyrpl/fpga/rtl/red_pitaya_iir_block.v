@@ -271,6 +271,7 @@ wire signed [IIRSIGNALBITS-1:0] p_ay2_full;
 
 red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
  p_ay1_module (
+  .clk(clk),
   .factor1_i(y1a),
   .factor2_i(a1),
   .product_o(p_ay1_full),
@@ -281,6 +282,7 @@ red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(I
 
 red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
    p_ay2_module (
+    .clk(clk),
     .factor1_i(y2a),
     .factor2_i(a2),
     .product_o(p_ay2_full),
@@ -294,6 +296,7 @@ wire signed [IIRSIGNALBITS-1:0] p_bx0_full;
 wire signed [IIRSIGNALBITS-1:0] p_bx1_full;
 red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
  p_bx0_module (
+  .clk(clk),
   .factor1_i(x0b),
   .factor2_i(b0),
   .product_o(p_bx0_full),
@@ -301,6 +304,7 @@ red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(I
    );
 red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
    p_bx1_module (
+    .clk(clk),
     .factor1_i(x1b),
     .factor2_i(b1),
     .product_o(p_bx1_full),

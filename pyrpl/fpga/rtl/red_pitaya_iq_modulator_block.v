@@ -69,7 +69,9 @@ red_pitaya_product_sat  #(
 	.SHIFT(GAINBITS+INBITS-OUTBITS-SHIFTBITS),
 	.BITS_OUT(OUTBITS))
 firstproduct_saturation [1:0]
-( .factor1_i  (  {signal2_i, signal1_i} ),
+(
+  .clk(clk),
+  .factor1_i  (  {signal2_i, signal1_i} ),
   .factor2_i  (  {       g4,        g1} ),
   .product_o  (  {firstproduct2, firstproduct1})
 );
@@ -123,6 +125,7 @@ red_pitaya_product_sat  #(
 	.SHIFT(SHIFTBITS+2),
 	.BITS_OUT(OUTBITS))
 i0_product_and_sat (
+  .clk(clk),
   .factor1_i(signal1_i),
   .factor2_i(g3),
   .product_o(q1_product),
@@ -135,6 +138,7 @@ red_pitaya_product_sat  #(
 	.SHIFT(SHIFTBITS+2),
 	.BITS_OUT(OUTBITS))
 q0_product_and_sat (
+  .clk(clk),
   .factor1_i(signal2_i),
   .factor2_i(g3),
   .product_o(q2_product),

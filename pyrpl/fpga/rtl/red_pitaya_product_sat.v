@@ -46,6 +46,7 @@ module red_pitaya_product_sat
    parameter SHIFT = 10
 )
 (
+    input clk,
     input signed [BITS_IN1-1:0] factor1_i,
     input signed [BITS_IN2-1:0] factor2_i,
     output signed [BITS_OUT-1:0] product_o,
@@ -54,10 +55,26 @@ module red_pitaya_product_sat
 wire signed [BITS_IN1+BITS_IN2-1:0] product;
 //assign product = factor1_i*factor2_i;
 // simple saturation added:
-assign product = factor1_i*factor2_i + $signed(1 <<(SHIFT-1));
-assign {product_o,overflow} =  ( {product[BITS_IN1+BITS_IN2-1],
-|product[BITS_IN1+BITS_IN2-2:SHIFT+BITS_OUT-1]} ==2'b01) ? {{1'b0,{BITS_OUT-1{1'b1}}},1'b1}  : //positive overflow
-                    ( {product[BITS_IN1+BITS_IN2-1],&product[BITS_IN1+BITS_IN2-2:SHIFT+BITS_OUT-1]} ==2'b10) ? {{1'b1,{BITS_OUT-1{1'b0}}},1'b1}   : //negative overflow
-                    {product[SHIFT+BITS_OUT-1:SHIFT],1'b0} ; //correct value           
+
+reg signed [BITS_IN1+BITS_IN2-1:0] product_reg;
+
+always @(posedge clk) begin
+    product_reg <= factor1_i * factor2_i + $signed(1 << (SHIFT-1));
+end
+
+reg signed [BITS_OUT-1:0] product_o_reg;
+reg overflow_reg;
+
+always @(posedge clk) begin
+    if ({product_reg[BITS_IN1+BITS_IN2-1], |product_reg[BITS_IN1+BITS_IN2-2:SHIFT+BITS_OUT-1]} == 2'b01) //positive overflow
+        {product_o_reg, overflow_reg} <= {{1'b0,{BITS_OUT-1{1'b1}}}, 1'b1};
+    else if ({product_reg[BITS_IN1+BITS_IN2-1], &product_reg[BITS_IN1+BITS_IN2-2:SHIFT+BITS_OUT-1]} == 2'b10) //negative overflow
+        {product_o_reg, overflow_reg} <= {{1'b1,{BITS_OUT-1{1'b0}}}, 1'b1};
+    else //correct value
+        {product_o_reg, overflow_reg} <= {product_reg[SHIFT+BITS_OUT-1:SHIFT], 1'b0};
+end
+
+assign product_o = product_o_reg;
+assign overflow = overflow_reg;
 
 endmodule
