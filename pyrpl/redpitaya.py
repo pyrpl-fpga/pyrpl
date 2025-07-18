@@ -384,29 +384,6 @@ class RedPitaya(object):
 
         return result.find('No such file or directory') < 0
 
-    def fpgarecentlyflashed(self):
-        self.ssh.ask()
-        result =self.ssh.ask("echo $(($(date +%s) - $(date +%s -r \""
-        + os.path.join(self.parameters['serverdirname'], self.parameters['serverbinfilename']) +"\")))")
-        age = None
-        for line in result.split('\n'):
-            try:
-                age = int(line.strip())
-            except:
-                pass
-            else:
-                break
-        if not age:
-            self.logger.debug("Could not retrieve bitfile age from: %s",
-                            result)
-            return False
-        elif age > 10:
-            self.logger.debug("Found expired bitfile. Age: %s", age)
-            return False
-        else:
-            self.logger.debug("Found recent bitfile. Age: %s", age)
-            return True
-
     def installserver(self):
         self.endserver()
         sleep(self.parameters['delay'])
