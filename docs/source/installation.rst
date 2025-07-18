@@ -8,6 +8,7 @@ For PyRPL to work, you must have a working `Red Pitaya / StemLab <http://www.red
 
 * download and unzip the `Red Pitaya OS Version 0.92 image <https://sourceforge.net/projects/pyrpl/files/SD_Card_RedPitayaOS_v0.92.img.zip/download>`_,
 * flash this image on 4 GB (or larger) micro SD card using `Win32DiskImager <https://sourceforge.net/projects/win32diskimager/>`_ (see a `step-by-step guide for all operating systems <http://redpitaya.readthedocs.io/en/latest/quickStart/SDcard/SDcard.html>`_), and insert the card into your Red Pitaya, and
+* the latest version of pyrpl is also compatible with os version 2.0x and 1.x
 * connect the Red Pitaya to your LAN and connect its power supply.
 
 :doc:`user_guide/installation/hardware_installation` gives more detailed instructions in case you are experiencing any trouble.
