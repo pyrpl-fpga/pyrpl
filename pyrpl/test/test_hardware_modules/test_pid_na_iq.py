@@ -7,7 +7,7 @@ from pyrpl.async_utils import sleep
 
 
 class TestPidNaIq(TestPyrpl):
-    def setup(self):
+    def setup_method(self):
         self.extradelay = 0.6 * 8e-9  # no idea where this comes from
             # shortcut
         self.pyrpl.na = self.pyrpl.networkanalyzer
@@ -16,7 +16,7 @@ class TestPidNaIq(TestPyrpl):
         self.loglevel = self.na._logger.getEffectiveLevel()
         self.na._logger.setLevel(10)
 
-    def teardown(self):
+    def teardown_method(self):
         self.na.stop()
         # set na loglevel to previous one
         self.na._logger.setLevel(self.loglevel)

@@ -60,7 +60,7 @@ if errorlevel 9009 (
 )
 
 REM Preliminaries to a real build - convert tutorial to readable format
-ipython nbconvert --to html source/user_guide/tutorial/tutorial.ipynb
+jupyter nbconvert --to html source/user_guide/tutorial/tutorial.ipynb
 
 
 if "%1" == "html" (

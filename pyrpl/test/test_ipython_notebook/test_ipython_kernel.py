@@ -81,6 +81,7 @@ def _notebook_run(path):
 
 # testing for the transferability of environment variables
 os.environ["python_sys_version"] = sys.version
+os.environ["pyrpl_path"] = 'C://Users//HQNOM//Documents//GitHub//pyrpl'
 
 # For some reason, the notebook preprocessor doesn't close
 # itself properly in python 3.7. I don't think it's worth the effort

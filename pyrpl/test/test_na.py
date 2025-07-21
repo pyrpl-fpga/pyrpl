@@ -17,7 +17,7 @@ except:
 
 
 class TestNA(TestPyrpl):
-    def setup(self):
+    def setup_method(self):
         self.na = self.pyrpl.networkanalyzer
         # stop all other instruments since something seems to read from fpga all the time
         #self.pyrpl.hide_gui()
@@ -30,7 +30,7 @@ class TestNA(TestPyrpl):
         """
         assert(self.na.running_state=='stopped')
 
-    def teardown(self):
+    def teardown_method(self):
         self.na.stop()
 
     def test_na_running_states(self):
@@ -137,8 +137,8 @@ class TestNA(TestPyrpl):
             max_rw_points = self.na.points
             sleep(0.1)
             print("Reads: %d %d %d. " % (self.pyrpl.rp.client._read_counter, old_read, max_rw_points))
-            assert self.pyrpl.rp.client._read_counter - old_read <= max_rw_points, \
-                (self.pyrpl.rp.client._read_counter, old_read, max_rw_points)
+            assert self.pyrpl.rp.client._read_counter - old_read <= 2*max_rw_points,(self.pyrpl.rp.client._read_counter, old_read, max_rw_points)
+            # twice because now we also read the# amplitude from the iq module
             print("Writes: %d %d %d. " % (self.pyrpl.rp.client._write_counter, old_write, max_rw_points))
             assert self.pyrpl.rp.client._write_counter - old_write <= max_rw_points, \
                 (self.pyrpl.rp.client._write_counter, old_write, max_rw_points)

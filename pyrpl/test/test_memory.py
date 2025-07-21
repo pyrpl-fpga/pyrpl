@@ -77,7 +77,7 @@ class TestMemory(object):
         by _loadsavedeadtime for speed reasons.
         """
         filename = 'test3'
-        T1, T2 = 0.5, 2.0
+        T1, T2 = 1, 2
         m1 = MemoryTree(filename, _loadsavedeadtime=T1)
         assert m1._loadsavedeadtime == T1
         assert m1._save_counter == 0
@@ -127,7 +127,7 @@ class TestMemory(object):
         """
         filename = 'test4'
         print("Filename: %s"%filename)
-        T1, T2 = 0.0, 0.0
+        T1, T2 = 0, 0
         m1 = MemoryTree(filename, _loadsavedeadtime=T1)
         assert m1._loadsavedeadtime == T1
         assert m1._write_to_file_counter == 0

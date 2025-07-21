@@ -59,7 +59,7 @@ class Loop(Module):
 
     @interval.setter
     def interval(self, val):
-        self.timer.setInterval(val*1000.0)
+        self.timer.setInterval(int(val*1000))
 
     def _clear(self):
         self._ended = True
@@ -134,7 +134,7 @@ class PlotWindow(object):
 
     close() closes the plot"""
     def __init__(self, title="plotwindow"):
-        self.win = pg.GraphicsWindow(title=title)
+        self.win = pg.GraphicsLayoutWidget(title=title)
         self.pw = self.win.addPlot()
         self.curves = {}
         self.win.show()

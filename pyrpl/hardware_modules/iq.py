@@ -34,7 +34,7 @@ Lock-in detection / PDH / synchronous detection
              output_signal='quadrature', quadrature_factor=10)
 
 After this setup, the demodulated quadrature is available as the
-output\_signal of iq0, and can serve for example as the input of a PID
+output_signal of iq0, and can serve for example as the input of a PID
 module to stabilize the frequency of a laser to a reference cavity. The
 module was tested and is in daily use in our lab. Frequencies as low as
 20 Hz and as high as 50 MHz have been used for this technique. At the
@@ -479,8 +479,8 @@ class Iq(FilterModule):
         self._logger.info("Estimated acquisition time: %.1f s", float(avg + sleeptimes) * points / rbw)
         sys.stdout.flush()  # make sure the time is shown
         # setup averaging
-        self._na_averages = np.int(np.round(125e6 / rbw * avg))
-        self._na_sleepcycles = np.int(np.round(125e6 / rbw * sleeptimes))
+        self._na_averages = int(np.round(125e6 / rbw * avg))
+        self._na_sleepcycles = int(np.round(125e6 / rbw * sleeptimes))
         # compute rescaling factor
         rescale = 2.0 ** (-self._LPFBITS) * 4.0  # 4 is artefact of fpga code
         # obtained by measuring transfer function with bnc cable - could replace the inverse of 4 above

@@ -9,6 +9,7 @@ from ...modules import SignalLauncher
 
 import numpy as np
 from qtpy import QtCore
+from scipy.signal import freqz
 
 
 class SignalLauncherIir(SignalLauncher):
@@ -179,7 +180,7 @@ class TfTypeProperty(SelectProperty):
 class IIR(FilterModule):
     _signal_launcher = SignalLauncherIir
     iirfilter = None  # will be set by setup()
-    _minloops = 5  # minimum number of loops for correct behaviour
+    _minloops = 3  # minimum number of loops for correct behaviour
     _maxloops = 1023
     # the first biquad (self.coefficients[0] has _delay cycles of delay
     # from input to output_signal. Biquad self.coefficients[i] has
@@ -429,7 +430,10 @@ class IIR(FilterModule):
             try:
                 na.load_state('iir_measurement')
             except KeyError:
-                freqs = self._module_widget.frequencies
+                if hasattr(self, '_module_widget'):
+                    freqs = self._module_widget.frequencies
+                else:
+                    freqs = np.logspace(2, np.log10(5e6), 2000)
                 mi, ma = min(freqs), max(freqs)
                 na.setup(start_freq=mi,
                          stop_freq=ma,
@@ -437,7 +441,7 @@ class IIR(FilterModule):
                          rbw=500,
                          avg_per_point=1,
                          trace_average=1,
-                         amplitude=0.005,
+                         amplitude=1.,
                          input=self,
                          output_direct='off',
                          acbandwidth=100,
@@ -454,6 +458,7 @@ class IIR(FilterModule):
         self._logger.info("NA acquisition finished.")
         # re-plot
         self._signal_launcher.update_plot.emit()
+        return self._measurement_data
 
     def _setup_unity(self):
         """sets the IIR filter transfer function unity"""
@@ -682,12 +687,13 @@ class IIR(FilterModule):
         If kind=='all', a list of plotdata tuples is returned that can be
         passed directly to iir.bodeplot().
         """
-        # frequencies = np.array(frequencies, dtype=np.float)
+        # frequencies = np.array(frequencies, dtype=float)
         # take average delay to be half the loops since this is the
         # expectation value for the delay (plus internal propagation delay)
         # module_delay = self._delay + self.loops / 2.0
 
         return self.iirfilter.tf_final(frequencies)
+
 
     def simulate_filter_float(self, xs, biquad="all"):
         """
