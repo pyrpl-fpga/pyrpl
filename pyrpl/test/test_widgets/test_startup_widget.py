@@ -13,7 +13,7 @@ class TestStartupWidgets(TestPyrpl):
     # somehow the file seems to suffer from other nosetests, so pick an
     # individual name for this test:
     # tmp_config_file = "nosetests_config_scope.yml"
-    def teardown(self):
+    def teardown_method(self):
         pass
 
     def test_startup_widget(self):

@@ -1,1 +1,11 @@
-.
+numpy
+scipy
+paramiko
+pandas
+nose
+pyqt5
+qtpy
+pyqtgraph
+pyyaml
+scp
+qasync

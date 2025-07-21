@@ -232,7 +232,6 @@ class OutputSignal(Signal):
             self.pid.p = 0
             self.pid.i = 0
             self.pid.setpoint = input.expected_signal(setpoint) + input.calibration_data._analog_offset
-
             if self.extra_module != 'None':
                 module = getattr(self.pyrpl.rp, self.extra_module)
                 module.input = input.signal()

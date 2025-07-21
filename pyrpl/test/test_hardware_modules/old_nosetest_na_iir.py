@@ -68,7 +68,7 @@ class TestIir(TestPyrpl):
         na.setup(start_freq=3e3,
                  stop_freq=1e6,
                  points=301,
-                 rbw=[500, 500],
+                 rbw=500,
                  avg_per_point=1,
                  running_state='stopped',
                  trace_average=1,
@@ -146,7 +146,7 @@ class TestIir(TestPyrpl):
         naset = dict(start_freq=3e3,
                      stop_freq=50e3,
                      points=501,
-                     rbw=[500, 500],
+                     rbw=500,
                      avg_per_point=1,
                      running_state='stopped',
                      trace_average=1,
@@ -166,7 +166,7 @@ class TestIir(TestPyrpl):
         naset = dict(start_freq=3e3,
                      stop_freq=10e6,
                      points=301,
-                     rbw=[500, 500],
+                     rbw=500,
                      avg_per_point=1,
                      running_state='stopped',
                      trace_average=1,
@@ -195,7 +195,7 @@ class TestIir(TestPyrpl):
         naset = dict(start_freq=3e3,
                      stop_freq=50e3,
                      points=1000, #2501
-                     rbw=[300, 300], # 1000,1000
+                     rbw=300, # 1000,1000
                      avg_per_point=3, # 5
                      running_state='stopped',
                      trace_average=1,
@@ -263,8 +263,7 @@ class TestIir(TestPyrpl):
                 eth = error_threshold
             else:
                 extrastring += '_' + kind + '_'
-                theory = module.transfer_function(f, extradelay=extradelay,
-                                                  kind=kind)
+                theory = module.transfer_function_by_kind(f, kind=kind)
                 try:
                     eth = error_threshold[kinds.index(kind)]
                 except:

@@ -49,10 +49,10 @@ requirements = ['scp',
                 'PyQt5<=5.14',  # cannot be installed with pip, if in conda you can use conda install pyqt<5.15
                 'qtpy<=1.10',  # qtpy 1.11 contains breaking API changes related to pyqtSignals
                 'nbconvert',
-                'jupyter-client',
-	        'nest_asyncio']
+                'jupyter-client']
+
 if sys.version_info >= (3,4):  # python version dependencies
-    requirements += ['quamash']
+    requirements += ['qasync']
 else:  # python 2.7
     requirements += ['futures', 'mock']  # mock is now a full dependency
 if os.environ.get('TRAVIS') == 'true':
@@ -61,8 +61,8 @@ if os.environ.get('READTHEDOCS') == 'True':
     requirements += ['pandoc', 'sphinx', 'sphinx_bootstrap_theme']  # mock is needed on readthedocs.io to mock PyQt5
     # remove a few of the mocked modules
     def rtd_included(r):
-        for rr in ['numpy', 'scipy', 'pandas', 'scp', 'paramiko', 'nose',
-                   'quamash', 'qtpy', 'asyncio', 'pyqtgraph']:
+        for rr in ['numpy', 'scipy', 'pandas', 'scp', 'paramiko', 'pytest',
+                   'qasync', 'qtpy', 'asyncio', 'pyqtgraph']:
             if r.startswith(rr):
                 return False
         return True
@@ -130,7 +130,7 @@ setup(name='pyrpl',
       author='Leonhard Neuhaus',
       author_email='neuhaus@lkb.upmc.fr',
       url='http://lneuhaus.github.io/pyrpl/',
-      license='GPLv3',
+      license='MIT',
       classifiers=['Programming Language :: Python :: 2.7',
                    'Programming Language :: Python :: 3.4',
                    'Programming Language :: Python :: 3.5',
@@ -138,7 +138,7 @@ setup(name='pyrpl',
                    'Programming Language :: C',
                    'Natural Language :: English',
                    'Development Status :: 4 - Beta',
-                   'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+                   'License :: OSI Approved :: MIT License',
                    'Topic :: Scientific/Engineering :: Human Machine Interfaces',
                    'Topic :: Scientific/Engineering :: Physics'],
       keywords='RedPitaya DSP FPGA IIR PDH synchronous detection filter PID '

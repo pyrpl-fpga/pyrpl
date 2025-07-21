@@ -9,10 +9,24 @@ class TestRegisters(TestRedpitaya):
     """ This test verifies that all registers behave as expected.
 
     The test is not only useful to test the python interface,
-    but also checks that the fpga is not behaving stragely,
+    but also checks that the fpga is not behaving strangely,
     i.e. loosing data or writing the wrong data. Thus, it is the
     principal test to execute on new fpga designs. """
-    def test_generator(self):
+    # def test_generator(self):
+    #     if self.r is None:
+    #         assert False
+    #     for modulekey, module in self.r.__dict__.items():
+    #         if isinstance(module, Module):
+    #             logger.info("Scanning module %s...", modulekey)
+    #             for regkey, regclass in type(module).__dict__.items():
+    #                 if isinstance(regclass, BaseRegister):
+    #                     logger.info("Scanning register %s...", regkey)
+    #                     yield self.register_validation, module, modulekey, \
+    #                           regclass, regkey
+                        
+    def test_generator_pytest(self):
+        # same test as above but without the yield not supported by pytest, 
+        # I don't think it changes anything here keeping both for nosetests
         if self.r is None:
             assert False
         for modulekey, module in self.r.__dict__.items():
@@ -21,8 +35,8 @@ class TestRegisters(TestRedpitaya):
                 for regkey, regclass in type(module).__dict__.items():
                     if isinstance(regclass, BaseRegister):
                         logger.info("Scanning register %s...", regkey)
-                        yield self.register_validation, module, modulekey, \
-                              regclass, regkey
+                        self.register_validation(module, modulekey, \
+                              regclass, regkey)
 
     def register_validation(self, module, modulekey, reg, regkey):
         logger.debug("%s %s", modulekey, regkey)

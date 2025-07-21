@@ -1,15 +1,21 @@
 from ._version import __version_info__, __version__
 
+import os, sys; sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 __author__ = "Leonhard Neuhaus <neuhaus@lkb.upmc.fr>"
-__license__ = "GNU General Public License 3 (GPLv3)"
+__license__ = "MIT License"
 
 # manage warnings of numpy and scipy
 import warnings
 import numpy as np
 # pyqtgraph is throwing a warning on ScatterPlotItem
-warnings.simplefilter("ignore", np.VisibleDeprecationWarning)
-# pyqtgraph is throwing a warning on ScatterPlotItem
-warnings.simplefilter("error", np.ComplexWarning)
+try:
+    warnings.simplefilter("ignore", np.exceptions.VisibleDeprecationWarning)
+    warnings.simplefilter("error", np.exceptions.ComplexWarning)
+except AttributeError:
+    warnings.simplefilter("ignore", np.VisibleDeprecationWarning)
+    warnings.simplefilter("error", np.ComplexWarning)
+    
 # former issue with IIR, now resolved
 #from scipy.signal import BadCoefficients
 #warnings.simplefilter("error", BadCoefficients)
@@ -25,7 +31,7 @@ logger.setLevel(logging.INFO)
 try:
     from IPython import get_ipython
     IPYTHON = get_ipython()
-    IPYTHON.magic("gui qt")
+    IPYTHON.run_line_magic("gui","qt")
 except BaseException as e:
     logger.debug('Could not enable IPython gui support: %s.' % e)
 

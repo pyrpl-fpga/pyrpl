@@ -44,7 +44,6 @@ source                            $path_ip/system_bd.tcl
 
 # generate SDK files
 generate_target all [get_files    system.bd]
-write_hwdef              -file    $path_sdk/red_pitaya.hwdef
 
 ################################################################################
 # read files:
@@ -56,7 +55,7 @@ write_hwdef              -file    $path_sdk/red_pitaya.hwdef
 # template
 #read_verilog                      $path_rtl/...
 
-read_verilog                      .srcs/sources_1/bd/system/hdl/system_wrapper.v
+read_verilog                      .gen/sources_1/bd/system/hdl/system_wrapper.v
 
 read_verilog                      $path_rtl/axi_master.v
 read_verilog                      $path_rtl/axi_slave.v
@@ -148,19 +147,20 @@ set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 write_bitstream -force $path_out/red_pitaya.bit
 
 ################################################################################
-# generate the .bin file for flashing via 'cat red_pitaya.bin > /dev/xdevcfg'
+# generate the .bin file for flashing
 ################################################################################
 
 set_property BITSTREAM.GENERAL.COMPRESS FALSE [current_design]
 write_bitstream -force $path_out/red_pitaya_uncompressed.bit
-write_cfgmem -force -format BIN -size 2 -interface SMAPx32 -disablebitswap -loadbit "up 0x0 $path_out/red_pitaya_uncompressed.bit" red_pitaya.bin
+write_cfgmem -force -format BIN -size 2 -interface SMAPx32 -disablebitswap -loadbit "up 0x0 $path_out/red_pitaya_uncompressed.bit" $path_out/red_pitaya.bin
 
 ################################################################################
 # generate system definition
 ################################################################################
 
-write_sysdef             -hwdef   $path_sdk/red_pitaya.hwdef \
-                         -bitfile $path_out/red_pitaya.bit \
-                         -file    $path_sdk/red_pitaya.sysdef
+write_hw_platform -include_bit -fixed -force $path_sdk/red_pitaya.xsa
+validate_hw_platform $path_sdk/red_pitaya.xsa
+
+file copy -force .gen/sources_1/bd/system/hw_handoff/system.hwh $path_sdk/red_pitaya.hwh
 
 exit

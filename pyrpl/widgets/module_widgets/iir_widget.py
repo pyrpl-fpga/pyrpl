@@ -11,8 +11,7 @@ from ... import APP
 
 class MyGraphicsWindow(pg.GraphicsLayoutWidget):
     def __init__(self, title, parent):
-        super(GraphicsLayoutWidget, self).__init__(title)
-        self.parent = parent
+        super().__init__(parent=parent, title=title)
         self.setToolTip("-----plot legend---------------\n"
                         "yellow: theoretical IIR transfer function\n"
                         "green: data curve\n"
@@ -28,7 +27,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         #APP.setDoubleClickInterval(300)  # default value (550) is fine
         self.mouse_clicked_timer = QtCore.QTimer()
         self.mouse_clicked_timer.setSingleShot(True)
-        self.mouse_clicked_timer.setInterval(APP.doubleClickInterval())
+        self.mouse_clicked_timer.setInterval(int(APP.doubleClickInterval()))
         self.mouse_clicked_timer.timeout.connect(self.mouse_clicked)
 
     # see https://wiki.python.org/moin/PyQt/Distinguishing%20between%20click%20and%20double%20click
@@ -171,8 +170,6 @@ class IirGraphWidget(QtWidgets.QGroupBox):
 
             self.plots[name].setLogMode(self.xlog, None)
             self.plots[name + '_phase'].setLogMode(self.xlog, None)
-
-
 
         # also set logscale for the xaxis
         # make scatter plots
@@ -363,8 +360,8 @@ class IirWidget(ModuleWidget):
                                   list(self._phase(tf)),
                                   brush,
                                   size))]
-            self.graph_widget.plots[end].setPoints(mag)
-            self.graph_widget.plots[end+'_phase'].setPoints(phase)
+            self.graph_widget.plots[end].setData(mag)
+            self.graph_widget.plots[end+'_phase'].setData(phase)
         # plot the measurement data if desired
         if self.module.plot_measurement and hasattr(self.module, '_measurement_data'):
             f, v = self.module._measurement_data

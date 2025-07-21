@@ -18,18 +18,34 @@ class TestValidateAndNormalize(TestPyrpl):
     changes to all registers
     """
 
-    def test_validate_and_normalize(self):
+    # def test_validate_and_normalize(self):
+    #     for mod in self.pyrpl.modules:
+    #         for exclude in [Lockbox]:  # lockbox is too complicated here
+    #             if isinstance(mod, exclude):
+    #                 break
+    #         else:
+    #             yield self.assert_validate_and_normalize, mod
+    #             # make sure all modules are stopped at the end of this test
+    #             try:
+    #                 mod.stop()
+    #             except:
+    #                 pass
+
+    def test_validate_and_normalize_pytest(self):
+        # same test as above but without the yield not supported by pytest, 
+        # I don't think it changes anything here keeping both for nosetests
         for mod in self.pyrpl.modules:
             for exclude in [Lockbox]:  # lockbox is too complicated here
                 if isinstance(mod, exclude):
                     break
             else:
-                yield self.assert_validate_and_normalize, mod
+                self.assert_validate_and_normalize(mod)
                 # make sure all modules are stopped at the end of this test
                 try:
                     mod.stop()
                 except:
                     pass
+
 
     def assert_validate_and_normalize(self, mod):
         self.results = []
