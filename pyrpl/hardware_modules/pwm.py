@@ -1,5 +1,6 @@
 from . import DspModule
 from ..widgets.module_widgets import PwmWidget
+from ..errors import ExpectedPyrplError
 
 
 class Pwm(DspModule):
@@ -35,7 +36,13 @@ class Pwm(DspModule):
         # because pwm's input is using adc-input's plug
         self.name = name
         with self.do_setup:
-            self.input ='off'
+            try:
+                self.pyrpl()
+                self.input ='off'
+            except ExpectedPyrplError as e:
+                rp.logger.warning(e)
+            except AttributeError as e:
+                rp.logger.warning('no pyrpl instance')
     """
     def __init__(self, client, name, parent): # name is 'pwm0' or 'pwm1'
         pwm_to_module = dict(pwm1='adc1', pwm2='adc2')
