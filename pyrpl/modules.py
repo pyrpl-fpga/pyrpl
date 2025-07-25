@@ -455,7 +455,7 @@ class Module(with_metaclass(ModuleMetaClass, object)):
             # check if this parent has occured before in order to avoid an infinite loop
             if parent in passedparents:
                 raise ExpectedPyrplError("Unable to find a pyrpl instance "
-                                         "that is parent of the module %s.",
+                                         "that is parent of the module %s." %
                                          self.name)
         return parent
 

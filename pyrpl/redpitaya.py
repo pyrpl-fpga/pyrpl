@@ -210,12 +210,12 @@ class RedPitaya(object):
         if self.parameters['autostart']:  # start client
             self.start()
         self.logger.info('Successfully connected to Redpitaya with hostname '
-                         '%s.'%self.ssh.hostname)
+                         '%s.' % self.ssh.hostname)
         self.parent = self
 
     def start_ssh(self, attempt=0):
         """
-        Extablishes an ssh connection to the RedPitaya board
+        Establishes an ssh connection to the RedPitaya board
 
         returns True if a successful connection has been established
         """
