@@ -498,8 +498,14 @@ class RedPitaya(object):
 
     def start(self):
         if self.parameters['leds_off']:
-            self.switch_led(gpiopin=0, state=False)
-            self.switch_led(gpiopin=7, state=False)
+            result = self.ssh.ask('cat /root/.version')
+            self.logger.debug('cat /root/.version: {}'.format(result))
+            if result.find('2.') != -1: # for os < 0.94
+                self.switch_led(gpiopin=0, state=False)
+                self.switch_led(gpiopin=7, state=False)
+            else: # for os > 0.94
+                self.ssh.ask('\x03')
+                self.ssh.ask('/opt/redpitaya/bin/led_control -y=Off -e=Off -r=Off')
         self.startserver()
         sleep(self.parameters['delay'])
         self.startclient()
