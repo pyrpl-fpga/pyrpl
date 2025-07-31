@@ -101,12 +101,11 @@ localparam PID1  = 'd1; //formerly PID12: input2->output1
 localparam PID2  = 'd2; //formerly PID21: input1->output2
 localparam PID3  = 'd3; //formerly PID22
 localparam TRIG  = 'd3; //formerly PID3
-//localparam IIR   = 'd4; //IIR not used on this build
+localparam IIR   = 'd4; //IIR filter to connect in series to PID module
 localparam IQ0   = 'd5; //for PDH signal generation
 localparam IQ1   = 'd6; //for NA functionality
 localparam IQ2   = 'd7; //for PFD error signal
-localparam CRDIC1 = 'd8; //Cordic module to compute the phase of a signal from I an Q
-localparam CRDIC2 = 'd4; //Cordic module to compute the phase of a signal from I an Q
+//localparam CUSTOM1 = 'd8; //available slots
 localparam NONE = 2**LOG_MODULES-1; //code for no module; only used to switch off PWM outputs
 
 //EXTRAMODULE numbers
@@ -254,8 +253,8 @@ always @(posedge clk_i) begin
       input_select [PID3] <= ADC1;
       output_select[PID3] <= OFF;
 
-      \\input_select [IIR] <= ADC1;
-      \\output_select[IIR] <= OFF;
+      input_select [IIR] <= ADC1;
+      output_select[IIR] <= OFF;
 
       input_select [IQ0] <= ADC1;
       output_select[IQ0] <= OFF;
@@ -273,10 +272,6 @@ always @(posedge clk_i) begin
       
       input_select [PWM0] <= NONE;
       input_select [PWM1] <= NONE;
-
-      input_select[CRDIC1] <= ADC1;
-      input_select[CRDIC2] <= ADC2;
-      output_select[CRDIC1] <= OFF;
       
       sync <= {MODULES{1'b1}} ;  // all modules on by default
    end
@@ -438,26 +433,6 @@ generate for (j = 7; j < 8; j = j+1) begin
          .dat_o        (  output_direct[j]),  // output data
          .signal_o     (  output_signal[j]),  // output signal
          .signal2_o    (  output_signal[j*2]),  // output signal 2
-
-         //communincation with PS
-         .addr ( sys_addr[16-1:0] ),
-         .wen  ( sys_wen & (sys_addr[20-1:16]==j) ),
-         .ren  ( sys_ren & (sys_addr[20-1:16]==j) ),
-         .ack  ( module_ack[j] ),
-         .rdata (module_rdata[j]),
-         .wdata (sys_wdata)
-      );
-
-// CORDIC with two inputs (I and Q) and one output (phase)
-generate for (j = 8; j < 9; j = j+1) begin
-    red_pitaya_pfd_block cordic(
-        // data
-         .clk_i        (  clk_i          ),  // clock
-         .rstn_i       (  rstn_i         ),  // reset - active low
-         .i            (  input_signal [j] ),  // input data
-         .q            (  input_signal [5] ),  // input data (used j=5 because IIR input is not used)
-         .integral_o     (  output_signal[j]),  // output signal
-
 
          //communincation with PS
          .addr ( sys_addr[16-1:0] ),
