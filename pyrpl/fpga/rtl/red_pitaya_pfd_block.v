@@ -58,13 +58,22 @@ module red_pitaya_pfd_block
 	parameter TURNWIDTH = 2, //number of (most significant) bits encoding the number of turns around the circle
 	parameter NSTAGES = 9 //number of steps in the cordic algorithm (see Python script)
 )
-(   input rstn_i,
-    input clk_i,
-       
-    input signed [INPUTWIDTH-1:0] i, //quadrature 1
-    input signed [INPUTWIDTH-1:0] q, //quadrature 2
-   
-    output signed [SIGNALBITS-1:0] integral_o
+(
+ // data
+   input                 clk_i           ,  // clock
+   input                 rstn_i          ,  // reset - active low
+
+   input signed [INPUTWIDTH-1:0] i       ,  // quadrature 1
+   input signed [INPUTWIDTH-1:0] q       ,  // quadrature 2
+   output signed [SIGNALBITS-1:0] integral_o        ,  // output data
+
+    // communication with PS
+   input      [ 16-1: 0] addr,
+   input                 wen,
+   input                 ren,
+   output reg   		 ack,
+   output reg [ 32-1: 0] rdata,
+   input      [ 32-1: 0] wdata
 );
 
 reg signed [SIGNALBITS-1:0] integral;

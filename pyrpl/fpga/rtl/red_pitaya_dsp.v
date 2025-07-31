@@ -100,7 +100,7 @@ localparam PID0  = 'd0; //formerly PID11
 localparam PID1  = 'd1; //formerly PID12: input2->output1
 localparam PID2  = 'd2; //formerly PID21: input1->output2
 localparam PID3  = 'd3; //formerly PID22
-localparam TRIG  = 'd3; //formerly PID3
+//localparam TRIG  = 'd3; //formerly PID3
 //localparam IIR   = 'd4; //IIR not used on this build
 localparam IQ0   = 'd5; //for PDH signal generation
 localparam IQ1   = 'd6; //for NA functionality
@@ -134,7 +134,7 @@ localparam OFF  = 2'b00;
 
 // the selected input signal of each module: modules and extramodules have inputs
 // extraoutputs are treated like extramodules that do not provide their own output_signal
-wire [14-1:0] input_signal [MODULES+EXTRAMODULES+EXTRAOUTPUTS-1:0];
+wire [14-1:0] input_signal [MODULES+EXTRAMODULES+EXTRAOUTPUTS-1+1:0];
 // the selected input signal NUMBER of each module
 reg [LOG_MODULES-1:0] input_select [MODULES+EXTRAMODULES+EXTRAOUTPUTS-1:0];
 
@@ -254,8 +254,8 @@ always @(posedge clk_i) begin
       input_select [PID3] <= ADC1;
       output_select[PID3] <= OFF;
 
-      \\input_select [IIR] <= ADC1;
-      \\output_select[IIR] <= OFF;
+      //input_select [IIR] <= ADC1;
+      //output_select[IIR] <= OFF;
 
       input_select [IQ0] <= ADC1;
       output_select[IQ0] <= OFF;
@@ -329,13 +329,13 @@ generate for (j = 0; j < 4; j = j+1) begin
      // data
      .clk_i        (  clk_i          ),  // clock
      .rstn_i       (  rstn_i         ),  // reset - active low
-     .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
+     .sync_i       (  sync[j]        ),  // synchronization of different dsp modules
      .dat_i        (  input_signal [j] ),  // input data
      .dat_o        (  output_direct[j]),  // output data
 	 .diff_dat_i   (  diff_input_signal[j] ),  // input data for differential mode
 	 .diff_dat_o   (  diff_output_signal[j] ),  // output data for differential mode
 
-	 //communincation with PS
+	 //communication with PS
 	 .addr ( sys_addr[16-1:0] ),
 	 .wen  ( sys_wen & (sys_addr[20-1:16]==j) ),
 	 .ren  ( sys_ren & (sys_addr[20-1:16]==j) ),
@@ -346,7 +346,7 @@ generate for (j = 0; j < 4; j = j+1) begin
    assign output_signal[j] = output_direct[j];
 end
 endgenerate
-
+/*
 wire trig_signal;
 //TRIG
 generate for (j = 4; j < 5; j = j+1) begin
@@ -360,7 +360,7 @@ generate for (j = 4; j < 5; j = j+1) begin
      .phase1_i     (  asg1phase_i ),  // phase input
      .trig_o       (  trig_signal ),
 
-	 //communincation with PS
+	 //communication with PS
 	 .addr ( sys_addr[16-1:0] ),
 	 .wen  ( sys_wen & (sys_addr[20-1:16]==j) ),
 	 .ren  ( sys_ren & (sys_addr[20-1:16]==j) ),
@@ -372,7 +372,7 @@ end
 endgenerate
 assign trig_o = trig_signal;
 
-/*
+
 //IIR module 
 generate for (j = 4; j < 5; j = j+1) begin
     red_pitaya_iir_block iir (
@@ -382,7 +382,7 @@ generate for (j = 4; j < 5; j = j+1) begin
 	     .dat_i        (  input_signal [j] ),  // input data
 	     .dat_o        (  output_direct[j]),  // output data
 
-		 //communincation with PS
+		 //communication with PS
 		 .addr ( sys_addr[16-1:0] ),
 		 .wen  ( sys_wen & (sys_addr[20-1:16]==j) ),
 		 .ren  ( sys_ren & (sys_addr[20-1:16]==j) ),
@@ -404,7 +404,7 @@ generate for (j = 5; j < 7; j = j+1) begin
 	     // data
 	     .clk_i        (  clk_i          ),  // clock
 	     .rstn_i       (  rstn_i         ),  // reset - active low
-         .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
+         .sync_i       (  sync[j]        ),  // synchronization of different dsp modules
          .trig_iq      (  exp_p_in0      ),
 	     .dat_i        (  input_signal [j] ),  // input data
 	     .dat_o        (  output_direct[j]),  // output data
@@ -414,7 +414,7 @@ generate for (j = 5; j < 7; j = j+1) begin
          // synthesized away by Vivado
          //.signal2_o  (  output_signal[j*2]),  // output signal
 
-		 //communincation with PS
+		 //communication with PS
 		 .addr ( sys_addr[16-1:0] ),
 		 .wen  ( sys_wen & (sys_addr[20-1:16]==j) ),
 		 .ren  ( sys_ren & (sys_addr[20-1:16]==j) ),
@@ -432,14 +432,14 @@ generate for (j = 7; j < 8; j = j+1) begin
          // data
          .clk_i        (  clk_i          ),  // clock
          .rstn_i       (  rstn_i         ),  // reset - active low
-         .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
+         .sync_i       (  sync[j]        ),  // synchronization of different dsp modules
          .trig_iq      (  exp_p_in0      ),
          .dat_i        (  input_signal [j] ),  // input data
          .dat_o        (  output_direct[j]),  // output data
          .signal_o     (  output_signal[j]),  // output signal
          .signal2_o    (  output_signal[j*2]),  // output signal 2
 
-         //communincation with PS
+         //communication with PS
          .addr ( sys_addr[16-1:0] ),
          .wen  ( sys_wen & (sys_addr[20-1:16]==j) ),
          .ren  ( sys_ren & (sys_addr[20-1:16]==j) ),
@@ -447,19 +447,20 @@ generate for (j = 7; j < 8; j = j+1) begin
          .rdata (module_rdata[j]),
          .wdata (sys_wdata)
       );
+end endgenerate
 
 // CORDIC with two inputs (I and Q) and one output (phase)
-generate for (j = 8; j < 9; j = j+1) begin
+generate for (j = 4; j < 5; j = j+1) begin
     red_pitaya_pfd_block cordic(
         // data
          .clk_i        (  clk_i          ),  // clock
          .rstn_i       (  rstn_i         ),  // reset - active low
          .i            (  input_signal [j] ),  // input data
-         .q            (  input_signal [5] ),  // input data (used j=5 because IIR input is not used)
+         .q            (  input_signal [14] ),  // input data (used j=4 because IIR input is not used)
          .integral_o     (  output_signal[j]),  // output signal
 
 
-         //communincation with PS
+         //communication with PS
          .addr ( sys_addr[16-1:0] ),
          .wen  ( sys_wen & (sys_addr[20-1:16]==j) ),
          .ren  ( sys_ren & (sys_addr[20-1:16]==j) ),
