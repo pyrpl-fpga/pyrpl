@@ -65,7 +65,7 @@ defaultparameters = dict(
 
 class RedPitaya(object):
     cls_modules = [rp.HK, rp.AMS, rp.Scope, rp.Sampler, rp.Asg0, rp.Asg1] + \
-                  [rp.Pwm] * 2 + [rp.Iq] * 3 + [rp.Pid] * 4 + [rp.Trig]
+                  [rp.Pwm] * 2 + [rp.Iq] * 3 + [rp.Pid] * 3 + [rp.Cordic]
 
     def __init__(self, config=None,  # configfile is needed to store parameters. None simulates one
                  **kwargs):
@@ -103,7 +103,7 @@ class RedPitaya(object):
         if you are experiencing problems, try to increase delay, or try
         logging.getLogger().setLevel(logging.DEBUG)"""
         self.logger = logging.getLogger(name=__name__)
-        #self.license()
+        # self.license()
         # make or retrieve the config file
         if isinstance(config, MemoryTree):
             self.c = config
