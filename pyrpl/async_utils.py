@@ -34,7 +34,7 @@ the background loop
 
 """
 import logging
-from qtpy import QtWidgets
+from qtpy import QtWidgets, QtCore
 import asyncio
 from asyncio import TimeoutError, futures, coroutines
 from asyncio.tasks import __sleep0, _wait

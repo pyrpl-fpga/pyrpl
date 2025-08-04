@@ -52,7 +52,7 @@ defaultparameters = dict(
     autostart=True,  # autostart the client?
     reloadserver=False,  # reinstall the server at startup if not necessary?
     reloadfpga=True,  # reload the fpga binfile at startup?
-    serverbinfilename='fpga.bit.bin',  # name of the binfile on the server
+    serverbinfilename='fpga.bit.bin',  # name of the binfile on the server and in the device tree overlay file
     serverdtbofilename='fpga.dtbo',  # name of the device tree overlay file on the server
     serverdirname = "//opt//pyrpl//",  # server directory for server app and bitfile
     leds_off=True,  # turn off all GPIO lets at startup (improves analog performance)
@@ -93,7 +93,7 @@ class RedPitaya(object):
             reloadfpga=True,  # reload the fpga bitfile at startup?
             filename='fpga//red_pitaya.bin',  # name of the binfile for the fpga, None is default file
             dtbo_filename='fpga//red_pitaya.dtbo', # name of device tree file, None is the default
-            serverbinfilename='fpga.bit.bin',  # name of the binfile on the server
+            serverbinfilename='fpga.bit.bin',  # name of the binfile on the server and in the device tree overlay file
             serverdtbofilename='fpga.dtbo',  # name of the device tree overlay file on the server
             serverdirname = "//opt//pyrpl//",  # server directory for server app and bitfile
             leds_off=True,  # turn off all GPIO lets at startup (improves analog performance)
@@ -204,18 +204,18 @@ class RedPitaya(object):
         self.start_ssh()
         # start other stuff
         if self.parameters['reloadfpga']:  # flash fpga
-            self.update_fpga()
+            self._update_fpga()
         if self.parameters['reloadserver']:  # reinstall server app
             self.installserver()
         if self.parameters['autostart']:  # start client
             self.start()
         self.logger.info('Successfully connected to Redpitaya with hostname '
-                         '%s.'%self.ssh.hostname)
+                         '%s.' % self.ssh.hostname)
         self.parent = self
 
     def start_ssh(self, attempt=0):
         """
-        Extablishes an ssh connection to the RedPitaya board
+        Establishes an ssh connection to the RedPitaya board
 
         returns True if a successful connection has been established
         """
@@ -292,17 +292,23 @@ class RedPitaya(object):
             else:
                 break
 
-    def update_fpga(self, filename=None):
+    def update_fpga(self, filename=None, dtbo_filename=None):
+        if self.parameters['reloadfpga']:
+            self.logger.error('FPGA update not completed please configure reloadfpga=False')
+            return
+
+        self._update_fpga(filename, dtbo_filename)
+
+    def _update_fpga(self, filename=None, dtbo_filename=None):
         # For version 2.07 and higher to load a custom fpga use overlay.sh script
         update_custom = ''
         update_cmd = '//opt//redpitaya//sbin//overlay.sh pyrpl'
-        if filename is None:
-            if 'filename' in self.parameters and not self.parameters['filename'] is None:
-                source = self.parameters['filename']
-            else:
-                source = None
+        source = None
+        if 'filename' in self.parameters:
+            source = self.parameters['filename']
 
-        else:
+        if not filename is None:
+            # override
             source = filename
 
         if not source is None and os.path.isfile(source):
@@ -329,22 +335,32 @@ class RedPitaya(object):
             raise IOError("Wrong filename",
                 "The fpga binfile was not found at the expected location. Try passing the arguments "
                 "filename=\"c://github//pyrpl//pyrpl//red_pitaya.bin\" adapted to your installation "
-                "directory of pyrpl: current filename: "+self.parameters['filename'])
+                          "directory of pyrpl: current filename: " + source)
 
-        # send binfile
+        if 0 < len(update_custom):
+            dtbo_source = None
+            if 'dtbo_filename' in self.parameters:
+                dtbo_source = self.parameters['dtbo_filename']
+
+            if not dtbo_filename is None:
+                # override
+                dtbo_source = dtbo_filename
+
+            if not dtbo_source is None:
+                # send device tree
+                update_custom = '{} dtbo'.format(update_custom)
+                if not os.path.isfile(dtbo_source):
+                    raise IOError("Wrong device tree filename",
+                                  "The fpga device tree was not found at the expected location. Try passing the arguments "
+                                  "dtbo_filename=\"c://github//pyrpl//pyrpl//red_pitaya.dtbo\" adapted to your installation "
+                                  "directory of pyrpl: current filename: " + dtbo_source)
+                self.put_file(dtbo_source,
+                              os.path.join(self.parameters['serverdirname'],
+                                           self.parameters['serverdtbofilename']))
+
+        # send binfile after all checks
         self.put_file(source, os.path.join(self.parameters['serverdirname'],
                                            self.parameters['serverbinfilename']))
-        if 0 < len(update_custom) and 'dtbo_filename' in self.parameters and not self.parameters['dtbo_filename'] is None:
-            # send device tree
-            update_custom = '{} dtbo'.format(update_custom)
-            if not os.path.isfile(self.parameters['dtbo_filename']):
-                raise IOError("Wrong device tree filename",
-                  "The fpga device tree was not found at the expected location. Try passing the arguments "
-                  "dtbo_filename=\"c://github//pyrpl//pyrpl//red_pitaya.dtbo\" adapted to your installation "
-                  "directory of pyrpl: current filename: "+self.parameters['dtbo_filename'])
-            self.put_file(self.parameters['dtbo_filename'],
-                          os.path.join(self.parameters['serverdirname'],
-                                       self.parameters['serverdtbofilename']))
 
         # add appropriate parameters to the update command line
         update_cmd = '{} {}'.format(update_cmd, update_custom)
@@ -370,26 +386,26 @@ class RedPitaya(object):
             self.parameters['serverdirname'], self.parameters['serverdtbofilename']))
         self.ssh.ask('rm -f '+ os.path.join(
             self.parameters['serverdirname'], self.parameters['serverbinfilename']))
-        self.ssh.ask('rm -f '+ os.path.join(
-            self.parameters['serverdirname'], 'update_fpga.sh'))
         self.ssh.ask("nginx -p //opt//www//")
         self.ssh.ask('systemctl start redpitaya_nginx')  # for 0.94 and higher
         sleep(self.parameters['delay'])
         self.ssh.ask('ro')
 
-    def fpgaupdateinprogress(self):
+    def serverbinfileexists(self):
         self.ssh.ask()
-        result = self.ssh.ask('wc {}'.format(os.path.join(self.parameters['serverdirname'], 'update_fpga.sh')))
-        self.logger.debug('wc update_fpga.sh {}'.format(result))
+        result = self.ssh.ask('ls {}'.format(os.path.join(self.parameters['serverdirname'], self.parameters['serverbinfilename'])))
+        self.logger.debug('ls serverbinfilename result: {}'.format(result))
 
         return result.find('No such file or directory') < 0
 
     def fpgarecentlyflashed(self):
+        if not self.serverbinfileexists(): return False
+
         self.ssh.ask()
         result =self.ssh.ask("echo $(($(date +%s) - $(date +%s -r \""
         + os.path.join(self.parameters['serverdirname'], self.parameters['serverbinfilename']) +"\")))")
         age = None
-        for line in result.split('\n'):
+        for line in result.split('\r'):
             try:
                 age = int(line.strip())
             except:
@@ -397,8 +413,8 @@ class RedPitaya(object):
             else:
                 break
         if not age:
-            self.logger.debug("Could not retrieve bitfile age from: %s",
-                            result)
+            self.logger.debug('Could not retrieve bitfile age from: {}'.format(
+                result.split('\r')))
             return False
         elif age > 10:
             self.logger.debug("Found expired bitfile. Age: %s", age)
@@ -450,7 +466,7 @@ class RedPitaya(object):
     def startserver(self):
         self.endserver()
         sleep(self.parameters['delay'])
-        if self.fpgaupdateinprogress():
+        if self.fpgarecentlyflashed():
             self.logger.info("FPGA is being flashed. Please wait for 2 "
                             "seconds.")
             sleep(2.0)
@@ -482,8 +498,14 @@ class RedPitaya(object):
 
     def start(self):
         if self.parameters['leds_off']:
-            self.switch_led(gpiopin=0, state=False)
-            self.switch_led(gpiopin=7, state=False)
+            result = self.ssh.ask('cat /root/.version')
+            self.logger.debug('cat /root/.version: {}'.format(result))
+            if result.find('2.') != -1: # for os < 0.94
+                self.switch_led(gpiopin=0, state=False)
+                self.switch_led(gpiopin=7, state=False)
+            else: # for os > 0.94
+                self.ssh.ask('\x03')
+                self.ssh.ask('/opt/redpitaya/bin/led_control -y=Off -e=Off -r=Off')
         self.startserver()
         sleep(self.parameters['delay'])
         self.startclient()
