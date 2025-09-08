@@ -38,6 +38,7 @@ from qtpy import QtWidgets, QtCore
 import asyncio
 from asyncio import TimeoutError, futures, coroutines
 from asyncio.tasks import __sleep0, _wait
+from pyrpl_utils import isnotebook
 import qasync
 import math
 import concurrent.futures
@@ -62,12 +63,12 @@ LOOP = qasync.QEventLoop(already_running=False)  # Since tasks scheduled in this
 # loop, it might seem useless to send all tasks to LOOP, however, a task
 # scheduled in the default loop seem to never get executed with IPython
 # kernel integration.
-asyncio.set_event_loop(LOOP)
 
 FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
 FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
+is_notebook = isnotebook()
 
 async def sleep_async(delay, result=None):
     """
@@ -135,46 +136,79 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     return await _wait(fs, timeout, return_when, LOOP)
 
 
+
 def wait(future, timeout=None):
-    loop = asyncio.get_event_loop()
-    if asyncio.iscoroutine(future):
-        future = asyncio.ensure_future(future, loop=loop)
 
-    app = QtCore.QCoreApplication.instance()
-    deadline = loop.time() + timeout if timeout is not None else None
 
-    if app is None:
-        print("[wait] no Qt app → run_until_complete")
-        loop.run_until_complete(future)
+    if is_notebook:
+        """
+           This function is used to turn async coroutines into blocking functions:
+           Returns the result of the future only once it is ready. This function
+           won't block the eventloop while waiting for other events.
+           ex:
+           def curve(self):
+               curve = scope.curve_async()
+               return wait(curve)
+
+           BEWARE: never use wait in a coroutine (use builtin await instead)
+           """
+        # assert isinstance(future, Future) or iscoroutine(future)
+        new_future = ensure_future(asyncio_wait({future},
+                                                timeout=timeout))
+        # if sys.version>='3.7': # this way, it was not possible to execute wait behind a qt slot !!!
+
+        #   LOOP.run_until_complete(new_future)
+        #   done, pending = new_future.result()
+        # else:
+
+        # This routine makes sure that the loop from the qt slot and the future don't interfere
+        loop = QtCore.QEventLoop()
+
+        def quit(*args):
+            loop.quit()
+
+        new_future.add_done_callback(quit)
+        loop.exec_()
+        done, pending = new_future.result()
+        if future in done:
+            return future.result()
     else:
-        print("[wait] Qt app detected → hybrid polling")
-        iteration = 0
-        while not future.done():
-            iteration += 1
-            print(f"[wait] iter {iteration}: pumping events, done={future.done()}")
+        loop = asyncio.get_event_loop()
+        if asyncio.iscoroutine(future):
+            future = asyncio.ensure_future(future, loop=loop)
 
-            # pump Qt
-            app.processEvents(QtCore.QEventLoop.AllEvents, 50)
+        app = QtCore.QCoreApplication.instance()
+        deadline = loop.time() + timeout if timeout is not None else None
 
-            # pump asyncio
-            loop.call_soon(loop.stop)
-            loop.run_forever()
+        if app is None:
+            print("[wait] no Qt app → run_until_complete")
+            loop.run_until_complete(future)
+        else:
+            print("[wait] Qt app detected → hybrid polling")
+            iteration = 0
+            while not future.done():
+                iteration += 1
+                print(f"[wait] iter {iteration}: pumping events, done={future.done()}")
 
-            if deadline is not None:
-                remaining = deadline - loop.time()
-                print(f"[wait] iter {iteration}: remaining {remaining:.3f} s")
-                if remaining <= 0:
-                    break
+                # pump Qt
+                app.processEvents(QtCore.QEventLoop.AllEvents, 50)
 
-    if not future.done():
-        print("[wait] timeout exceeded after polling")
-        raise TimeoutError("Timeout exceeded")
+                # pump asyncio
+                loop.call_soon(loop.stop)
+                loop.run_forever()
 
-    print("[wait] success: returning result")
-    return future.result()
+                if deadline is not None:
+                    remaining = deadline - loop.time()
+                    print(f"[wait] iter {iteration}: remaining {remaining:.3f} s")
+                    if remaining <= 0:
+                        break
 
+        if not future.done():
+            print("[wait] timeout exceeded after polling")
+            raise TimeoutError("Timeout exceeded")
 
-
+        print("[wait] success: returning result")
+        return future.result()
 
 def sleep(time_s):
     """
