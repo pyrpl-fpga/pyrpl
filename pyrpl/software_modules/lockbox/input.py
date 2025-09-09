@@ -291,7 +291,7 @@ class InputSignal(Signal):
                                 run_continuous=False,
                                 rolling_mode=False)
                     scope.save_state("autosweep")
-                timeout = max(1. / self.lockbox.asg.frequency + scope.duration, 0.5)
+                timeout = max(1. / self.lockbox.asg.frequency + scope.duration, 0.3)
                 curve1, curve2 = scope.single(timeout=timeout)
                 times = scope.times
                 curve1 -= self.calibration_data._analog_offset
