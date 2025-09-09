@@ -48,8 +48,9 @@ logger = logging.getLogger(name=__name__)
 # enable ipython QtGui support if needed
 try:
     from IPython import get_ipython
+
     IPYTHON = get_ipython()
-    IPYTHON.run_line_magic("gui","qt")
+    IPYTHON.run_line_magic("gui", "qt")
 except BaseException as e:
     logger.debug('Could not enable IPython gui support: %s.' % e)
 
@@ -68,7 +69,23 @@ FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
 FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
-is_notebook = isnotebook()
+INTERACTIVE = True  # True if we are in an interactive IPython session
+
+try:
+    shell = get_ipython().__class__.__name__
+    if shell == 'ZMQInteractiveShell':
+        msg = 'async_utils: Jupyter notebook or qtconsole'
+    elif shell == 'TerminalInteractiveShell':
+        msg = 'async_utils: Terminal running IPython'
+    else:
+        INTERACTIVE = False
+        msg = 'async_utils: # Other type (?)'
+except NameError:
+    INTERACTIVE = False
+    msg = 'async_utils: Probably standard Python interpreter'
+
+logger.debug(msg)
+
 
 async def sleep_async(delay, result=None):
     """
@@ -101,6 +118,7 @@ def ensure_future(coroutine):
     IPython kernel integration.
     """
     return asyncio.ensure_future(coroutine, loop=LOOP)
+
 
 async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     """
@@ -136,11 +154,8 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     return await _wait(fs, timeout, return_when, LOOP)
 
 
-
 def wait(future, timeout=None):
-
-
-    if is_notebook:
+    if INTERACTIVE:
         """
            This function is used to turn async coroutines into blocking functions:
            Returns the result of the future only once it is ready. This function
@@ -181,14 +196,11 @@ def wait(future, timeout=None):
         deadline = loop.time() + timeout if timeout is not None else None
 
         if app is None:
-            print("[wait] no Qt app → run_until_complete")
             loop.run_until_complete(future)
         else:
-            print("[wait] Qt app detected → hybrid polling")
             iteration = 0
             while not future.done():
                 iteration += 1
-                print(f"[wait] iter {iteration}: pumping events, done={future.done()}")
 
                 # pump Qt
                 app.processEvents(QtCore.QEventLoop.AllEvents, 50)
@@ -199,16 +211,14 @@ def wait(future, timeout=None):
 
                 if deadline is not None:
                     remaining = deadline - loop.time()
-                    print(f"[wait] iter {iteration}: remaining {remaining:.3f} s")
                     if remaining <= 0:
                         break
 
         if not future.done():
-            print("[wait] timeout exceeded after polling")
             raise TimeoutError("Timeout exceeded")
 
-        print("[wait] success: returning result")
         return future.result()
+
 
 def sleep(time_s):
     """
