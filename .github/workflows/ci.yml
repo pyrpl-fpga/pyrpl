@@ -77,7 +77,8 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y qt5-default
+        sudo apt-get install qtbase5-dev qt5-qmake
+        # sudo apt-get install -y qt5-default
 
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
