@@ -7,6 +7,7 @@ on:
     branches: [ main, master ]
   release:
     types: [published]
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
 
 env:
   REDPITAYA_HOSTNAME: "_FAKE_"
@@ -20,23 +21,31 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install sphinx jupyter nbconvert
-        sudo apt-get install -y pandoc
+        pip install sphinx jupyter nbconvert sphinx_bootstrap_theme
+        # Install pyrpl in development mode so conf.py can import it
+        pip install -e .
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qt5-qmake pandoc xvfb
 
     - name: Build documentation
       run: |
         cd docs
-        make html
+        # Use xvfb-run to provide a virtual display for any GUI components
+        xvfb-run -a make html
+      env:
+        READTHEDOCS: "True"  # This triggers the mocking in conf.py
+        QT_QPA_PLATFORM: "offscreen"
+        DISPLAY: ":99"
 
     - name: Upload docs artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: documentation
         path: docs/build/html/
@@ -47,23 +56,23 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: ['3.8', '3.9', '3.10', '3.11']
         exclude:
           # Reduce matrix size - keep most important combinations
           - os: macos-latest
-            python-version: '3.7'
+            python-version: '3.8'
           - os: macos-latest
-            python-version: '3.8'
-          - os: windows-latest
-            python-version: '3.7'
+            python-version: '3.10'
           - os: windows-latest
             python-version: '3.8'
+          - os: windows-latest
+            python-version: '3.10'
 
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -77,7 +86,7 @@ jobs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
-        sudo apt-get install -y qt5-default
+        sudo apt-get install -y qtbase5-dev qt5-qmake
 
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
@@ -88,7 +97,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install coverage pytest pytest-cov
+        pip install coverage pytest pytest-cov pytest-notebook
 
     - name: Install package
       run: |
@@ -101,7 +110,7 @@ jobs:
         QT_QPA_PLATFORM: offscreen
 
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.9'
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
@@ -116,7 +125,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
@@ -154,7 +163,7 @@ jobs:
         pkill -f pyrpl-linux || true
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pyrpl-linux-binary
         path: pyrpl-linux-${{ github.ref_name }}
@@ -175,7 +184,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
@@ -204,7 +213,7 @@ jobs:
       shell: powershell
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pyrpl-windows-binary
         path: pyrpl-windows-${{ github.ref_name }}.exe
@@ -225,7 +234,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
@@ -254,7 +263,7 @@ jobs:
         pkill -f pyrpl-macos || true
 
     - name: Upload binary artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pyrpl-macos-binary
         path: pyrpl-macos-${{ github.ref_name }}
@@ -275,7 +284,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
 
@@ -294,7 +303,7 @@ jobs:
         python -m build
 
     - name: Upload package artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: python-package
         path: dist/
