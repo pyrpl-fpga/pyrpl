@@ -25,7 +25,7 @@ import logging
 
 class SshShell(object):
     """ This is a wrapper around paramiko.SSHClient and scp.SCPClient
-    I provides a ssh connection with the ability to transfer files over it"""
+    It provides an ssh connection with the ability to transfer files over it"""
     def __init__(
             self,
             hostname='localhost',
@@ -42,7 +42,7 @@ class SshShell(object):
         self.sshport=sshport
         self.user = user
         self.password = password
-        self.timeout= timeout
+        self.timeout = timeout
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(
@@ -50,7 +50,9 @@ class SshShell(object):
             username=self.user,
             password=self.password,
             port=self.sshport,
-            timeout=timeout)
+            timeout=timeout,
+            look_for_keys=False,
+            allow_agent=False)
         if shell:
             self.channel = self.ssh.invoke_shell()
         self.startscp()

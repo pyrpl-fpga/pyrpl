@@ -51,11 +51,12 @@ sinusoidal signal and a white noise originating from an asg
         p.spectrumanalyzer.setup(input1_baseband=asg, #note that input1_baseband!=input)
                                  baseband=True, # only mod eavailable right now
                                  span=1e6, # span of the analysis (/2 in iq mode)
-                                 window=blackman # filter window)
+                                 window='blackman' # filter window
+                                 )
 
         # the return format is (spectrum for channel 1, spectrum for channel 2,
         # real part of cross spectrum, imaginary part of cross spectrum):
-        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.curve()
+        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.single()
 
     # plot the spectrum
     import matplotlib.pyplot as plt
@@ -81,7 +82,7 @@ of noise spectral density, a utility function is provided: data_to_unit()
 
         # the return format is (spectrum for channel 1, spectrum for channel 2,
         # real part of cross spectrum, imaginary part of cross spectrum):
-        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.curve()
+        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.single()
 
     # convert to Vrms^2/Hz
     data = p.spectrumanalyzer.data_to_unit(ch1, 'Vrms^2/Hz', p.spectrumanalyzer.rbw)

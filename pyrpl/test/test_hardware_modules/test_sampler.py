@@ -4,11 +4,11 @@ from pyrpl.test.test_base import TestPyrpl
 
 
 class TestInput(TestPyrpl):
-    def setup(self):
+    def setup_method(self):
         self.p = self.pyrpl
         self.sampler = self.r.sampler
 
-    def teardown(self):
+    def teardown_method(self):
         pass
 
     def test_sampler(self):

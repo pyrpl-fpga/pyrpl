@@ -34,12 +34,13 @@ the background loop
 
 """
 import logging
-from qtpy import QtWidgets
+from qtpy import QtWidgets, QtCore
 import asyncio
-from asyncio import TimeoutError, futures
-from asyncio.tasks import __sleep0
+from asyncio import TimeoutError, futures, coroutines
+from asyncio.tasks import __sleep0, _wait
 import qasync
 import math
+import concurrent.futures
 
 logger = logging.getLogger(name=__name__)
 
@@ -61,6 +62,10 @@ LOOP = qasync.QEventLoop(already_running=False)  # Since tasks scheduled in this
 # loop, it might seem useless to send all tasks to LOOP, however, a task
 # scheduled in the default loop seem to never get executed with IPython
 # kernel integration.
+
+FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
+FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
+ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
 
 async def sleep_async(delay, result=None):
@@ -95,6 +100,39 @@ def ensure_future(coroutine):
     """
     return asyncio.ensure_future(coroutine, loop=LOOP)
 
+async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
+    """
+    (This is the asyncio.wait() function rewritten here to work on the qasync LOOP)
+    
+    Wait for the Futures or Tasks given by fs to complete.
+
+    The fs iterable must not be empty.
+
+    Returns two sets of Future: (done, pending).
+
+    Usage:
+
+        done, pending = await asyncio.wait(fs)
+
+    Note: This does not raise TimeoutError! Futures that aren't done
+    when the timeout occurs are returned in the second set.
+    """
+    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
+        raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
+    if not fs:
+        raise ValueError('Set of Tasks/Futures is empty.')
+    if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
+        raise ValueError(f'Invalid return_when value: {return_when}')
+
+    fs = set(fs)
+
+    if any(coroutines.iscoroutine(f) for f in fs):
+        raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
+
+    # loop = events.get_running_loop()  
+    # Here we send the right qasync LOOP
+    return await _wait(fs, timeout, return_when, LOOP)
+
 
 def wait(future, timeout=None):
     """
@@ -109,23 +147,26 @@ def wait(future, timeout=None):
     BEWARE: never use wait in a coroutine (use builtin await instead)
     """
     # assert isinstance(future, Future) or iscoroutine(future)
-    new_future = ensure_future(asyncio.wait({future},
+    new_future = ensure_future(asyncio_wait({future},
                                             timeout=timeout))
     # if sys.version>='3.7': # this way, it was not possible to execute wait behind a qt slot !!!
 
-    LOOP.run_until_complete(new_future)
-    done, pending = new_future.result()
+    #   LOOP.run_until_complete(new_future)
+    #   done, pending = new_future.result()
     # else:
-    # loop = QtCore.QEventLoop()
-    # def quit(*args):
-    #     loop.quit()
-    # new_future.add_done_callback(quit)
-    # loop.exec_()
-    # done, pending = new_future.result()
+
+    # This routine makes sure that the loop from the qt slot and the future don't interfere
+    loop = QtCore.QEventLoop()
+    def quit(*args):
+        loop.quit()
+    new_future.add_done_callback(quit)
+    loop.exec_()
+    done, pending = new_future.result()
     if future in done:
         return future.result()
     else:
         raise TimeoutError("Timeout exceeded")
+
 
 
 def sleep(time_s):

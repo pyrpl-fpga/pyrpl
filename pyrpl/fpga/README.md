@@ -1,57 +1,67 @@
 # Directory structure
 
-|  path           | contents
-|-----------------|-------------------------------------------------------------
-| `fpga/Makefile` | main Makefile, used to run FPGA related tools
-| `fpga/*.tcl`    | TCL scripts to be run inside FPGA tools
-| `fpga/archive/` | archive of XZ compressed FPGA bit files
-| `fpga/doc/`     | documentation (block diagrams, address space, ...)
-| `fpga/ip/`      | third party IP, for now Zynq block diagrams
-| `fpga/rtl/`     | Verilog (SystemVerilog) "Register-Transfer Level"
-| `fpga/sdc/`     | "Synopsys Design Constraints" contains Xilinx design constraints
-| `fpga/sim/`     | simulation scripts
-| `fpga/tbn/`     | Verilog (SystemVerilog) "test bench"
-|                 |
-| `fpga/hsi/`     | "Hardware Software Interface" contains FSBL (First Stage Boot Loader) and DTS (Design Tree) builds
+|  path             | contents
+|-------------------|-------------------------------------------------------------
+| `fpga/Makefile`   | main Makefile, used to run FPGA related tools
+| `fpga/*.tcl`      | TCL scripts to be run inside FPGA tools
+| `fpga/ip/`        | third party IP, for now Zynq block diagrams
+| `fpga/rtl/`       | Verilog (SystemVerilog) "Register-Transfer Level"
+| `fpga/sdc/`       | "Synopsys Design Constraints" contains Xilinx design constraints
+| `fpga/sim/`       | simulation scripts
+| `fpga/tbn/`       | Verilog (SystemVerilog) "test bench"
+|                   |
+| `fpga/sdk/`       | generated red_pitaya.xsa file used to create a Vitis project
+| `fpga/out`        | generated logs and other significant artifacts from the build
 
 # Build process
 
-Xilinx Vivado 2015.4 (including SDK) is required. If installed at the default location, then the next command will properly configure system variables:
+> [!NOTE]
+> First consider using the fpga build scripts in [RedPitaya/Makefile.x86](https://github.com/RedPitaya/RedPitaya/blob/master/Makefile.x86) that supports all the different RedPitaya board types using the [RedPitaya-FPGA](https://github.com/RedPitaya/RedPitaya-FPGA) hdl code rather than this fpga build.
+
+Assuming you have a specific requirement to use this hdl code rather than the RedPitaya-FPGA hdl code in your design make sure that you update the part number and constraints sdc file specific to your target board in `fpga/red_pitaya_vivado.tcl`
+```
+set part xc7z010clg400-1
+read_xdc                          $path_sdc/red_pitaya.xdc
+```
+
+Xilinx Vitis / Vivado 2023.2 is required. If installed at the default location, then the next command will properly configure system variables:
 ```bash
-. /opt/Xilinx/Vivado/2015.4/settings64.sh
+. /opt/Xilinx/Vivado/2023.2/settings64.sh
+```
+
+If you need to update to a more recent version of Vitis / Vivado then update the Vivado version in `fpga/ip/system_bd.tcl` - be prepared to fix up various build tcl scripts to replace depreciated tcl commands
+```
+set scripts_vivado_version 2023.2
 ```
 
 The default mode for building the FPGA is to run a TCL script inside Vivado. Non project mode is used, to avoid the generation of project files, which are too many and difficult to handle. This allows us to only place source files and scripts under version control.
 
-The next scripts perform various tasks:
+The next scripts perform various tasks for the xc7z010clg400-1 part:
 
 | TCL script                      | action
 |---------------------------------|---------------------------------------------
-| `red_pitaya_hsi_dram_test.tcl`  | should create the `zynq_dram_test` but the produced binary can not be run from a SD card
-| `red_pitaya_hsi_dts.tcl`        | creates device tree sources
-| `red_pitaya_hsi_fsbl.tcl`       | creates FSBL executable binary
 | `red_pitaya_vivado_project.tcl` | creates a Vivado project for graphical editing
 | `red_pitaya_vivado.tcl`         | creates the bitstream and reports
 
-To generate a bit file, reports, device tree and FSBL, run these two commands:
+To generate a redpitaya.bin file for the xc7z010clg400-1 part, redpitaya.dtbo device tree, reports, run these two commands:
 ```bash
-source /opt/Xilinx/Vivado/2015.4/settings64.sh
+source /opt/Xilinx/Vivado/2023.2/settings64.sh
 make
 ```
 
 # Device tree
+> [!NOTE]
+> You do not need to build the .bin file or the device tree to use Pyrpl.  They are provided pre-built.
 
-Device tree is used by Linux to describe features and address space of memory mapped hardware attached to the CPU.
-
-Running `make` inside this directory will create a device tree source and some include files:
-
-| device tree file | contents
-|------------------|------------------------------------------------------------
-| `zynq-7000.dtsi` | description of peripherals inside PS (processing system)
-| `pl.dtsi`        | description of AXI attached peripherals inside PL (programmable logic)
-| `system.dts`     | description of all peripherals, includes the above `*.dtsi` files
-
-To enable some Linux drivers (Ethernet, XADC, I2C EEPROM, SPI, GPIO and LED) the device tree source is patched using `../patches/devicetree.patch`.
+Device tree is used by Linux to describe features and address space of memory mapped hardware attached to the CPU.  It can (optionally) be installed onto the RedPitaya board with the redpitaya.bin file generated (specify the full path to the files).  In this example assuming the generated .bin and .dtbo files are in the same directory as the python code:
+```
+from pyrpl import Pyrpl
+p = Pyrpl(hostname=HOSTNAME,
+    reloadfpga = True, filename = 'red_pitaya.bin',
+    dtbo_filename = 'red_pitaya.dtbo'
+    )
+```
+The pre-built .bin file and device tree are used if these files are not specified.  You can avoid reloading the fpga files each time you run your script by setting reloadfpga = False.  If you use the config, configuration file attribute, then the attributes that are used are stored in a .yaml file in the PYRPL_USER_DIR so next time you start your application the settings including reloadfpga will be restored.
 
 # Signal mapping
 

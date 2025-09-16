@@ -8,11 +8,11 @@ from pyrpl.test.test_base import TestPyrpl
 
 
 class TestScope(TestPyrpl):
-    def setup(self):
+    def setup_method(self):
         self.asg = self.pyrpl.asgs.pop("trigtest")
         self.t = self.pyrpl.rp.trig
 
-    def teardown(self):
+    def teardown_method(self):
         self.pyrpl.asgs.free(self.asg)
 
     def test_trigger(self):

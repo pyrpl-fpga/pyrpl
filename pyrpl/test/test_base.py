@@ -35,7 +35,7 @@ class TestPyrpl(object):
             pass  # make sure the file is really gone before proceeding further
 
     @classmethod
-    def setUpAll(cls):
+    def setup_class(cls):
         print("=======SETTING UP %s=============" % cls.__name__)
         # these tests will not succeed without the hardware
         cls.erase_temp_file()  # also before (for instance in case of Ctrl-C)
@@ -85,7 +85,7 @@ class TestPyrpl(object):
             "your Red Pitaya device. " % (self.write_time, maxtime)
 
     @classmethod
-    def tearDownAll(cls):
+    def teardown_class(cls):
         print("=======TEARING DOWN %s===========" % cls.__name__)
         # delete the curves fabricated in the test
         if hasattr(cls, 'curves'):

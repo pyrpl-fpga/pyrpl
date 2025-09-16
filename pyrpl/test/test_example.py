@@ -4,7 +4,7 @@ from .test_base import TestPyrpl
 
 
 class TestExample(TestPyrpl):
-    def setup(self):
+    def setup_method(self):
         self.asg = self.pyrpl.rp.asg0
 
     #you are welcome to change the following silly tests to something useful

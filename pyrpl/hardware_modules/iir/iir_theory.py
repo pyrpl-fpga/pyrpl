@@ -732,7 +732,7 @@ class IirFilter(object):
         #
         #                          b0 + b1*z^-1
         #     Y(z)/X(z) =  ----------------------------
-        #                     1.0 - a1*z^-1 - a2*z^-1
+        #                     1.0 - a1*z^-1 - a2*z^-2
         #
         # 3) The design started in continuous time, where we have the partial
         #    fraction expansion as a starting point:

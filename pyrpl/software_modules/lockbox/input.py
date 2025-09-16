@@ -344,11 +344,9 @@ class InputSignal(Signal):
         of the variable. May be overwritten by a more efficient (analytical) method
         in a derived class.
         """
-        return scipy.misc.derivative(self.expected_signal,
-                                     variable,
-                                     dx=1e-9,
-                                     n=1,  # first derivative
-                                     order=3)
+        dx = 1e-9
+        df = self.expected_signal(variable + dx) - self.expected_signal(variable - dx)
+        return df / 2 / dx
 
     def is_locked(self, loglevel=logging.INFO):
         """ returns whether the input is locked at the current stage """
