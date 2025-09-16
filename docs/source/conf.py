@@ -91,15 +91,15 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pyrpl'
-copyright = u'2014-2017, Leonhard Neuhaus, Samuel Deléglise'
+copyright = u'2014-2025, Leonhard Neuhaus, Samuel Deléglise, Michaël Croquette '
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-from pyrpl import __version__
-version = __version__
+from pyrpl import _version
+version = _version
 # The full version, including alpha/beta/rc tags.
 release = version
 
