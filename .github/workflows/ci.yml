@@ -7,6 +7,7 @@ on:
     branches: [ main, master ]
   release:
     types: [published]
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
 
 env:
   REDPITAYA_HOSTNAME: "_FAKE_"
