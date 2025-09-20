@@ -19,18 +19,18 @@ The official PyRPL website address is [http://pyrpl.readthedocs.io/](http://pyrp
 
 ## Installation
 The easiest and fastest way to get PyRPL is to download and execute the [precompiled executable for windows](https://sourceforge.net/projects/pyrpl/files/latest/download). This option requires no extra programs to be installed on the computer.
+Currently the executable is outdated and will only work with RedPitaya OS 0.92.  
 
 If instead you would like to use and/or modify the source code, make sure you have an
-installation of Python (2.7, 3.4, 3.5, or 3.6). If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
+installation of Python (3.8, 3.9, 3.10, 3.11, 3.12, 3.13). If you are new to Python or inexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
 ```
-conda install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp
+conda install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
 ```
 Check [this documentation section](http://pyrpl.readthedocs.io/en/latest/user_guide/installation/common_problems.html#anaconda-problems) for hints if you are unable to execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands
 ```
-conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp
-activate pyrpl-env
+conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+conda activate pyrpl-env
 ```
-If you are not using Anaconda, you must manually install the python package [PyQt5](https://pypi.python.org/pypi/PyQt5) or [PyQt4](https://pypi.python.org/pypi/PyQt4), which requires a working C compiler installation on the system.
 
 Next, clone (if you have a [git client](https://git-scm.com/downloads) installed - recommended option) the pyrpl repository to your computer with 
 ```
@@ -43,7 +43,19 @@ If you are using pip, you can just navigate to the pyrpl directory and run
 ```
 pip install -r requirements.txt
 ```
-and you should be good to go.
+if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
+
+```
+pip install -e .
+```
+for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
+
+You can also use the environment config file "environment_pyrpl.yml"
+```
+conda env create -f environment_pyrpl.yml
+conda activate pyrpl-env
+```
+
 
 ## Quick start
 First, hook up your Red Pitaya / STEMlab to a LAN accessible from your computer (follow the instructions for this on redpitya.com and make sure you can access your Red Pitaya with a web browser by typing its ip-address /  hostname into the address bar).
@@ -51,10 +63,10 @@ In a command line terminal, type
 ```
 python -m pyrpl your_configuration_name
 ```
-A GUI should open, let you configure the redpitaya device you would like to use, and you can start playing around with pyrpl. Different strings for 'your_configuration_name' create different configurations that will be automatically remembered by PyRPL, for example if you have several different redpitayas. Different RedPitayas with different configuration names can be run simultaneously in separate terminals.
+A GUI should open, let you configure the RedPitaya device you would like to use, and you can start playing around with pyrpl. Different strings for 'your_configuration_name' create different configurations that will be automatically remembered by PyRPL, for example if you have several different redpitayas. Different RedPitayas with different configuration names can be run simultaneously in separate terminals.
 
 ## Issues
-We collect a list of common problems on the [documenation website](http://pyrpl.readthedocs.io/en/latest/user_guide/installation/common_problems.html). If you do not find your problem listed there, please report all problems or wishes as new issues on [this page](https://github.com/lneuhaus/pyrpl/issues), so we can fix it and improve the future user experience.
+We collect a list of common problems on the [documentation website](http://pyrpl.readthedocs.io/en/latest/user_guide/installation/common_problems.html). If you do not find your problem listed there, please report all problems or wishes as new issues on [this page](https://github.com/lneuhaus/pyrpl/issues), so we can fix it and improve the future user experience.
 
 ## Unit test
 If you want to check whether PyRPL works correctly on your machine, navigate with a command line terminal into the pyrpl root directory and type the  following commands (by substituting the ip-address / hostname of your Red Pitaya, of course)
@@ -69,7 +81,7 @@ The full html documentation is hosted at [http://pyrpl.readthedocs.io](http://py
 
 ## Updates
 Since PyRPL is continuously improved, you should install upgrades if you expect bugfixes. 
-If you have clonded the github repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
+If you have cloned the GitHub repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
 ```
 git pull
 ```
