@@ -24,10 +24,11 @@ If instead you would like to use and/or modify the source code, make sure you ha
 installation of Python (3.7 to 3.13). If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
 ```
 conda install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
-conda install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
 ```
 Check [this documentation section](http://pyrpl.readthedocs.io/en/latest/user_guide/installation/common_problems.html#anaconda-problems) for hints if you are unable to execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands
 ```
+conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+conda activate pyrpl-env
 conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
 conda activate pyrpl-env
 ```
@@ -61,6 +62,19 @@ conda env create -f environment_pyrpl.yml
 conda activate pyrpl-env
 ```
 
+if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
+
+```
+pip install -e .
+```
+for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
+
+You can also use the environment config file "environment_pyrpl.yml"
+```
+conda env create -f environment_pyrpl.yml
+conda activate pyrpl-env
+```
+
 
 ## Quick start
 First, hook up your Red Pitaya / STEMlab to a LAN accessible from your computer (follow the instructions for this on redpitya.com and make sure you can access your Red Pitaya with a web browser by typing its ip-address /  hostname into the address bar).
@@ -68,6 +82,7 @@ In a command line terminal, type
 ```
 python -m pyrpl your_configuration_name
 ```
+A GUI should open, let you configure the RedPitaya device you would like to use, and you can start playing around with pyrpl. Different strings for 'your_configuration_name' create different configurations that will be automatically remembered by PyRPL, for example if you have several different redpitayas. Different RedPitayas with different configuration names can be run simultaneously in separate terminals.
 A GUI should open, let you configure the RedPitaya device you would like to use, and you can start playing around with pyrpl. Different strings for 'your_configuration_name' create different configurations that will be automatically remembered by PyRPL, for example if you have several different redpitayas. Different RedPitayas with different configuration names can be run simultaneously in separate terminals.
 
 ## Issues
@@ -86,6 +101,7 @@ The full html documentation is hosted at [http://pyrpl.readthedocs.io](http://py
 
 ## Updates
 Since PyRPL is continuously improved, you should install upgrades if you expect bugfixes. 
+If you have cloned the GitHub repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
 If you have cloned the GitHub repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
 ```
 git pull
