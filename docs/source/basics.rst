@@ -2,7 +2,7 @@ Basics of the PyRPL Architecture
 **********************************
 
 This section presents the basic architecture of PyRPL. The main goal here is to quickly give a broad overview of PyRPL's internal logic
-without distracting the reader with too many technical details. For a more detailled description of the individual components described in this page, please, refer
+without distracting the reader with too many technical details. For a more detailed description of the individual components described in this page, please, refer
 to the corresponding section :doc:`developer_guide/index`.
 
 Motivation
@@ -19,7 +19,7 @@ to control quantum optics experiments. Running open-source software on this hard
 - Functionality beyond analog electronics
 - Modify or customize instrument functionality
 
-However, learning all the subtelties of FPGA programming, compiling and debugging FPGA code can be extremely time consumming. 
+However, learning all the subtleties of FPGA programming, compiling and debugging FPGA code can be extremely time consuming.
 Hence, PyRPL aims at providing a large panel of functionalities on a precompiled FPGA bitfile. These FPGA modules are highly customizable by changing 
 register values without the need to recompile the FPGA code written in Hardware Description Language. High-level functionalities are implemented by a python 
 package running remotely and controlling the FPGA registers.

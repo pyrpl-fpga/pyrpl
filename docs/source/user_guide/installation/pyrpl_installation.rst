@@ -33,7 +33,7 @@ If you are new to Python or unexperienced with fighting installation issues, it 
 
 Check :ref:`anaconda_problems` for hints if you cannot execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands::
 
-    conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert
+    conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert qasync
     activate pyrpl-env
 
 
@@ -52,7 +52,7 @@ Downloading and installing PyRPL from source
 Various channels are available to obtain the PyRPL source code.
 
 
-Option 1: Installation with pip (Not recommended as the version on pypi is outadated ! )
+Option 1: Installation with pip (Not recommended as the version on pypi is outdated ! )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you have pip correctly installed, executing the following line in a command line should install pyrpl and all missing dependencies::

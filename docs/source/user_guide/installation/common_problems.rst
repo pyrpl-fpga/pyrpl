@@ -20,7 +20,7 @@ Solution:
     * Another solution is to execute the Anaconda navigator, click on the left on "Environments", left-click on the arrow next to "root" in the list of environments, and click on "Open Terminal". In the terminal that opens, the conda command should now work such that you can install the PyRPL dependencies.
 
 
-Problem: I cannot launch PyRPL, even though the installation finished successfullly
+Problem: I cannot launch PyRPL, even though the installation finished successfully
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Reason:
