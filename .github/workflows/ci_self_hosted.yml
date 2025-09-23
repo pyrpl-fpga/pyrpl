@@ -1,0 +1,368 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [published]
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+
+env:
+  REDPITAYA_HOSTNAME: "_FAKE_"
+  PYPI_PSW: ${{ secrets.PYPI_PSW }}
+
+jobs:
+  # Documentation build test
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install system dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx jupyter nbconvert sphinx_bootstrap_theme
+        # Install pyrpl in development mode so conf.py can import it
+        pip install -e .
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qt5-qmake pandoc xvfb
+        
+
+    - name: Build documentation
+      run: |
+        cd docs
+        # Use xvfb-run to provide a virtual display for any GUI components
+        xvfb-run -a make html
+      env:
+        READTHEDOCS: "True"  # This triggers the mocking in conf.py
+        QT_QPA_PLATFORM: "offscreen"
+        DISPLAY: ":99"
+
+    - name: Upload docs artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: docs/build/html/
+
+  # Unit tests across multiple Python versions and OS
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.8', '3.9', '3.10', '3.11']
+        exclude:
+          # Reduce matrix size - keep most important combinations
+          - os: macos-latest
+            python-version: '3.8'
+          - os: macos-latest
+            python-version: '3.10'
+          - os: windows-latest
+            python-version: '3.8'
+          - os: windows-latest
+            python-version: '3.10'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up display (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        export DISPLAY=:99
+        sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qt5-qmake
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install qt5
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install coverage pytest pytest-cov
+
+    - name: Install package
+      run: |
+        python setup.py install
+
+    - name: Run tests
+      run: |
+        python -m pytest --cov=pyrpl --cov-report=xml
+      env:
+        QT_QPA_PLATFORM: offscreen
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+
+  # Build Linux binary
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Set up display
+      run: |
+        export DISPLAY=:99
+        sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qt5-default psmisc
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install https://github.com/lneuhaus/pyinstaller/tarball/develop
+
+    - name: Install package
+      run: python setup.py install
+
+    - name: Build binary
+      run: |
+        pyinstaller pyrpl.spec
+        mv dist/pyrpl ./pyrpl-linux-${{ github.ref_name }}
+        chmod +x pyrpl-linux-${{ github.ref_name }}
+      env:
+        QT_QPA_PLATFORM: offscreen
+
+    - name: Test binary
+      run: |
+        timeout 30s ./pyrpl-linux-${{ github.ref_name }} config=test_linux hostname=_FAKE_ || true
+        sleep 5
+        pkill -f pyrpl-linux || true
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-linux-binary
+        path: pyrpl-linux-${{ github.ref_name }}
+
+    # Uncomment when you have SourceForge credentials
+    # - name: Deploy to SourceForge
+    #   if: github.event_name == 'push'
+    #   run: |
+    #     python .deploy_to_sourceforge.py pyrpl-linux-${{ github.ref_name }}
+
+  # Build Windows binary
+  build-windows:
+    runs-on: windows-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pypiwin32
+        pip install https://github.com/lneuhaus/pyinstaller/tarball/develop
+
+    - name: Install package
+      run: python setup.py install
+
+    - name: Build binary
+      run: |
+        pyinstaller pyrpl.spec
+        move dist\pyrpl.exe .\pyrpl-windows-${{ github.ref_name }}.exe
+      env:
+        QT_QPA_PLATFORM_PLUGIN_PATH: ${{ env.Python_ROOT_DIR }}\Lib\site-packages\PyQt5\Qt5\plugins\platforms
+
+    - name: Test binary
+      run: |
+        Start-Process -FilePath ".\pyrpl-windows-${{ github.ref_name }}.exe" -ArgumentList "config=test_windows hostname=_FAKE_" -NoNewWindow
+        Start-Sleep -Seconds 20
+        Get-Process -Name "pyrpl-windows-*" -ErrorAction SilentlyContinue | Stop-Process -Force
+      shell: powershell
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-windows-binary
+        path: pyrpl-windows-${{ github.ref_name }}.exe
+
+    # Uncomment when you have SourceForge credentials
+    # - name: Deploy to SourceForge
+    #   if: github.event_name == 'push'
+    #   run: |
+    #     python .deploy_to_sourceforge.py pyrpl-windows-${{ github.ref_name }}.exe
+
+  # Build macOS binary
+  build-macos:
+    runs-on: macos-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install system dependencies
+      run: brew install qt5
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install https://github.com/lneuhaus/pyinstaller/tarball/develop
+
+    - name: Install package
+      run: python setup.py install
+
+    - name: Build binary
+      run: |
+        pyinstaller pyrpl.spec
+        mv dist/pyrpl ./pyrpl-macos-${{ github.ref_name }}
+        chmod +x pyrpl-macos-${{ github.ref_name }}
+
+    - name: Test binary
+      run: |
+        timeout 30s ./pyrpl-macos-${{ github.ref_name }} config=test_osx hostname=_FAKE_ || true
+        sleep 5
+        pkill -f pyrpl-macos || true
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-macos-binary
+        path: pyrpl-macos-${{ github.ref_name }}
+
+    # Uncomment when you have SourceForge credentials
+    # - name: Deploy to SourceForge
+    #   if: github.event_name == 'push'
+    #   run: |
+    #     python .deploy_to_sourceforge.py pyrpl-macos-${{ github.ref_name }}
+
+  # Build and publish Python package
+  build-package:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+        sudo apt-get install -y pandoc
+
+    - name: Convert README
+      run: |
+        pandoc --from=markdown --to=rst --output=README.rst README.md
+
+    - name: Build package
+      run: |
+        python -m build
+
+    - name: Upload package artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-package
+        path: dist/
+
+    # Uncomment when you have PyPI credentials
+    # - name: Publish to PyPI
+    #   if: github.event_name == 'release'
+    #   uses: pypa/gh-action-pypi-publish@release/v1
+    #   with:
+    #     password: ${{ secrets.PYPI_API_TOKEN }}
+
+  # Notification job
+  notify:
+    runs-on: ubuntu-latest
+    needs: [docs, test, build-linux, build-windows, build-macos, build-package]
+    if: always()
+
+    steps:
+    - name: Notify on success
+      if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+      run: echo "All jobs completed successfully!"
+
+    - name: Notify on failure
+      if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+      run: |
+        echo "Some jobs failed or were cancelled"
+        exit 1
+
+  # Hardware tests on real RedPitaya (runs on your computer)
+  hardware-tests:
+    runs-on: self-hosted
+    needs: test  # Only run after basic tests pass
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -e .
+
+    - name: Check RedPitaya connection
+      run: |
+        ping -n 1 $env:REDPITAYA_HOSTNAME
+      env:
+        REDPITAYA_HOSTNAME: "192.168.1.100"  # Replace with your RedPitaya IP
+
+    - name: Run hardware tests
+      run: |
+        python -m pytest pyrpl/test/ -v -k "not fake"
+      env:
+        REDPITAYA_HOSTNAME: "192.168.1.100"  # Replace with your RedPitaya IP
+        REDPITAYA_USER: ${{ secrets.REDPITAYA_USER }}
+        REDPITAYA_PASSWORD: ${{ secrets.REDPITAYA_PASSWORD }}
