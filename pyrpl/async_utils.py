@@ -38,6 +38,7 @@ from qtpy import QtWidgets, QtCore
 import asyncio
 from asyncio import TimeoutError, futures, coroutines
 from asyncio.tasks import __sleep0, _wait
+from pyrpl_utils import isnotebook
 import qasync
 import math
 import concurrent.futures
@@ -47,8 +48,9 @@ logger = logging.getLogger(name=__name__)
 # enable ipython QtGui support if needed
 try:
     from IPython import get_ipython
+
     IPYTHON = get_ipython()
-    IPYTHON.run_line_magic("gui","qt")
+    IPYTHON.run_line_magic("gui", "qt")
 except BaseException as e:
     logger.debug('Could not enable IPython gui support: %s.' % e)
 
@@ -66,6 +68,23 @@ LOOP = qasync.QEventLoop(already_running=False)  # Since tasks scheduled in this
 FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
 FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
+
+INTERACTIVE = True  # True if we are in an interactive IPython session
+
+try:
+    shell = get_ipython().__class__.__name__
+    if shell == 'ZMQInteractiveShell':
+        msg = 'async_utils: Jupyter notebook or qtconsole'
+    elif shell == 'TerminalInteractiveShell':
+        msg = 'async_utils: Terminal running IPython'
+    else:
+        INTERACTIVE = False
+        msg = 'async_utils: # Other type (?)'
+except NameError:
+    INTERACTIVE = False
+    msg = 'async_utils: Probably standard Python interpreter'
+
+logger.debug(msg)
 
 
 async def sleep_async(delay, result=None):
@@ -99,6 +118,7 @@ def ensure_future(coroutine):
     IPython kernel integration.
     """
     return asyncio.ensure_future(coroutine, loop=LOOP)
+
 
 async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     """
@@ -135,38 +155,69 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
 
 
 def wait(future, timeout=None):
-    """
-    This function is used to turn async coroutines into blocking functions:
-    Returns the result of the future only once it is ready. This function
-    won't block the eventloop while waiting for other events.
-    ex:
-    def curve(self):
-        curve = scope.curve_async()
-        return wait(curve)
+    if INTERACTIVE:
+        """
+           This function is used to turn async coroutines into blocking functions:
+           Returns the result of the future only once it is ready. This function
+           won't block the eventloop while waiting for other events.
+           ex:
+           def curve(self):
+               curve = scope.curve_async()
+               return wait(curve)
 
-    BEWARE: never use wait in a coroutine (use builtin await instead)
-    """
-    # assert isinstance(future, Future) or iscoroutine(future)
-    new_future = ensure_future(asyncio_wait({future},
-                                            timeout=timeout))
-    # if sys.version>='3.7': # this way, it was not possible to execute wait behind a qt slot !!!
+           BEWARE: never use wait in a coroutine (use builtin await instead)
+           """
+        # assert isinstance(future, Future) or iscoroutine(future)
+        new_future = ensure_future(asyncio_wait({future},
+                                                timeout=timeout))
+        # if sys.version>='3.7': # this way, it was not possible to execute wait behind a qt slot !!!
 
-    #   LOOP.run_until_complete(new_future)
-    #   done, pending = new_future.result()
-    # else:
+        #   LOOP.run_until_complete(new_future)
+        #   done, pending = new_future.result()
+        # else:
 
-    # This routine makes sure that the loop from the qt slot and the future don't interfere
-    loop = QtCore.QEventLoop()
-    def quit(*args):
-        loop.quit()
-    new_future.add_done_callback(quit)
-    loop.exec_()
-    done, pending = new_future.result()
-    if future in done:
-        return future.result()
+        # This routine makes sure that the loop from the qt slot and the future don't interfere
+        loop = QtCore.QEventLoop()
+
+        def quit(*args):
+            loop.quit()
+
+        new_future.add_done_callback(quit)
+        loop.exec_()
+        done, pending = new_future.result()
+        if future in done:
+            return future.result()
     else:
-        raise TimeoutError("Timeout exceeded")
+        loop = asyncio.get_event_loop()
+        if asyncio.iscoroutine(future):
+            future = asyncio.ensure_future(future, loop=loop)
 
+        app = QtCore.QCoreApplication.instance()
+        deadline = loop.time() + timeout if timeout is not None else None
+
+        if app is None:
+            loop.run_until_complete(future)
+        else:
+            iteration = 0
+            while not future.done():
+                iteration += 1
+
+                # pump Qt
+                app.processEvents(QtCore.QEventLoop.AllEvents, 50)
+
+                # pump asyncio
+                loop.call_soon(loop.stop)
+                loop.run_forever()
+
+                if deadline is not None:
+                    remaining = deadline - loop.time()
+                    if remaining <= 0:
+                        break
+
+        if not future.done():
+            raise TimeoutError("Timeout exceeded")
+
+        return future.result()
 
 
 def sleep(time_s):
