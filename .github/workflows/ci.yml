@@ -127,7 +127,7 @@ jobs:
 
     - name: Run tests with real hardware
       run: |
-        python -m pytest pyrpl/test/ -v --cov=pyrpl --cov-report=xml
+        python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml
       env:
         QT_QPA_PLATFORM: offscreen
         REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
