@@ -119,9 +119,9 @@ jobs:
             stdin, stdout, stderr = ssh.exec_command('echo RedPitaya connected successfully')
             print(stdout.read().decode().strip())
             ssh.close()
-            print('✅ RedPitaya connection test passed')
+            print('RedPitaya connection test passed')
         except Exception as e:
-            print(f'❌ RedPitaya connection failed: {e}')
+            print(f'RedPitaya connection failed: {e}')
             sys.exit(1)
         "
 
