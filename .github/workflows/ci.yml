@@ -27,20 +27,21 @@ jobs:
 
     - name: Install system dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install sphinx jupyter nbconvert sphinx_bootstrap_theme
-        # Install pyrpl in development mode so conf.py can import it
-        pip install -e .
         sudo apt-get update
         sudo apt-get install -y qtbase5-dev qt5-qmake pandoc xvfb
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install sphinx jupyter nbconvert sphinx_bootstrap_theme
+        pip install -e .
 
     - name: Build documentation
       run: |
         cd docs
-        # Use xvfb-run to provide a virtual display for any GUI components
         xvfb-run -a make html
       env:
-        READTHEDOCS: "True"  # This triggers the mocking in conf.py
+        READTHEDOCS: "True"
         QT_QPA_PLATFORM: "offscreen"
         DISPLAY: ":99"
 
@@ -50,7 +51,7 @@ jobs:
         name: documentation
         path: docs/build/html/
 
-  # Unit tests across multiple Python versions and OS
+  # Unit tests across multiple Python versions and OS with real RedPitaya
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -58,7 +59,6 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ['3.8', '3.9', '3.10', '3.11']
         exclude:
-          # Reduce matrix size - keep most important combinations
           - os: macos-latest
             python-version: '3.8'
           - os: macos-latest
@@ -103,11 +103,36 @@ jobs:
       run: |
         python setup.py install
 
-    - name: Run tests
+    - name: Test RedPitaya connection
       run: |
-        python -m pytest --cov=pyrpl --cov-report=xml
+        python -c "
+        import paramiko
+        import sys
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect('${{ secrets.REDPITAYA_PUBLIC_IP }}', 
+                       port=2222, 
+                       username='${{ secrets.REDPITAYA_USER }}',
+                       password='${{ secrets.REDPITAYA_PASSWORD }}',
+                       timeout=10)
+            stdin, stdout, stderr = ssh.exec_command('echo RedPitaya connected successfully')
+            print(stdout.read().decode().strip())
+            ssh.close()
+            print('✅ RedPitaya connection test passed')
+        except Exception as e:
+            print(f'❌ RedPitaya connection failed: {e}')
+            sys.exit(1)
+        "
+
+    - name: Run tests with real hardware
+      run: |
+        python -m pytest pyrpl/test/ -v --cov=pyrpl --cov-report=xml --timeout=600
       env:
         QT_QPA_PLATFORM: offscreen
+        REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
+        REDPITAYA_USER: ${{ secrets.REDPITAYA_USER }}
+        REDPITAYA_PASSWORD: ${{ secrets.REDPITAYA_PASSWORD }}
 
     - name: Upload coverage to Codecov
       if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
@@ -137,7 +162,7 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y qt5-default psmisc
+        sudo apt-get install -y qtbase5-dev qt5-qmake psmisc
 
     - name: Install dependencies
       run: |
