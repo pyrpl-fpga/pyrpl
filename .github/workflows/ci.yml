@@ -10,7 +10,8 @@ on:
   workflow_dispatch:  # Allows manual triggering from GitHub UI
 
 env:
-  REDPITAYA_HOSTNAME: "_FAKE_"
+  REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
+  REDPITAYA_PASSWORD: ${{ secrets.REDPITAYA_PASSWORD }}  
   PYPI_PSW: ${{ secrets.PYPI_PSW }}
 
 jobs:
@@ -67,7 +68,7 @@ jobs:
             python-version: '3.8'
           - os: windows-latest
             python-version: '3.10'
-
+      max-parallel: 1   # ensures only one platform runs at a time
     steps:
     - uses: actions/checkout@v4
 
@@ -112,22 +113,24 @@ jobs:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect('${{ secrets.REDPITAYA_PUBLIC_IP }}', 
-                       port=2222, 
+                       port=22, 
                        username='${{ secrets.REDPITAYA_USER }}',
                        password='${{ secrets.REDPITAYA_PASSWORD }}',
                        timeout=10)
             stdin, stdout, stderr = ssh.exec_command('echo RedPitaya connected successfully')
             print(stdout.read().decode().strip())
             ssh.close()
-            print('✅ RedPitaya connection test passed')
+            print('RedPitaya connection test passed')
         except Exception as e:
-            print(f'❌ RedPitaya connection failed: {e}')
+            print(f'RedPitaya connection failed: {e}')
             sys.exit(1)
         "
 
     - name: Run tests with real hardware
       run: |
-        python -m pytest pyrpl/test/ -v --cov=pyrpl --cov-report=xml --timeout=600
+        # use a custom global configfile adapted to the hardware for unit tests
+        cp ./remote_global_config.yml ./pyrpl/config/global_config.yml
+        python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml
       env:
         QT_QPA_PLATFORM: offscreen
         REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
