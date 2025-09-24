@@ -10,7 +10,7 @@ on:
   workflow_dispatch:  # Allows manual triggering from GitHub UI
 
 env:
-  REDPITAYA_HOSTNAME: "_FAKE_"
+  REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
   PYPI_PSW: ${{ secrets.PYPI_PSW }}
 
 jobs:
