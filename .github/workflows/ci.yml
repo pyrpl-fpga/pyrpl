@@ -11,6 +11,7 @@ on:
 
 env:
   REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
+  REDPITAYA_PASSWORD: ${{ secrets.REDPITAYA_PASSWORD }}  
   PYPI_PSW: ${{ secrets.PYPI_PSW }}
 
 jobs:
@@ -112,7 +113,7 @@ jobs:
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect('${{ secrets.REDPITAYA_PUBLIC_IP }}', 
-                       port=2222, 
+                       port=22, 
                        username='${{ secrets.REDPITAYA_USER }}',
                        password='${{ secrets.REDPITAYA_PASSWORD }}',
                        timeout=10)
