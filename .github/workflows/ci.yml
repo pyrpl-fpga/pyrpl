@@ -68,7 +68,7 @@ jobs:
             python-version: '3.8'
           - os: windows-latest
             python-version: '3.10'
-
+      max-parallel: 1   # ensures only one platform runs at a time
     steps:
     - uses: actions/checkout@v4
 
@@ -128,6 +128,8 @@ jobs:
 
     - name: Run tests with real hardware
       run: |
+        # use a custom global configfile adapted to the hardware for unit tests
+        cp ./remote_global_config.yml ./pyrpl/config/global_config.yml
         python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml
       env:
         QT_QPA_PLATFORM: offscreen
