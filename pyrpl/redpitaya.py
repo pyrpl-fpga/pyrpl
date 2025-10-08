@@ -380,7 +380,7 @@ class RedPitaya(object):
                          + os.path.join(self.parameters['serverdirname'], self.parameters['serverbinfilename'])
                          + ' > //dev//xdevcfg')
 
-        sleep(self.parameters['delay'])
+        sleep(3.0) # wait a bit for the fpga to be programmed
         self.logger.debug('About to restart the redpitaya service')
         self.ssh.ask('rm -f '+ os.path.join(
             self.parameters['serverdirname'], self.parameters['serverdtbofilename']))
@@ -469,7 +469,7 @@ class RedPitaya(object):
         if self.fpgarecentlyflashed():
             self.logger.info("FPGA is being flashed. Please wait for 2 "
                             "seconds.")
-            sleep(2.0)
+            sleep(3.0) # extra second wait time after flashing to avoid bug with the exe
         result = self.ssh.ask(self.parameters['serverdirname']+"/"+self.parameters['monitor_server_name']
                           +" "+ str(self.parameters['port']))
         if not "sh" in result: # sh in result means we tried the wrong binary version
