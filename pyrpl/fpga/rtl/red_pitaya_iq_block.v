@@ -74,7 +74,7 @@ module red_pitaya_iq_block #(
 //output states
 localparam QUADRATURE    = 4'd0;
 localparam OUTPUT_DIRECT = 4'd1;
-localparam PFD 			 = 4'd2;
+//localparam PFD 			 = 4'd2;
 localparam QUADRATURE_HF = 4'd4;
 
 // state registers
@@ -118,14 +118,15 @@ always @(posedge clk_i) begin
       g4 <= {GAINBITS{1'b0}};
       na_averages = 32'd0;
       na_sleepcycles = 32'd0;
-      pfd_on <= 1'b1;
+      //pfd_on <= 1'b1;
   	  output_select <= QUADRATURE;
    end
    else begin
       if (wen) begin
 		 // on was replaced by sync_i
 		 // if (addr==16'h100)   {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on, on}   <= wdata[6-1:0];
-		 if (addr==16'h100)   {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on} <= wdata[6-1:1];
+		 // if (addr==16'h100)   {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on} <= wdata[6-1:1];
+         if (addr==16'h100)   {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f} <= wdata[4-1:1];
          if (addr==16'h104)   start_phase   <= wdata[PHASEBITS-1:0];
          if (addr==16'h108)   shift_phase   <= wdata[PHASEBITS-1:0];
          if (addr==16'h10C)   output_select <= wdata[4-1:0];
@@ -141,7 +142,8 @@ always @(posedge clk_i) begin
       end
 
 	  casez (addr)
-	     16'h100 : begin ack <= wen|ren; rdata <= {{32-6{1'b0}},cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on,on}; end
+	     //16'h100 : begin ack <= wen|ren; rdata <= {{32-6{1'b0}},cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on,on}; end
+         16'h100 : begin ack <= wen|ren; rdata <= {{32-6{1'b0}},cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,on}; end   
 	     16'h104 : begin ack <= wen|ren; rdata <= {{32-PHASEBITS{1'b0}},start_phase}; end
 	     16'h108 : begin ack <= wen|ren; rdata <= {{32-PHASEBITS{1'b0}},shift_phase}; end
 	     16'h10C : begin ack <= wen|ren; rdata <= {{32-4{1'b0}},output_select}; end
@@ -157,7 +159,7 @@ always @(posedge clk_i) begin
          16'h144 : begin ack <= wen|ren; rdata <= {do_averaging,iq_i_sum[62-1:31]};end
          16'h148 : begin ack <= wen|ren; rdata <= {do_averaging,iq_q_sum[31-1:0]};end
          16'h14C : begin ack <= wen|ren; rdata <= {do_averaging,iq_q_sum[62-1:31]};end
-	     16'h150 : begin ack <= wen|ren; rdata <= {{32-SIGNALBITS{1'b0}},pfd_integral};end
+	     //16'h150 : begin ack <= wen|ren; rdata <= {{32-SIGNALBITS{1'b0}},pfd_integral};end
 
 	     16'h200 : begin ack <= wen|ren; rdata <= LUTSZ; end
 	     16'h204 : begin ack <= wen|ren; rdata <= LUTBITS; end
@@ -333,7 +335,9 @@ always @(posedge clk_i) begin
     end
 end
 
-// pfd functionality (optional)
+// pfd functionality (optional) commented here because it is a standalone module now
+
+/*
 wire [SIGNALBITS-1:0] pfd_integral;
 reg pfd_on;
 red_pitaya_pfd_block (
@@ -343,12 +347,13 @@ red_pitaya_pfd_block (
 	.q (quadrature2[LPFBITS-1:LPFBITS-12]), //quadrature from iq
 	.integral_o(pfd_integral)
 );
+*/
 
 // output_signal multiplexer
 assign signal_o = (output_select==QUADRATURE) ? quadrature1_o
 				//: (output_select==QUADRATURE_HF) ? quadrature1_hf[LPFBITS-1:LPFBITS-SIGNALBITS] // maybe for the future
 				: (output_select==OUTPUT_DIRECT) ? dat_o
-				: (output_select==PFD) ? pfd_integral
+				//: (output_select==PFD) ? pfd_integral
 				: {SIGNALBITS{1'b0}};
 
 assign signal2_o = quadrature2_o;

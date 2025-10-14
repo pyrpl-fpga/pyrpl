@@ -52,7 +52,7 @@
 module red_pitaya_pfd_block
 #(
 	parameter SIGNALBITS = 14, //output signal bitwidth
-	parameter INPUTWIDTH = 12,
+	parameter INPUTWIDTH = 14,
 	parameter WORKINGWIDTH = 14, //i_val and q_val and ph bitwidth, minimal value: SIGNALBITS+2
 	parameter PHASEWIDTH = 12, //number of (least significant) bits encoding the phase 
 	parameter TURNWIDTH = 2, //number of (most significant) bits encoding the number of turns around the circle
