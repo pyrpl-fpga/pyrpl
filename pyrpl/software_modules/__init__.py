@@ -1,5 +1,5 @@
 from ..modules import Module
-from .module_managers import Asgs, Iqs, Pids, Scopes, Iirs, Pwms
+from .module_managers import Asgs, Iqs, Pids, Scopes, Cordics, Pwms
 from .network_analyzer import NetworkAnalyzer
 from .spectrum_analyzer import SpectrumAnalyzer
 from .pyrpl_config import PyrplConfig
@@ -14,6 +14,7 @@ from ..pyrpl_utils import all_subclasses
 class ModuleNotFound(ValueError):
     pass
 
+
 def get_module(name):
     """
     Returns the subclass of Module named name (if exists, otherwise None)
@@ -23,4 +24,4 @@ def get_module(name):
         if cls.__name__ == name:
             return cls
     raise ModuleNotFound("class %s not found in subclasses of Module. Did you "
-                         "forget to import a custom module?"%name)
+                         "forget to import a custom module?" % name)

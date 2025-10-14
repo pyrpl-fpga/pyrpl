@@ -13,7 +13,7 @@ class Lorentz(object):
         return 1.0 / (1.0 + 1.0j * x)
 
     def _lorentz_slope(self, x):
-        """ derivative of _lorentz"""
+        """ derivative of _lorentz """
         return -2.0 * x * self._lorentz(x) ** 2
 
     def _lorentz_slope_normalized(self, x):
