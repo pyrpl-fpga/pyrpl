@@ -12,7 +12,7 @@ set path_sdk sdk
 
 hsi open_hw_design $path_sdk/red_pitaya.xsa
 
-set ver 2023.2
+set ver 2024.2
 foreach item $argv {
   puts "Input arfguments: $argv"
   if {[lsearch -all $item "*DTG_VER*"] >= 0} {
