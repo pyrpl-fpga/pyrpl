@@ -1,0 +1,63 @@
+ps7_cortexa9_0:
+  standalone:
+    lwip220:
+      description: lwip220 library lwIP (light weight IP) is an open source TCP/IP stack configured for AMD hard and soft Ethernet MACs.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\ThirdParty\sw_services\lwip220_v1_1
+    xilffs:
+      description: Generic Fat File System Library.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilffs_v5_3
+    xilflash:
+      description: Xilinx Flash library for Intel/AMD CFI compliant parallel flash.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilflash_v4_11
+    xilrsa:
+      description: Xilinx RSA Library to access RSA and SHA software algorithms on Zynq.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilrsa_v1_8
+    xilskey:
+      description: Xilinx Secure Key Library supports programming efuse and bbram.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilskey_v7_6
+    xiltimer:
+      description: Xiltimer library provides generic timer interface for the timer IP's.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xiltimer_v2_1
+  freertos:
+    lwip220:
+      description: lwip220 library lwIP (light weight IP) is an open source TCP/IP stack configured for AMD hard and soft Ethernet MACs.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\ThirdParty\sw_services\lwip220_v1_1
+    xilffs:
+      description: Generic Fat File System Library.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilffs_v5_3
+    xilflash:
+      description: Xilinx Flash library for Intel/AMD CFI compliant parallel flash.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilflash_v4_11
+    xilrsa:
+      description: Xilinx RSA Library to access RSA and SHA software algorithms on Zynq.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilrsa_v1_8
+    xilskey:
+      description: Xilinx Secure Key Library supports programming efuse and bbram.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilskey_v7_6
+    xiltimer:
+      description: Xiltimer library provides generic timer interface for the timer IP's.
+      depends_libs: []
+      path:
+      - c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xiltimer_v2_1

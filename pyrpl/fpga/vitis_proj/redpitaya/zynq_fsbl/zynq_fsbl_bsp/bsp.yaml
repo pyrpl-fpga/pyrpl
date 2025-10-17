@@ -1,0 +1,440 @@
+sdt: hw_artifacts\ps7_cortexa9_0_baremetal.dts
+family: Zynq
+path: C:\Users\croquette\GitHub\pyrpl\pyrpl\fpga\vitis_proj\redpitaya\zynq_fsbl\zynq_fsbl_bsp
+config: None
+os: standalone
+os_info:
+  standalone:
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\bsp\standalone_v9_2
+os_config:
+  standalone:
+    standalone_enable_sw_intrusive_profiling:
+      name: standalone_enable_sw_intrusive_profiling
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      description: This option is not supported in the Unified Vitis IDE in this version.
+        Change to the classic IDE if you want to use this option
+    standalone_microblaze_exceptions:
+      name: standalone_microblaze_exceptions
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      description: Unused option and deprecated
+    standalone_pmu_sleep_timer:
+      name: standalone_pmu_sleep_timer
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      description: Deprecated in favor of xiltimer
+    standalone_profile_timer:
+      name: standalone_profile_timer
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      description: This option is not supported in the Unified Vitis IDE in this version.
+        Change to the classic IDE if you want to use this option
+    standalone_sleep_timer:
+      name: standalone_sleep_timer
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      description: Deprecated in favor of xiltimer
+    standalone_stdin:
+      name: standalone_stdin
+      permission: read_write
+      type: string
+      value: ps7_uart_0
+      default: ps7_uart_0
+      options:
+      - None
+      - ps7_uart_0
+      - ps7_uart_1
+      - ps7_coresight_comp_0
+      description: stdin peripheral
+    standalone_stdout:
+      name: standalone_stdout
+      permission: read_write
+      type: string
+      value: ps7_uart_0
+      default: ps7_uart_0
+      options:
+      - None
+      - ps7_uart_0
+      - ps7_uart_1
+      - ps7_coresight_comp_0
+      description: stdout peripheral
+    standalone_ttc_select_cntr:
+      name: standalone_ttc_select_cntr
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      description: Deprecated in favor of xiltimer
+    standalone_xpm_support:
+      name: standalone_xpm_support
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      description: This option is not supported in the Unified Vitis IDE in this version.
+        Change to the classic IDE if you want to use this option.
+toolchain_file: cortexa9_toolchain.cmake
+specs_file: Xilinx.spec
+proc: ps7_cortexa9_0
+proc_config:
+  ps7_cortexa9_0:
+    proc_archiver:
+      name: proc_archiver
+      permission: readonly
+      type: string
+      value: arm-none-eabi-gcc-ar.exe
+      default: arm-none-eabi-gcc-ar.exe
+      options: []
+      description: Archiver used to archive libraries for both BSP generation as well
+        as applications.
+    proc_assembler:
+      name: proc_assembler
+      permission: readonly
+      type: string
+      value: arm-none-eabi-gcc
+      default: arm-none-eabi-gcc
+      options: []
+      description: Assembler used to assemble both BSP/libraries and applications.
+    proc_compiler:
+      name: proc_compiler
+      permission: readonly
+      type: string
+      value: arm-none-eabi-gcc.exe
+      default: arm-none-eabi-gcc.exe
+      options: []
+      description: Compiler used to compile both BSP/libraries and applications.
+    proc_compiler_flags:
+      name: proc_compiler_flags
+      permission: readonly
+      type: string
+      value: ' -O2 -DSDT -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard;-c'
+      default: ' -O2 -DSDT -mcpu=cortex-a9 -mfpu=vfpv3 -mfloat-abi=hard;-c'
+      options: []
+      description: Compiler Flags used in BSP and library generation.'-c'flag stands
+        for 'compile and assemble, but do not link'.Without this flag, gcc tries to
+        link the code, which will fail because there is no application involved during
+        libgen.'-O2' can be overwritten by extra compile flags.
+    proc_extra_compiler_flags:
+      name: proc_extra_compiler_flags
+      permission: read_write
+      type: string
+      value: ' -g -Wall -Wextra -fno-tree-loop-distribute-patterns'
+      default: ' -g -Wall -Wextra -fno-tree-loop-distribute-patterns'
+      options: []
+      description: Extra Compiler Flags used in BSP and library generation
+template: zynq_fsbl
+compiler_flags: ''
+include_folder: include
+lib_folder: lib
+libsrc_folder: libsrc
+drv_info:
+  M_AXI_GP0: None
+  ps7_afi_0: None
+  ps7_afi_1: None
+  ps7_afi_2: None
+  ps7_afi_3: None
+  ps7_coresight_comp_0:
+    driver: coresightps_dcc
+    ip_name: ps7_coresight_comp
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\coresightps_dcc_v1_11
+  ps7_ddrc_0: None
+  ps7_dev_cfg_0:
+    driver: devcfg
+    ip_name: ps7_dev_cfg
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\devcfg_v3_8
+  ps7_dma_ns: None
+  ps7_dma_s:
+    driver: dmaps
+    ip_name: ps7_dma
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\dmaps_v2_11
+  ps7_ethernet_0:
+    driver: emacps
+    ip_name: ps7_ethernet
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\emacps_v3_21
+  ps7_globaltimer_0: None
+  ps7_gpio_0:
+    driver: gpiops
+    ip_name: ps7_gpio
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\gpiops_v3_13
+  ps7_gpv_0: None
+  ps7_i2c_0:
+    driver: iicps
+    ip_name: ps7_i2c
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\iicps_v3_20
+  ps7_intc_dist_0:
+    driver: scugic
+    ip_name: ps7_intc_dist
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\scugic_v5_4
+  ps7_iop_bus_config_0: None
+  ps7_ocmc_0: None
+  ps7_pl310_0: None
+  ps7_pmu_0: None
+  ps7_qspi_0:
+    driver: qspips
+    ip_name: ps7_qspi
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\qspips_v3_13
+  ps7_scuc_0: None
+  ps7_scutimer_0:
+    driver: scutimer
+    ip_name: ps7_scutimer
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\scutimer_v2_6
+  ps7_scuwdt_0:
+    driver: scuwdt
+    ip_name: ps7_scuwdt
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\scuwdt_v2_6
+  ps7_sd_0:
+    driver: sdps
+    ip_name: ps7_sdio
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\sdps_v4_4
+  ps7_slcr_0: None
+  ps7_spi_1:
+    driver: spips
+    ip_name: ps7_spi
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\spips_v3_11
+  ps7_ttc_0:
+    driver: ttcps
+    ip_name: ps7_ttc
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\ttcps_v3_20
+  ps7_uart_0:
+    driver: uartps
+    ip_name: ps7_uart
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\uartps_v3_15
+  ps7_uart_1:
+    driver: uartps
+    ip_name: ps7_uart
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\uartps_v3_15
+  ps7_usb_0:
+    driver: usbps
+    ip_name: ps7_usb
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\usbps_v2_9
+  ps7_xadc_0:
+    driver: xadcps
+    ip_name: ps7_xadc
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\xadcps_v2_7
+  xadc:
+    driver: sysmon
+    ip_name: xadc_wiz
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\XilinxProcessorIPLib\drivers\sysmon_v7_10
+lib_info:
+  xiltimer:
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xiltimer_v2_1
+  xilffs:
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilffs_v5_3
+    examples:
+      xilffs_polled_example.c: []
+  xilrsa:
+    path: c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_services\xilrsa_v1_8
+lib_config:
+  xiltimer:
+    XILTIMER_en_interval_timer:
+      name: XILTIMER_en_interval_timer
+      permission: read_write
+      type: boolean
+      value: 'false'
+      default: 'false'
+      options:
+      - 'true'
+      - 'false'
+      description: Enable Interval Timer
+    XILTIMER_sleep_timer:
+      name: XILTIMER_sleep_timer
+      permission: read_write
+      type: string
+      value: Default
+      default: Default
+      options:
+      - Default
+      - ps7_ttc_0
+      - ps7_scutimer_0
+      description: This parameter is used to select specific timer for sleep functionality
+    XILTIMER_tick_timer:
+      name: XILTIMER_tick_timer
+      permission: read_write
+      type: string
+      value: None
+      default: None
+      options:
+      - None
+      - ps7_ttc_0
+      - ps7_scutimer_0
+      description: This parameter is used to select specific timer for tick functionality
+  xilffs:
+    XILFFS_enable_exfat:
+      name: XILFFS_enable_exfat
+      permission: read_write
+      type: boolean
+      value: 'false'
+      default: 'false'
+      options:
+      - 'true'
+      - 'false'
+      description: 0:Disable exFAT, 1:Enable exFAT(Also Enables LFN)
+    XILFFS_enable_multi_partition:
+      name: XILFFS_enable_multi_partition
+      permission: read_write
+      type: boolean
+      value: 'false'
+      default: 'false'
+      options:
+      - 'true'
+      - 'false'
+      description: 0:Single partition, 1:Enable multiple partition
+    XILFFS_fs_interface:
+      name: XILFFS_fs_interface
+      permission: read_write
+      type: integer
+      value: '1'
+      default: '1'
+      options:
+      - '1'
+      - '2'
+      description: Enables file system with selected interface. Enter 1 for SD. Enter
+        2 for RAM
+    XILFFS_max_sector_size:
+      name: XILFFS_max_sector_size
+      permission: read_write
+      type: integer
+      value: '4096'
+      default: '4096'
+      options: []
+      description: Maximum Sector size(valid values are 4096, 8192, 16384, 32768)
+    XILFFS_num_logical_vol:
+      name: XILFFS_num_logical_vol
+      permission: read_write
+      type: integer
+      value: '35'
+      default: '35'
+      options: []
+      description: Number of volumes (logical drives, from 1 to 175) to be used.
+    XILFFS_ramfs_size:
+      name: XILFFS_ramfs_size
+      permission: read_write
+      type: integer
+      value: '3145728'
+      default: '3145728'
+      options: []
+      description: RAM FS size
+    XILFFS_ramfs_start_addr:
+      name: XILFFS_ramfs_start_addr
+      permission: read_write
+      type: string
+      value: ''
+      default: ''
+      options: []
+      description: RAM FS start address
+    XILFFS_read_only:
+      name: XILFFS_read_only
+      permission: read_write
+      type: boolean
+      value: 'false'
+      default: 'false'
+      options:
+      - 'true'
+      - 'false'
+      description: Enables the file system in Read_Only mode if true. ZynqMP fsbl
+        will set this to true
+    XILFFS_set_fs_rpath:
+      name: XILFFS_set_fs_rpath
+      permission: read_write
+      type: integer
+      value: '0'
+      default: '0'
+      options:
+      - '0'
+      - '1'
+      - '2'
+      description: Configures relative path feature (valid values 0 to 2).
+    XILFFS_use_chmod:
+      name: XILFFS_use_chmod
+      permission: read_write
+      type: boolean
+      value: 'false'
+      default: 'false'
+      options:
+      - 'true'
+      - 'false'
+      description: Enables use of CHMOD functionality for changing attributes (valid
+        only with read_only set to false)
+    XILFFS_use_lfn:
+      name: XILFFS_use_lfn
+      permission: read_write
+      type: integer
+      value: '0'
+      default: '0'
+      options:
+      - '0'
+      - '1'
+      - '2'
+      - '3'
+      description: 'Enables the Long File Name(LFN) support if non-zero. Disabled
+        by default: 0, LFN with static working buffer: 1, Dynamic working buffer:
+        2 (on stack) or 3 (on heap)'
+    XILFFS_use_mkfs:
+      name: XILFFS_use_mkfs
+      permission: read_write
+      type: boolean
+      value: 'true'
+      default: 'true'
+      options:
+      - 'true'
+      - 'false'
+      description: Disable(0) or Enable(1) f_mkfs function. ZynqMP fsbl will set this
+        to false
+    XILFFS_use_strfunc:
+      name: XILFFS_use_strfunc
+      permission: read_write
+      type: integer
+      value: '0'
+      default: '0'
+      options:
+      - '0'
+      - '1'
+      - '2'
+      description: Enables the string functions (valid values 0 to 2).
+    XILFFS_use_trim:
+      name: XILFFS_use_trim
+      permission: read_write
+      type: boolean
+      value: 'false'
+      default: 'false'
+      options:
+      - 'true'
+      - 'false'
+      description: Disable(0) or Enable(1) TRIM function. ZynqMP fsbl will set this
+        to false
+    XILFFS_word_access:
+      name: XILFFS_word_access
+      permission: read_write
+      type: boolean
+      value: 'true'
+      default: 'true'
+      options:
+      - 'true'
+      - 'false'
+      description: Enables word access for misaligned memory access platform
+  xilrsa: {}
