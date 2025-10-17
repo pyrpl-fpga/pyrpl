@@ -2,9 +2,9 @@
 	amba_pl: amba_pl {
 		ranges;
 		compatible = "simple-bus";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		firmware-name = "red_pitaya.bit.bin";
+		//#address-cells = <1>;
+		//#size-cells = <1>;
+		firmware-name = "fpga.bit.bin";
 		clocking3: clocking3 {
 			compatible = "xlnx,fclk";
 			assigned-clocks = <&clkc 18>;
@@ -40,17 +40,17 @@
 		afi1: afi1@f8009000 {
 			status = "okay";
 			compatible = "xlnx,afi-fpga";
-			#address-cells = <1>;
+			//#address-cells = <1>;
 			reg = <0xF8009000 0x1000>;
-			#size-cells = <0>;
+			//#size-cells = <0>;
 			xlnx,afi-width = <0>;
 		};
 		afi0: afi0@f8008000 {
 			status = "okay";
 			compatible = "xlnx,afi-fpga";
-			#address-cells = <1>;
+			//#address-cells = <1>;
 			reg = <0xF8008000 0x1000>;
-			#size-cells = <0>;
+			//#size-cells = <0>;
 			xlnx,afi-width = <0>;
 		};
 		xadc: xadc_wiz@83c00000 {
