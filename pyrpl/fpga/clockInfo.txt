@@ -1,7 +1,7 @@
 -------------------------------------
 | Tool Version : Vivado v.2024.2
-| Date         : Tue Oct 14 14:42:44 2025
-| Host         : PC-Michael
+| Date         : Fri Oct 17 13:53:26 2025
+| Host         : PCLDY-ESGT-419
 | Design       : design_1
 | Device       : xc7z010-clg400-1--
 -------------------------------------
