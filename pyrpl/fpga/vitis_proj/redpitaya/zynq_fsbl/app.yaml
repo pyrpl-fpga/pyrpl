@@ -1,0 +1,4 @@
+domain_path: C:\Users\croquette\GitHub\pyrpl\pyrpl\fpga\vitis_proj\redpitaya\zynq_fsbl\zynq_fsbl_bsp
+app_src_dir: c:\Xilinx\Vitis\2024.2\data\embeddedsw\lib\sw_apps\zynq_fsbl
+template: zynq_fsbl
+lang: c

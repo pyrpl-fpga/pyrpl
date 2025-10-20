@@ -1,0 +1,67 @@
+{
+  "name": "redpitaya",
+  "type": "PLATFORM",
+  "configuration": {
+    "description": "",
+    "xsa": "C:\\Users\\croquette\\GitHub\\pyrpl\\pyrpl\\fpga\\sdk\\red_pitaya.xsa",
+    "xsaPathInPlatform": "redpitaya\\hw\\red_pitaya.xsa",
+    "emulationXsa": "",
+    "emulationXsaPathInPlatform": "",
+    "isCustomFSBL": false,
+    "fsblPath": "",
+    "pmufwElf": "",
+    "flow": "EMBEDDED",
+    "processorsMap": {
+      "ps7_cortexa9_0": "ps7_cortexa9",
+      "ps7_cortexa9_1": "ps7_cortexa9"
+    },
+    "supportedFamily": "zynq",
+    "stdGenHookList": [],
+    "componentType": "PLATFORM",
+    "domains": [
+      {
+        "name": "zynq_fsbl",
+        "displayName": "zynq_fsbl",
+        "processor": "ps7_cortexa9_0",
+        "cpuType": "cortex-a9",
+        "cpuInstance": "ps7_cortexa9_0",
+        "os": "standalone",
+        "appTemplate": "zynq_fsbl",
+        "isBootDomain": true,
+        "qemuData": "resources\\zynq_fsbl\\qemu",
+        "qemuArgsFile": "resources\\zynq_fsbl\\qemu\\qemu_args.txt",
+        "pmcQemuArgsFile": "",
+        "isBSPGenReq": false
+      },
+      {
+        "name": "standalone_ps7_cortexa9_0",
+        "displayName": "standalone_ps7_cortexa9_0",
+        "processor": "ps7_cortexa9_0",
+        "cpuType": "cortex-a9",
+        "cpuInstance": "ps7_cortexa9_0",
+        "os": "standalone",
+        "appTemplate": "empty_application",
+        "isBootDomain": false,
+        "qemuData": "resources\\standalone_ps7_cortexa9_0\\qemu",
+        "qemuArgsFile": "resources\\standalone_ps7_cortexa9_0\\qemu\\qemu_args.txt",
+        "pmcQemuArgsFile": "",
+        "isBSPGenReq": false
+      },
+      {
+        "name": "Full",
+        "displayName": "Full",
+        "processor": "ps7_cortexa9_0",
+        "cpuType": "cortex-a9",
+        "cpuInstance": "ps7_cortexa9_0",
+        "os": "standalone",
+        "appTemplate": "empty_application",
+        "isBootDomain": false,
+        "qemuData": "resources\\Full\\qemu",
+        "qemuArgsFile": "resources\\Full\\qemu\\qemu_args.txt",
+        "pmcQemuArgsFile": "",
+        "isBSPGenReq": false
+      }
+    ],
+    "emptyToolchainConfiguration": []
+  }
+}

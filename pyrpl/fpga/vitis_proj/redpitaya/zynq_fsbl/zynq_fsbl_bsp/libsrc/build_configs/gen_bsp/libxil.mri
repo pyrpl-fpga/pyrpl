@@ -1,0 +1,20 @@
+create libxil.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/xadcps/src/libxadcps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/usbps/src/libusbps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/uartps/src/libuartps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/ttcps/src/libttcps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/sysmon/src/libsysmon.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/spips/src/libspips.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/sdps/src/libsdps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/scuwdt/src/libscuwdt.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/scutimer/src/libscutimer.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/scugic/src/libscugic.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/qspips/src/libqspips.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/iicps/src/libiicps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/gpiops/src/libgpiops.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/emacps/src/libemacps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/dmaps/src/libdmaps.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/devcfg/src/libdevcfg.a
+addlib C:/Users/croquette/GitHub/pyrpl/pyrpl/fpga/vitis_proj/redpitaya/zynq_fsbl/zynq_fsbl_bsp/libsrc/build_configs/gen_bsp/libsrc/coresightps_dcc/src/libcoresightps_dcc.a
+save
+end

@@ -1,0 +1,10 @@
+ps7_cortexa9_0:
+    ip_name: ps7_cortexa9
+    supported_os:
+    - standalone
+    - freertos
+ps7_cortexa9_1:
+    ip_name: ps7_cortexa9
+    supported_os:
+    - standalone
+    - freertos
