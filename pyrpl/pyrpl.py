@@ -166,16 +166,10 @@ from .software_modules.lockbox import models
 from . import user_config_dir
 from ._version import __version__
 
-# input is the wrong function in python 2
-try:
-    raw_input
-except NameError:  # Python 3
-    raw_input = input
 
-try:
-    basestring  # in python 2
-except:
-    basestring = (str, bytes)
+raw_input = input
+
+basestring = (str, bytes)
 
 
 default_pyrpl_config = {'name': 'default_pyrpl_instance',

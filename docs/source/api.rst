@@ -57,7 +57,7 @@ RedPitaya's ip address.
 If you see at least one '>' symbol, your computer has successfully
 connected to your RedPitaya via SSH. This means that your connection
 works. The message 'Server application started on port 2222' means that
-your computer has sucessfully installed and started a server application
+your computer has successfully installed and started a server application
 on your RedPitaya. Once you get 'Client started with success', your
 python session has successfully connected to that server and all things
 are in place to get started.
@@ -80,7 +80,7 @@ there is enough time to repeat the reading n times.
 
 .. code:: python
 
-    #see how the adc reading fluctuates over time
+    # see how the adc reading fluctuates over time
     import time
     from matplotlib import pyplot as plt
     times, data = [],[]

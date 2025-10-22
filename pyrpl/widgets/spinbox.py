@@ -4,10 +4,8 @@ import time
 import logging
 
 import sys
-if sys.version_info < (3,):
-    integer_types = (int, long)
-else:
-    integer_types = (int,)
+
+integer_types = (int,)
 
 
 class NumberSpinBox(QtWidgets.QWidget):

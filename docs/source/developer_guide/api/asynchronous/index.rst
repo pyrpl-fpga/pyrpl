@@ -19,10 +19,10 @@ function). Let's see that on an example:
     %pylab qt # in a notebook, we need the qt event loop to run in the background
     import asyncio
     import scipy.fftpack
-    import quamash # quamash allows to use the asyncio syntax of python 3 with the Qt event loop. Not sure how mainstream the library is...
+    import qasync # qasync allows to use the asyncio syntax of python 3 with the Qt event loop. Not sure how mainstream the library is...
     from PyQt4 import QtCore, QtGui
     import asyncio
-    loop = quamash.QEventLoop()
+    loop = qasync.QEventLoop()
     asyncio.set_event_loop(loop) # set the qt event loop as the loop to be used by asyncio
 
 
@@ -58,12 +58,12 @@ practice, the code execution is probably extremely similar)
     %pylab qt
     import asyncio
     import scipy.fftpack
-    import quamash
+    import qasync
     from PyQt4 import QtCore, QtGui
     APP = QtGui.QApplication.instance()
     import asyncio
     from promise import Promise
-    loop = quamash.QEventLoop()
+    loop = qasync.QEventLoop()
     asyncio.set_event_loop(loop)
 
 
@@ -187,10 +187,10 @@ would easily do the trick:
     %pylab qt
     import asyncio
     import scipy.fftpack
-    import quamash
+    import qasync
     from PyQt4 import QtCore, QtGui
     import asyncio
-    loop = quamash.QEventLoop()
+    loop = qasync.QEventLoop()
     asyncio.set_event_loop(loop)
 
 
