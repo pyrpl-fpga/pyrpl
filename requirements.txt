@@ -9,3 +9,7 @@ pyqtgraph
 pyyaml
 scp
 qasync
+pytest
+nbconvert
+matplotlib
+nbformat
