@@ -2,7 +2,6 @@
 REM Define variables
 set PARENT=..\..\..
 set VITIS_VER=2024.2
-set VIVADO_VER=2024.2
 set DTG=%PARENT%\device-tree-xlnx-xilinx-v%VITIS_VER%
 
 REM Red Pitaya FPGA repo
@@ -11,27 +10,18 @@ set RPFPGA=%PARENT%\RedPitaya-FPGA
 
 REM build results
 set OUT_DIR=out
-set FPGA_BIN=%OUT_DIR%\red_pitaya.bin
 set FPGA_DTBO=%OUT_DIR%\red_pitaya.dtbo
 
 REM logfile for stdout and stderr
 set LOG=>> fpga.log 2>&1
 
-REM Vivado from Xilinx provides IP handling, FPGA compilation
 REM Vitis / xsct provide software integration
 REM both tools are run in batch mode with an option to avoid log/journal files
-
 set DTS_DIR=sdk\dts
 set PL_DEVICE_TREE=%DTS_DIR%\pl.dtsi
 
 REM Create output directory
 if not exist %OUT_DIR% mkdir %OUT_DIR%
-
-REM Run Vivado synthesis
-echo Starting Vivado...
-call c:\Xilinx\Vivado\%VIVADO_VER%\bin\vivado.bat -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl %LOG%
-
-echo compilation finished
 
 REM required for the device tree creation
 if not exist "%DTG%" (
@@ -69,7 +59,6 @@ set DTC_PATH=C:\Xilinx\Vivado\%VITIS_VER%\tps\win64\lopper-1.1.0-packages\min_sd
 "%DTC_PATH%" -I dtb -O dts %FPGA_DTBO% -o %OUT_DIR%\red_pitaya.dts %LOG%
 
 REM postclean
-copy /Y %FPGA_BIN% .
 copy /Y %FPGA_DTBO% .
 copy /Y .gen\sources_1\bd\system\ip\system_processing_system7_0\*.html %OUT_DIR%
 copy /Y sdk\red_pitaya.hwh %OUT_DIR%
