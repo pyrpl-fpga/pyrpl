@@ -27,8 +27,6 @@ Check [this documentation section](http://pyrpl.readthedocs.io/en/latest/user_gu
 ```
 conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
 conda activate pyrpl-env
-conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
-conda activate pyrpl-env
 ```
 If you are not using Anaconda, and using pip, you can just run: 
 ```
