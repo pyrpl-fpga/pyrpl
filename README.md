@@ -1,6 +1,7 @@
 [<img src="http://pyrpl.readthedocs.io/en/latest/_static/logo.png" width="250" alt="PyRPL">](http://www.pyrpl.org/)
-[![Pyversions](https://img.shields.io/pypi/pyversions/ibm-analytics-engine-python.svg?style=flat-square)](https://pypi.python.org/pypi/ibm-analytics-engine-python)
-[![code coverage](https://codecov.io/github/pyrpl-fpga/pyrpl/coverage.svg?branch=master "Code coverage")](https://codecov.io/gh/pyrpl-fpga/pyrpl)
+
+[![GitHub Actions CI](https://github.com/lneuhaus/pyrpl/actions/workflows/ci.yml/badge.svg)](https://github.com/lneuhaus/pyrpl/actions)
+[![code coverage](https://codecov.io/github/lneuhaus/pyrpl/coverage.svg?branch=master "Code coverage")](https://codecov.io/gh/lneuhaus/pyrpl)
 [![Python versions on PyPI](https://img.shields.io/pypi/pyversions/pyrpl.svg)](https://pypi.python.org/pypi/pyrpl/)
 [![PyRPL version on PyPI](https://img.shields.io/pypi/v/pyrpl.svg "PyRPL on PyPI")](https://pypi.python.org/pypi/pyrpl/)
 [![Download pyrpl](https://img.shields.io/sourceforge/dt/pyrpl.svg)](https://sourceforge.net/projects/pyrpl/files/)
@@ -16,10 +17,11 @@ PyRPL (Python RedPitaya Lockbox) turns your RedPitaya into a powerful DSP device
 The official PyRPL website address is [http://pyrpl.readthedocs.io/](http://pyrpl.readthedocs.io). The information on the website is more up-to-date than in this readme.
 
 ## Installation
-The easiest and fastest way to get PyRPL is to download and execute the [precompiled executable for windows](https://drive.google.com/file/d/1uj5GfKSBs_ceQcKP73JrwaT5-82ZKx1D/view). This option requires no extra programs to be installed on the computer.
+The easiest and fastest way to get PyRPL is to download and execute the [precompiled executable for windows](https://sourceforge.net/projects/pyrpl/files/latest/download). This option requires no extra programs to be installed on the computer.
+Currently the executable is outdated and will only work with RedPitaya OS 0.92.  
 
 If instead you would like to use and/or modify the source code, make sure you have an
-installation of Python (3.7 to 3.13). If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
+installation of Python (3.8, 3.9, 3.10, 3.11, 3.12, 3.13). If you are new to Python or inexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
 ```
 conda install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
 ```
@@ -28,11 +30,6 @@ Check [this documentation section](http://pyrpl.readthedocs.io/en/latest/user_gu
 conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
 conda activate pyrpl-env
 ```
-If you are not using Anaconda, and using pip, you can just run: 
-```
-pip install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
-```
-or clone the reposetory before and use the requirements.txt.
 
 Next, clone (if you have a [git client](https://git-scm.com/downloads) installed - recommended option) the pyrpl repository to your computer with 
 ```
@@ -98,13 +95,12 @@ The full html documentation is hosted at [http://pyrpl.readthedocs.io](http://py
 ## Updates
 Since PyRPL is continuously improved, you should install upgrades if you expect bugfixes. 
 If you have cloned the GitHub repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
-If you have cloned the GitHub repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
 ```
 git pull
 ```
 
 ## FPGA bitfile generation (only for developers)
-In case you would like to modify the logic running on the FPGA, you should make sure that you are able to [generate a working bitfile on your machine](http://pyrpl.readthedocs.io/en/latest/developer_guide/fpga_compilation.html). In short, to do so, you must install Vivado 2024.2 [(64-bit windows](windows web-installer](https://www.xilinx.com/member/forms/download/xef.html?filename=Xilinx_Vivado_SDK_2024.2_1118_2_Win64.exe&akdm=1) or [Linux)](https://www.xilinx.com/member/forms/download/xef.html?filename=Xilinx_Vivado_SDK_2024.2_1118_2_Lin64.bin&akdm=1) [together with a working license](http://pyrpl.readthedocs.io/en/latest/developer_guide/fpga_compilation.html#fpga-license). Next, with a terminal in the pyrpl root directory, type
+In case you would like to modify the logic running on the FPGA, you should make sure that you are able to [generate a working bitfile on your machine](http://pyrpl.readthedocs.io/en/latest/developer_guide/fpga_compilation.html). In short, to do so, you must install Vivado 2024.2 [(64-bit windows](windows web-installer](https://www.xilinx.com/member/forms/download/xef.html?filename=FPGAs_AdaptiveSoCs_Unified_2024.2_1113_1001_Win64.exe) or [Linux)](https://www.xilinx.com/member/forms/download/xef.html?filename=FPGAs_AdaptiveSoCs_Unified_2024.2_1113_1001_Lin64.bin) [together with a working license](http://pyrpl.readthedocs.io/en/latest/developer_guide/fpga_compilation.html#fpga-license). Next, with a terminal in the pyrpl root directory, type
 ```
 cd pyrpl/fpga
 make
