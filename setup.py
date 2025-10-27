@@ -36,7 +36,8 @@ requirements = [
     'qtpy',
     'nbconvert',
     'jupyter-client',
-    'qasync'
+    'qasync',
+    'ipykernel<6.30' 
 ]
 
 
