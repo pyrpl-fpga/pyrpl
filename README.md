@@ -6,8 +6,8 @@
 [![PyRPL version on PyPI](https://img.shields.io/pypi/v/pyrpl.svg "PyRPL on PyPI")](https://pypi.python.org/pypi/pyrpl/)
 [![Download pyrpl](https://img.shields.io/sourceforge/dt/pyrpl.svg)](https://sourceforge.net/projects/pyrpl/files/)
 [![Documentation Status](https://readthedocs.org/projects/pyrpl/badge/?version=latest)](http://pyrpl.readthedocs.io/en/latest/)
-[![join chat on gitter](https://badges.gitter.im/JoinChat.svg "Join chat on gitter")](https://gitter.im/lneuhaus/pyrpl)
-[![License](https://img.shields.io/pypi/l/pyrpl.svg)](https://github.com/lneuhaus/pyrpl/blob/master/LICENSE)
+[![join chat on gitter](https://badges.gitter.im/JoinChat.svg "Join chat on gitter")](https://gitter.im/pyrpl-fpga/pyrpl)
+[![License](https://img.shields.io/pypi/l/pyrpl.svg)](https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE)
 
 [![Download PyRPL](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/pyrpl/files/)
 
@@ -33,15 +33,28 @@ conda activate pyrpl-env
 
 Next, clone (if you have a [git client](https://git-scm.com/downloads) installed - recommended option) the pyrpl repository to your computer with 
 ```
-git clone https://github.com/lneuhaus/pyrpl.git
+git clone https://github.com/pyrpl-fpga/pyrpl.git
 ```
-or [download and extract](https://github.com/lneuhaus/pyrpl/archive/master.zip) (if you do not want to install git on your computer) the repository. 
+or [download and extract](https://github.com/pyrpl-fpga/pyrpl/archive/master.zip) (if you do not want to install git on your computer) the repository. 
 
 If you are using pip, you can just navigate to the pyrpl directory and run 
 
 ```
 pip install -r requirements.txt
 ```
+if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
+
+```
+pip install -e .
+```
+for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
+
+You can also use the environment config file "environment_pyrpl.yml"
+```
+conda env create -f environment_pyrpl.yml
+conda activate pyrpl-env
+```
+
 if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
 
 ```
@@ -63,9 +76,10 @@ In a command line terminal, type
 python -m pyrpl your_configuration_name
 ```
 A GUI should open, let you configure the RedPitaya device you would like to use, and you can start playing around with pyrpl. Different strings for 'your_configuration_name' create different configurations that will be automatically remembered by PyRPL, for example if you have several different redpitayas. Different RedPitayas with different configuration names can be run simultaneously in separate terminals.
+A GUI should open, let you configure the RedPitaya device you would like to use, and you can start playing around with pyrpl. Different strings for 'your_configuration_name' create different configurations that will be automatically remembered by PyRPL, for example if you have several different redpitayas. Different RedPitayas with different configuration names can be run simultaneously in separate terminals.
 
 ## Issues
-We collect a list of common problems on the [documentation website](http://pyrpl.readthedocs.io/en/latest/user_guide/installation/common_problems.html). If you do not find your problem listed there, please report all problems or wishes as new issues on [this page](https://github.com/lneuhaus/pyrpl/issues), so we can fix it and improve the future user experience.
+We collect a list of common problems on the [documentation website](http://pyrpl.readthedocs.io/en/latest/user_guide/installation/common_problems.html). If you do not find your problem listed there, please report all problems or wishes as new issues on [this page](https://github.com/pyrpl-fpga/pyrpl/issues), so we can fix it and improve the future user experience.
 
 ## Unit test
 If you want to check whether PyRPL works correctly on your machine, navigate with a command line terminal into the pyrpl root directory and type the  following commands (by substituting the ip-address / hostname of your Red Pitaya, of course)
@@ -76,7 +90,7 @@ pytest
 All tests should take about 3 minutes and finish without failures or errors. If there are errors, please report the console output as an issue (see the section "Issues" below for detailed explanations).
 
 ## Next steps / documentation
-The full html documentation is hosted at [http://pyrpl.readthedocs.io](http://pyrpl.readthedocs.io). Alternatively, you can download a .pdf version at [https://media.readthedocs.org/pdf/pyrpl/latest/pyrpl.pdf](https://media.readthedocs.org/pdf/pyrpl/latest/pyrpl.pdf). We are still in the process of creating an fully up-to-date version of the documentation of the current code. If the current documentation is wrong or insufficient, please post an [issue](https://github.com/lneuhaus/pyrpl/issues/new) and we will prioritize documenting the part of code you need.
+The full html documentation is hosted at [http://pyrpl.readthedocs.io](http://pyrpl.readthedocs.io). Alternatively, you can download a .pdf version at [https://media.readthedocs.org/pdf/pyrpl/latest/pyrpl.pdf](https://media.readthedocs.org/pdf/pyrpl/latest/pyrpl.pdf). We are still in the process of creating an fully up-to-date version of the documentation of the current code. If the current documentation is wrong or insufficient, please post an [issue](https://github.com/pyrpl-fpga/pyrpl/issues/new) and we will prioritize documenting the part of code you need.
 
 ## Updates
 Since PyRPL is continuously improved, you should install upgrades if you expect bugfixes. 
@@ -94,4 +108,4 @@ make
 Compilation should take between 10 and 30 minutes, depending on your machine. If there are no errors during compilation, the new bitfile will be in the (pyrpl/fpga/out) repository. If you replace the (pyrpl/fpga/red_pitaya.bin), it will be automatically used at the next restart of PyRPL. The best way to getting started is to skim through the very short Makefile in the fpga directory and to continue by reading the files mentioned in the makefile and the refences therein. All verilog source code is located in the subdirectory pyrpl/fpga/rtl/. 
 
 ## License
-Please read our license file [LICENSE](https://github.com/lneuhaus/pyrpl/blob/master/LICENSE) for more information.
+Please read our license file [LICENSE](https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE) for more information. 

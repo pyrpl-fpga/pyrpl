@@ -21,3 +21,4 @@ pytest
 nbconvert
 matplotlib
 nbformat
+ipykernel<6.30 
