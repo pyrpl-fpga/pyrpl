@@ -152,7 +152,7 @@ class Lockbox(LockboxModule):
                              %(unit1+'_in_'+unit2))
 
     def _unit_in_setpoint_unit(self, unit):
-        # helper function to convert setpoint_unit into unit
+        # helper function to convert unit into setpoint_unit
         return self._unit1_in_unit2(unit, self.setpoint_unit)
 
     def _setpoint_unit_in_unit(self, unit):
