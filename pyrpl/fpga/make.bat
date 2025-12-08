@@ -65,7 +65,7 @@ powershell -Command "(Get-Content '%PL_DEVICE_TREE%') -replace 'red_pitaya.bit.b
 
 REM Set dtc.exe path (from Lopper in Vivado installation)
 set DTC_PATH=C:\Xilinx\Vivado\%VITIS_VER%\tps\win64\lopper-1.1.0-packages\min_sdk\usr\bin\dtc.exe
-"%DTC_PATH%" -@ -O dtb -o %FPGA_DTBO% -i %DTS_DIR% %PL_DEVICE_TREE% %LOG%
+"%DTC_PATH%" -@ -O dtb -o %FPGA_DTBO% -i %DTS_DIR% -i %RPFPGA%\dts %PL_DEVICE_TREE% %LOG%
 "%DTC_PATH%" -I dtb -O dts %FPGA_DTBO% -o %OUT_DIR%\red_pitaya.dts %LOG%
 
 REM postclean
