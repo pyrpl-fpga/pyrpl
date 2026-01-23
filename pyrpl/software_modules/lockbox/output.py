@@ -1,7 +1,6 @@
 from __future__ import division
 
 import numpy as np
-from scipy import interpolate
 
 from ...software_modules.lockbox.input import Signal
 from ...attributes import BoolProperty, FloatProperty, SelectProperty, \
@@ -345,8 +344,8 @@ class OutputSignal(Signal):
             x = curve.data.index
             y = curve.data.values
             # sample the curve transfer function at the requested frequencies
-            ampl = interpolate.interp1d(x, abs(y))(freqs)
-            phase = interpolate.interp1d(x, np.unwrap(np.angle(y)))(freqs)
+            ampl = np.interp(freqs, x, np.abs(y))
+            phase = np.interp(freqs, x, np.unwrap(np.angle(y)))
             analog_tf = ampl * np.exp(1j * phase)
         # multiply by PID transfer function to get the loop transfer function
         # same as Pid.transfer_function(freqs) but avoids reading registers form FPGA

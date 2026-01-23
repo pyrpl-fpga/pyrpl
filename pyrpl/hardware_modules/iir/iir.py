@@ -9,7 +9,35 @@ from ...modules import SignalLauncher
 
 import numpy as np
 from qtpy import QtCore
-from scipy.signal import freqz
+# from scipy.signal import freqz
+
+def freqz_numpy(b, a=1, worN=512, fs=1.0):
+    """
+    NumPy replacement for scipy.signal.freqz
+    b: numerator coefficients (list or array)
+    a: denominator coefficients (list or array)
+    worN: int or array of frequencies (rad/sample)
+    fs: sampling frequency in Hz (optional, only for plotting convenience)
+    
+    Returns:
+        w: frequencies (rad/sample)
+        h: frequency response (complex)
+    """
+    b = np.atleast_1d(b)
+    a = np.atleast_1d(a)
+
+    if np.isscalar(worN):
+        # equally spaced points from 0 to pi
+        w = np.linspace(0, np.pi, worN, endpoint=False)
+    else:
+        w = np.array(worN)
+
+    # evaluate numerator and denominator on the unit circle
+    ejw = np.exp(1j * w[:, None] * np.arange(max(len(b), len(a))))
+    b_poly = np.sum(b * ejw[:, :len(b)], axis=1)
+    a_poly = np.sum(a * ejw[:, :len(a)], axis=1)
+    h = b_poly / a_poly
+    return w, h
 
 
 class SignalLauncherIir(SignalLauncher):
@@ -818,7 +846,7 @@ class IIR(FilterModule):
         labels = []
         for b0, b1, _, _, a1, a2 in self.coefficients:
             if any((b0, b1, a1, a2)):
-                f, z = freqz((b0, b1), (1, a1, a2),
+                f, z = freqz_numpy((b0, b1), (1, a1, a2),
                              worN=2 * np.pi * freqs * self.iirfilter.dt *
                                   self.loops)
                 z_all += z
