@@ -23,19 +23,27 @@ import sys
 
 a = Analysis(['pyrpl/__main__.py'],
              pathex=['.'],
-             binaries=[], # (os.path.join(qt_plugin_path, '*'), 'plugins')],
+             binaries=[], # [(os.path.join(qt_plugin_path, '*'), 'plugins')],
              datas=[('pyrpl/fpga/red_pitaya.bin', 'pyrpl/fpga'),
                     ('pyrpl/monitor_server/monitor_server*',
                      'pyrpl/monitor_server')],
              hiddenimports=['scipy._lib.messagestream', '_sysconfigdata_m_darwin_'],
              hookspath=[],
              runtime_hooks=[],
-             excludes=[],
+             excludes=['pytest',
+             'doctest',
+             'setuptools',
+             'pandas',
+             'pkg_resources',
+             'IPython',
+             'matplotlib',
+             'mpl_toolkits'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
+
 exe = EXE(pyz,
           a.scripts,
           a.binaries,
@@ -43,7 +51,32 @@ exe = EXE(pyz,
           a.datas,
           name='pyrpl',
           debug=False,
-          strip=False,
-          upx=False,
+          strip=True,
+          upx=True,
           console=True )
+
+# Use this to see if any library is too big in the final exe
+
+""" exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name='pyrpl',
+    debug=False,
+    strip=True,
+    upx=True,
+    console=True
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=True,
+    upx=True,
+    name='pyrpl'
+) """
+
 

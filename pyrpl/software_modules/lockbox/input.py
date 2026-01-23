@@ -1,5 +1,4 @@
 from __future__ import division
-import scipy
 import numpy as np
 import logging
 from ...attributes import SelectProperty, FloatProperty, FrequencyProperty, \
