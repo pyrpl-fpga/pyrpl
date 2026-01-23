@@ -17,7 +17,6 @@
 ###############################################################################
 
 
-import scipy.signal as sig
 import numpy as np
 import logging
 from ...errors import ExpectedPyrplError
