@@ -21,9 +21,9 @@ Installing PyRPL
 
 The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable for
 
-* **windows**: `pyrpl-windows.exe <https://sourceforge.net/projects/pyrpl/files/pyrpl-windows.exe>`__,
-* **linux**: `pyrpl-linux <https://sourceforge.net/projects/pyrpl/files/pyrpl-linux>`__, or
-* **Mac OS X**: `pyrpl-mac <https://sourceforge.net/projects/pyrpl/files/pyrpl-mac>`__.
+* **windows**: `pyrpl-windows.exe <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl.exe>`__,
+* **linux**: `pyrpl-linux <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl>`__, or
+* **Mac OS X**: `pyrpl-mac <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl_mac>`__.
 
 If you prefer an installation from source code, go to :ref:`installation_from_source`.
 

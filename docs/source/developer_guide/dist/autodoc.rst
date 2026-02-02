@@ -3,7 +3,7 @@ How to generate the automatic documentation with Sphinx
 
 For the automatic documentation to work, please follow the `code style
 guidelines for
-docstrings <https://github.com/lneuhaus/pyrpl/wiki/Code:-Coding-style-guide#docstrings>`__.
+docstrings <https://github.com/pyrpl-fpga/pyrpl/wiki/Code:-Coding-style-guide#docstrings>`__.
 To compile the autodoc with sphinx, simply install sphinx > 1.3
 (``pip install sphinx``) and type (starting from the pyrpl root
 directory)
@@ -14,10 +14,10 @@ directory)
     make html
 
 An extensive discussion of the (automatic) documentation can be found in
-issue `#291 <https://github.com/lneuhaus/pyrpl/issues/291>`__.
+issue `#291 <https://github.com/pyrpl-fpga/pyrpl/issues/291>`__.
 
 A few useful links and older information (from issue
-`#85 <https://github.com/lneuhaus/pyrpl/issues/85>`__):
+`#85 <https://github.com/pyrpl-fpga/pyrpl/issues/85>`__):
 
 -  We should implement this in order to view the autodoc online,
    preferentially by having travis perform a build of the autodoc at
@@ -28,4 +28,4 @@ A few useful links and older information (from issue
    ``sphinx-apidoc -f -o source/ ../../pyrpl/`` ``make html``
 
 Current version of autodoc:
-https://github.com/lneuhaus/pyrpl/blob/master/doc/sphinx/build/html/pyrpl.html
+https://github.com/pyrpl-fpga/pyrpl/blob/master/doc/sphinx/build/html/pyrpl.html

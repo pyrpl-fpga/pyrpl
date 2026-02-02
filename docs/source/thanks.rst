@@ -3,10 +3,11 @@ Contributors
 
 Below is partial list of PyRPL contributors. We do our best to keep this list updated.
 If you've been left off, please change this file by yourself or send an email to the
-maintainer (currently neuhaus@lkb.upmc.fr).
+maintainer (currently michael.croquette@gmail.com).
 
 * Leonhard Neuhaus
 * Samuel Deléglise
+* Michael Croquette
 * Jonas Neergard-Nielsen
 * Xueshi Guo
 * Jerome Degallaix
@@ -15,7 +16,7 @@ maintainer (currently neuhaus@lkb.upmc.fr).
 * Remi Metzdorff
 * Kevin Makles
 * Clement Chardin
-
+* Peter Saunderson
 
 Funding and support
 **********************
@@ -60,4 +61,5 @@ Its was initially based on the open-source code for the `Red Pitaya <www.redpita
 and gradually diverged away from it. In 2016, large parts of the graphical
 user interface were added to the project by Samuel Deleglise. PyRPL was finally
 published as an open-source project under the GNU General Public License, Version 3
-and has been online since July 2017.
+and has been online since July 2017. We switched to an MIT license in 2023. The code base is now 
+maintaned by Michael Croquette with contributions from many others.

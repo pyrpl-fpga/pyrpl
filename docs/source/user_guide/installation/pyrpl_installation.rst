@@ -5,7 +5,7 @@ Installing PyRPL
 Running from binary files (fastest)
 ====================================
 
-The easiest and fastest way to get PyRPL running is to download and execute the `precompiled executable for windows "pyrpl-windows.exe" <https://sourceforge.net/projects/pyrpl/files/pyrpl-windows.exe>`__ or `linux "pyrpl-linux" <https://sourceforge.net/projects/pyrpl/files/pyrpl-linux>`__. This option requires no extra programs to be installed on the computer. If you want the Pyrpl binaries for a Mac, please let us know `by creating a new issue <https://www.github.com/lneuhaus/pyrpl/issues/new>`_ and we will prepare them for you.
+The easiest and fastest way to get PyRPL running is to download and execute the `precompiled executable for windows "pyrpl-windows.exe" <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl.exe>`__ or `linux "pyrpl-linux" <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl>`__ or `Mac OS X "pyrpl-mac" <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl_mac>`__. This option requires no extra programs to be installed on the computer. If you want the Pyrpl binaries for a Mac, please let us know `by creating a new issue <https://www.github.com/pyrpl-fpga/pyrpl/issues/new>`_ and we will prepare them for you.
 
 
 
@@ -40,9 +40,10 @@ Check :ref:`anaconda_problems` for hints if you cannot execute conda in a termin
 Option 2: Installation on a regular (non-Anaconda) python version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are not using Anaconda, I recommend navigating to the pyrpl directory and running
+If you are not using Anaconda, I recommend using pip and running 
+    pip install git+https://github.com/pyrpl-fpga/pyrpl.git
 
-    pip install -r requirements.txt
+to install the latest pyrpl version and all its dependencies directly from the github repository.
 
 .. _actual_installation:
 
@@ -68,4 +69,4 @@ If you have a `git client <https://git-scm.com/downloads>`__ installed (recommen
 
     git clone https://github.com/pyrpl-fpga/pyrpl.git YOUR_PYRPL_DESTINATION_FOLDER
 
-If you do not want to install git on your computer, just download and extract the repository `from github.com <https://github.com/lneuhaus/pyrpl/archive/master.zip>`__ () the repository.
+If you do not want to install git on your computer, just download and extract the repository `from github.com <https://github.com/pyrpl-fpga/pyrpl/archive/master.zip>`__ () the repository.
