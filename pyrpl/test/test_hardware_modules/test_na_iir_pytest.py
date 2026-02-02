@@ -6,30 +6,40 @@ from pyrpl.attributes import *
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
 
+@pytest.fixture(autouse=True, scope="class")
+def setup_iir(hardware_session): 
+    # shortcuts
+    pyrpl = hardware_session.pyrpl
+    rp = hardware_session.rp
+    na = pyrpl.networkanalyzer
+    # set na loglevel to DEBUG
+    loglevel = na._logger.getEffectiveLevel()
+    na._logger.setLevel(10)
+    na.auto_bandwidth = False
+    na.auto_amplitude = False
+    iir = rp.iir
+    yield
+    
+    # Teardown
+    na.stop()
+    # set na loglevel to previous one
+    na._logger.setLevel(loglevel)
 
 class TestIir(TestPyrpl):
-    @pytest.fixture(autouse=True)
-    def setup_iir(self):
-        self.extradelay = 0.6 * 8e-9  # no idea where this delay comes from
-        # shortcuts
-        self.pyrpl.na = self.pyrpl.networkanalyzer
-        self.na = self.pyrpl.networkanalyzer
-        # set na loglevel to DEBUG
-        self.loglevel = self.na._logger.getEffectiveLevel()
-        self.na._logger.setLevel(10)
-        self.na.auto_bandwidth = False
-        self.na.auto_amplitude = False
-        self.iir = self.pyrpl.rp.iir
-        yield
-        
-        # Teardown
-        self.na.stop()
-        # set na loglevel to previous one
-        self.na._logger.setLevel(self.loglevel)
+    
+    extradelay = 0.6 * 8e-9 # no idea where this delay comes from
+
+    @property
+    def iir(self):
+        return self.pyrpl.rp.iir
+    
+    @property
+    def na(self):
+        return self.pyrpl.networkanalyzer
 
     def test_pz_interface(self):
         """ tests that poles and real/comples_poles remain sync'ed"""
-        iir = self.pyrpl.rp.iir
+        iir = self.iir
         iir.poles = [-1000j-2032, -34343j-3424, -1221, -43254.4]
         assert iir.real_poles == [-1221, -43254.4], iir.real_poles
         assert iir.complex_poles == [1000j-2032, 34343j-3424], \
@@ -71,8 +81,8 @@ class TestIir(TestPyrpl):
         # another filter with very slow scan to test for model accuracy.
         # This test is only to confirm that all of the biquads are working.
         # setup na
-        na = self.pyrpl.networkanalyzer
-        iir = self.pyrpl.rp.iir
+        na = self.na
+        iir = self.iir
         na.setup(start_freq=3e3,
                  stop_freq=1e6,
                  points=301,
@@ -235,7 +245,7 @@ class TestIir(TestPyrpl):
         helper function: tests if module.transfer_function is within
         error_threshold of the measured transfer function of the module
         """
-        na = self.pyrpl.na
+        na = self.na
         na.input = module
         na._logger.info("Starting NA acquisition...")
         data = na.single()

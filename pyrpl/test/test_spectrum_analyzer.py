@@ -64,9 +64,10 @@ class TestClass(TestPyrpl):
                       trace_average=1)
             sa.stop()
             asg = self.pyrpl.rp.asg0
+            asg.free()
             asg.setup(frequency=1e5,
                       amplitude=1.0,
-                      trigger_source='immediately',
+                      trigger_source='high',
                       offset=0,
                       waveform='sin')
             freqs = np.linspace(sa.rbw*3, sa.span/2-sa.rbw*3, 11)
@@ -103,12 +104,14 @@ class TestClass(TestPyrpl):
         self.asg = self.pyrpl.rp.asg0
         self.asg.setup(amplitude=0.4,
                        waveform='noise',
-                       trigger_source='immediately')
+                       trigger_source='high')
 
         self.iq = self.pyrpl.rp.iq0
         self.iq.setup(input=self.asg,
                 acbandwidth=10,
                 gain=1.0,
+                amplitude=0,
+                quadrature_factor=0,
                 bandwidth=5e3,
                 frequency=1e5,
                 output_signal='output_direct')
@@ -187,6 +190,8 @@ class TestClass(TestPyrpl):
         self.iq.setup(input=self.asg,
                       acbandwidth=500,
                       gain=1.0,
+                      amplitude=0,
+                      quadrature_factor=0,
                       bandwidth=5e4,
                       frequency=1e6,
                       output_signal='output_direct')
@@ -199,6 +204,7 @@ class TestClass(TestPyrpl):
                phase=0,  # nominal phase at center frequency (
                # propagation phase lags not accounted for)
                gain=1.0,  # peak gain = +0 dB
+               quadrature_factor=0,
                output_direct='off',
                output_signal='output_direct',
                input=self.asg)  # plug filter input to na output...

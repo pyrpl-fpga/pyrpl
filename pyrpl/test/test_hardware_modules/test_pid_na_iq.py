@@ -6,36 +6,42 @@ from pyrpl.test.test_base import TestPyrpl
 from pyrpl.async_utils import sleep
 import pytest
 
+@pytest.fixture(autouse=True, scope="class")
+def setup_na(hardware_session):
+    pyrpl = hardware_session.pyrpl
+    r = hardware_session.rp
 
+    # shortcuts
+    na = pyrpl.networkanalyzer
+    na.auto_bandwidth = False
+    na.auto_amplitude = False
+    # set na loglevel to DEBUG
+    loglevel = na._logger.getEffectiveLevel()
+    na._logger.setLevel(10)
+
+    yield  # Test runs here
+
+    na.stop()
+    # set na loglevel to previous one
+    na._logger.setLevel(loglevel)
+    for pid in pyrpl.pids.all_modules:
+        pid.input = 'off'
+        pid.p = 0   
+        pid.i = 0
+        pid.ival = 0
+        pid.output_direct = 'off'
+        pid.setpoint = 0
+        pid.inputfilter = 0
+        pid.pause_gains = 'off'
+        pid.paused = False
+        pid.differential_mode_enabled = False
 class TestPidNaIq(TestPyrpl):
-    @pytest.fixture(autouse=True)
-    def setup_na(self):
-        self.extradelay = 0.6 * 8e-9  # no idea where this delay comes from
-        # shortcuts
-        self.pyrpl.na = self.pyrpl.networkanalyzer
-        self.na = self.pyrpl.networkanalyzer
-        self.na.auto_bandwidth = False
-        self.na.auto_amplitude = False
-        # set na loglevel to DEBUG
-        self.loglevel = self.na._logger.getEffectiveLevel()
-        self.na._logger.setLevel(10)
 
-        yield  # Test runs here
+    extradelay = 0.6 * 8e-9  # no idea where this delay comes from
 
-        self.na.stop()
-        # set na loglevel to previous one
-        self.na._logger.setLevel(self.loglevel)
-        for pid in self.pyrpl.pids.all_modules:
-            pid.input = 'off'
-            pid.p = 0   
-            pid.i = 0
-            pid.ival = 0
-            pid.output_direct = 'off'
-            pid.setpoint = 0
-            pid.inputfilter = 0
-            pid.pause_gains = 'off'
-            pid.paused = False
-            pid.differential_mode_enabled = False
+    @property
+    def na(self):
+        return self.pyrpl.networkanalyzer
             
     def test_na(self):
         error_threshold = 0.03  # (relative error, dominated by phase error)
@@ -45,7 +51,7 @@ class TestPidNaIq(TestPyrpl):
             r = self.r
         extradelay = self.extradelay
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for iq in [r.iq0, r.iq1, r.iq2]:
             na._iq = iq
             na.setup(start_freq=3000,
@@ -85,7 +91,7 @@ class TestPidNaIq(TestPyrpl):
         error_threshold = 0.3 # 0.15 is ok for all but -3 MHz filter
         # testing one pid is enough
         pid = self.pyrpl.rp.pid0
-        na = self.pyrpl.na
+        na = self.na
         na.setup(start_freq=10e3,
                  stop_freq=5e6,
                  # points 101->11, it was taking ages
@@ -154,7 +160,7 @@ class TestPidNaIq(TestPyrpl):
         plotdata = []
 
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for pid in self.pyrpl.pids.all_modules:
             na.setup(start_freq=1000,
                      stop_freq=1000e3,
@@ -207,7 +213,7 @@ class TestPidNaIq(TestPyrpl):
         plotdata = []
 
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for pid in self.pyrpl.pids.all_modules:
             na.setup(start_freq=1000,
                      stop_freq=1000e3,
@@ -268,7 +274,7 @@ class TestPidNaIq(TestPyrpl):
         plotdata = []
 
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for pid in self.pyrpl.pids.all_modules:
             na.setup(start_freq=1000,
                      stop_freq=1000e3,

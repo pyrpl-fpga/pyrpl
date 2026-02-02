@@ -6,7 +6,7 @@ import numpy as np
 from ..async_utils import sleep, sleep_async, ensure_future
 from .test_base import TestPyrpl
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def setup_fake_system_once(hardware_session):
     """
     Setup fake system once for the entire test class.
@@ -22,10 +22,15 @@ def setup_fake_system_once(hardware_session):
     if pyrpl.lockbox.inputs is not None:
         pyrpl.lockbox._clear # make sure no old lockbox config exists
     pid = r.pid1
+    pid.free() # make sure pid is not used by another module
+
+    print("Setting up fake system for TestLockbox...")
     pyrpl.lockbox.classname = 'Interferometer'
     lockbox = pyrpl.lockbox
     pid.i = -1
     pid.p = -1
+    pid.paused = False
+    pid.differential_mode_enabled = False
     pid.input = lockbox.outputs.piezo
     lockbox.inputs.port1.input_signal = pid
     output = lockbox.outputs.values()[0]
@@ -47,9 +52,16 @@ def setup_fake_system_once(hardware_session):
     yield
     
     # Cleanup after all tests (if needed)
+    print("Tearing down fake system for TestLockbox...")
     lockbox.auto_lock = False
     lockbox.unlock()
+    for key in lockbox.outputs.keys():
+        lockbox.outputs[key].pid.free()
+        lockbox.outputs[key].pid.output_direct = 'off'
+    lockbox.asg.free()
+
     lockbox._clear()
+
     pid.p = 0
     pid.i = 0
     pid.ival = 0

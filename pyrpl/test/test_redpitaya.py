@@ -26,4 +26,5 @@ class TestRedpitaya(object):
         assert (self.r is not None)
 
     def test_connect(self):
+        self.r.hk.led = 0
         assert self.r.hk.led == 0
