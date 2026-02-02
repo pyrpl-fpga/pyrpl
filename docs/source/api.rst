@@ -23,7 +23,7 @@ console to the directory, for example:
 
 .. code:: python
 
-    cd c:\lneuhaus\github\pyrpl
+    cd c:\pyrpl-fpga\github\pyrpl
 
 Now retry to load the module. It should really work now.
 

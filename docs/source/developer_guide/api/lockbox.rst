@@ -10,7 +10,7 @@ of the lockbox API with custom behaviour.
 The general way to implement a custom lockbox class is to copy the file
 "pyrpl/software\_modules/lockbox/models/custom\_lockbox\_example.py"
 into the folder
-"`:math:`PYRPL_USER_DIR` <https://github.com/lneuhaus/pyrpl/wiki/Installation:-Directory-for-user-data-%22PYRPL_USER_DIR%22>`__/lockbox"
+"`:math:`PYRPL_USER_DIR` <https://github.com/pyrpl-fpga/pyrpl/wiki/Installation:-Directory-for-user-data-%22PYRPL_USER_DIR%22>`__/lockbox"
 and to start modifying it. PyRPL will automatically search this
 directory for classes that have Lockbox as one base class and allow to
 select these by setting the corresponding class name in the property

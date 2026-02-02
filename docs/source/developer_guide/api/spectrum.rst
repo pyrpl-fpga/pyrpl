@@ -100,7 +100,7 @@ We deduce using (1), that the estimated spectrum is:
 Y[r] = 1/2 (W[r - m] + W[r - (N-m)])
 
 With the discrete fourier transform convention used here, we need to pay attention that 
-the DC-component is for r=0, and the “negative frequencies” are actually located in the second 
+the DC-component is for r=0, and the ï¿½negative frequenciesï¿½ are actually located in the second 
 half of the interval [N/2, N]. If we take the single sided convention where the negative frequency 
 side is simply ignored, the correct normalization in terms of V_pk (for which the maximum of the 
 spectrum corresponds to the amplitude of the sinusoid) is the one for where max(W[r]) = 2.
@@ -323,13 +323,13 @@ elliptical filter for maximum steepness):
     plt.axis([min(w/ww), max(w/ww), min(h_abs)-5, max(h_abs)+5])
     plt.legend()
     plt.show()
-    plt.savefig('c://lneuhaus//github//pyrpl//doc//specan_filter.png',DPI=300)
+    plt.savefig('c://pyrpl-fpga//github//pyrpl//doc//specan_filter.png',DPI=300)
 
     print "Final biquad coefficients [b0, b1, b2, a0, a1, a2]:"
     for biquad in signal.zpk2sos(z, p, k):
         print biquad
 
-.. figure:: https://github.com/lneuhaus/pyrpl/blob/master/doc/specan_filter.png
+.. figure:: https://github.com/pyrpl-fpga/pyrpl/blob/master/doc/specan_filter.png
    :alt: Resulting filter
 
    Resulting filter

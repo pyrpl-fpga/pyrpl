@@ -76,10 +76,10 @@ Option 2: from GitHub using setuptools (beta version)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Download the code manually from
-https://github.com/lneuhaus/pyrpl/archive/master.zip and unzip it or get
+https://github.com/pyrpl-fpga/pyrpl/archive/master.zip and unzip it or get
 it directly from git by typing
 
-:math:`\texttt{git clone https://github.com/lneuhaus/pyrpl.git YOUR_DESTINATIONFOLDER}`
+:math:`\texttt{git clone https://github.com/pyrpl-fpga/pyrpl.git YOUR_DESTINATIONFOLDER}`
 
 In a command line shell, navigate into your new local pyrplockbox
 directory and execute
@@ -280,7 +280,7 @@ console to the directory, for example:
 
 .. code:: ipython3
 
-    cd c:\lneuhaus\github\pyrpl
+    cd c:\pyrpl-fpga\github\pyrpl
 
 Now retry to load the module. It should really work now.
 

@@ -38,9 +38,9 @@ What is PyRPL?
    can be easily :ref:`downloaded <installing_pyrpl>` and run without any installation work.
 
 
-.. admonition:: PyRPL's code is entirely public `on github <https://www.github.com/lneuhaus/pyrpl>`_ and can be customized,
+.. admonition:: PyRPL's code is entirely public `on github <https://www.github.com/pyrpl-fpga/pyrpl>`_ and can be customized,
 
-   including the `Verilog source code for the FPGA <https://github.com/lneuhaus/pyrpl/tree/master/pyrpl/fpga>`_ which is based on the official Red Pitaya software version 0.95.
+   including the `Verilog source code for the FPGA <https://github.com/pyrpl-fpga/pyrpl/tree/master/pyrpl/fpga>`_ which is based on the official Red Pitaya software version 0.95.
 
 
 .. admonition:: PyRPL is already used in many research groups all over the world.
@@ -50,7 +50,7 @@ What is PyRPL?
 
 .. admonition:: PyRPL is free software and comes with the `MIT License <https://opensource.org/licenses/MIT>`_.
 
-    Read the `license <https://github.com/lneuhaus/pyrpl/blob/master/LICENSE>`_ for more details!
+    Read the `license <https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE>`_ for more details!
 
 
 
@@ -189,7 +189,7 @@ High-level API example
 .. |Download pyrpl| image:: https://img.shields.io/sourceforge/dt/pyrpl.svg
    :target: https://sourceforge.net/projects/pyrpl/files/
 .. |join chat on gitter| image:: https://badges.gitter.im/JoinChat.svg
-   :target: https://gitter.im/lneuhaus/pyrpl
+   :target: https://gitter.im/pyrpl-fpga/pyrpl
 .. |License| image:: https://img.shields.io/pypi/l/pyrpl.svg
    :target: https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE
 

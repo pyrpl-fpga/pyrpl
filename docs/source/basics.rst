@@ -107,7 +107,7 @@ Connecting the **output_signal** of submodule **i** to the **input_signal** of s
 Similarly, a second, possibly different output is allowed for each module (except for scope and trigger): **output_direct**.
 This output is added to the analog output 1 and/or 2 depending on the value of the register **output_select**.
 
-The routing of digital signals within the different FPGA modules is handled by a DSP multiplexer coded in VHDL in the file `red_pitaya_dsp.v <https://github.com/lneuhaus/pyrpl/blob/master/pyrpl/fpga/rtl/red_pitaya_dsp.v>`_.
+The routing of digital signals within the different FPGA modules is handled by a DSP multiplexer coded in VHDL in the file `red_pitaya_dsp.v <https://github.com/pyrpl-fpga/pyrpl/blob/master/pyrpl/fpga/rtl/red_pitaya_dsp.v>`_.
 An illustration of the DSP module's principle is provided below:
 
 .. image:: DSP.jpg
@@ -118,7 +118,7 @@ An illustration of the DSP module's principle is provided below:
 Monitor Server
 ---------------
 
-The monitor server is a lightweight application written in C (the source code is in the file `monitor_server.c <https://github.com/lneuhaus/pyrpl/blob/master/pyrpl/monitor_server/monitor_server.c>`_) and running on the redpitaya OS to allow remote writing and monitoring of FPGA registers.
+The monitor server is a lightweight application written in C (the source code is in the file `monitor_server.c <https://github.com/pyrpl-fpga/pyrpl/blob/master/pyrpl/monitor_server/monitor_server.c>`_) and running on the redpitaya OS to allow remote writing and monitoring of FPGA registers.
 
 The program is launched on the redpitaya with (automatically done at startup)::
 
@@ -253,7 +253,7 @@ When the module widget is created, sub-widgets are automatically created to mani
 Example: definition of the Pid class
 ++++++++++++++++++++++++++++++++++++++
 
-The following is extracted from `pid.py <https://github.com/lneuhaus/pyrpl/blob/master/pyrpl/hardware_modules/pid.py>`_
+The following is extracted from `pid.py <https://github.com/pyrpl-fpga/pyrpl/blob/master/pyrpl/hardware_modules/pid.py>`_
 
 .. code-block:: python
 
