@@ -1,5 +1,9 @@
 name: CI/CD Pipeline
 
+concurrency:
+  group: redpitaya-hardware
+  cancel-in-progress: false
+
 on:
   push:
     branches: [ main, master, develop ]
@@ -133,7 +137,7 @@ jobs:
       run: |
         # use a custom global configfile adapted to the hardware for unit tests
         cp ./remote_global_config.yml ./pyrpl/config/global_config.yml
-        python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml
+        python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml --reruns 1 --reruns-delay 5
         || \
         python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml --last-failed
       env:
@@ -199,12 +203,6 @@ jobs:
       with:
         name: pyrpl-linux-binary
         path: pyrpl-linux-${{ github.ref_name }}
-
-    # Uncomment when you have SourceForge credentials
-    # - name: Deploy to SourceForge
-    #   if: github.event_name == 'push'
-    #   run: |
-    #     python .deploy_to_sourceforge.py pyrpl-linux-${{ github.ref_name }}
 
   # Build Windows binary
   build-windows:
@@ -296,12 +294,6 @@ jobs:
       with:
         name: pyrpl-macos-binary
         path: pyrpl-macos-${{ github.ref_name }}
-
-    # Uncomment when you have SourceForge credentials
-    # - name: Deploy to SourceForge
-    #   if: github.event_name == 'push'
-    #   run: |
-    #     python .deploy_to_sourceforge.py pyrpl-macos-${{ github.ref_name }}
 
   # Build and publish Python package
   # build-package:
