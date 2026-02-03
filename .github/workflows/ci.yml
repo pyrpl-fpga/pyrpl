@@ -102,7 +102,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install coverage pytest pytest-cov pytest-notebook pytest-subtests
+        pip install coverage pytest pytest-cov pytest-notebook pytest-subtests pytest-rerunfailures
 
     - name: Install package
       run: |
@@ -138,8 +138,6 @@ jobs:
         # use a custom global configfile adapted to the hardware for unit tests
         cp ./remote_global_config.yml ./pyrpl/config/global_config.yml
         python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml --reruns 1 --reruns-delay 5
-        || \
-        python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml --last-failed
       env:
         QT_QPA_PLATFORM: offscreen
         REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
