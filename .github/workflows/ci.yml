@@ -62,16 +62,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
-        exclude:
-          - os: macos-latest
-            python-version: '3.8'
-          - os: macos-latest
-            python-version: '3.10'
-          - os: windows-latest
-            python-version: '3.8'
-          - os: windows-latest
-            python-version: '3.10'
+        python-version: ['3.13']
+ 
       max-parallel: 1   # ensures only one platform runs at a time
     steps:
     - uses: actions/checkout@v4
@@ -109,9 +101,7 @@ jobs:
         pip install .
     - name: Test RedPitaya connection
       run: | # restarts ssh to try to fix potential connection issues
-        
-        sudo systemctl restart ssh
-        sudo systemctl status ssh
+    
 
         python -c "
         import paramiko

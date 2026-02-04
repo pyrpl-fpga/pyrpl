@@ -14,6 +14,9 @@ class TestOwnership(TestPyrpl):
         self.pyrpl.networkanalyzer.iq.free()
         # otherwise not a single iq is left for test
 
+        self.pyrpl.asg0.free()
+        # otherwise not a single asg is left for test
+
         for module in self.pyrpl.modules:
             if isinstance(module, ModuleManager):
                 with module.pop("foo") as mod:
