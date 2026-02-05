@@ -21,7 +21,7 @@ on:
       build_windows:
         description: "Build Windows binary"
         type: boolean
-        default: false
+        default: true
 
       publish_release:
         description: "Publish binaries to GitHub Release"
