@@ -104,8 +104,7 @@ class TestPidNaIq(TestPyrpl):
                  output_direct='off',
                  acbandwidth=0,
                  logscale=True,
-                 paused=False,
-                 differential_mode_enabled=False
+                 paused=False
                  )
 
         # setup pid: input is the network analyzer output.
