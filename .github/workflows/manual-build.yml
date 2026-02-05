@@ -98,7 +98,7 @@ jobs:
     - name: Build macOS universal binary
       run: |
         export ARCHFLAGS="-arch x86_64 -arch arm64"
-        pyinstaller --target-arch universal2 pyrpl.spec
+        pyinstaller pyrpl.spec
         mv dist/pyrpl pyrpl-macos-${{ inputs.ref }}
         chmod +x pyrpl-macos-${{ inputs.ref }}
 
