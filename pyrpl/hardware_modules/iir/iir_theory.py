@@ -23,11 +23,6 @@ from ...errors import ExpectedPyrplError
 
 logger = logging.getLogger(name=__name__)
 
-# this is not strictly needed
-try:
-    import matplotlib.pyplot as plt
-except:
-    pass
 
 def freqz_numpy(*args, dt=8e-9, worN=None):
     """
@@ -304,6 +299,7 @@ def bodeplot(data, xlog=True):
     figure:
     """
     try:
+        import matplotlib.pyplot as plt
         ax1 = plt.subplot(211)
     except:
         raise ExpectedPyrplError("No installation of matplotlib found. "
