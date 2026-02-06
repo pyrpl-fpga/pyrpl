@@ -111,6 +111,10 @@ jobs:
       - name: Verify architecture
         run: |
           file pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
+      - uses: actions/upload-artifact@v4
+        with:
+            name: pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
+            path: pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
 
   build-windows:
     if: inputs.build_windows
