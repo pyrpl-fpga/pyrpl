@@ -60,11 +60,14 @@ def freqz_numpy(*args, dt=8e-9, worN=None):
     if isinstance(args[0], tuple) and len(args[0]) == 3:
         # ZPK form
         (z, p, k), w = args
+        z = np.atleast_1d(z)
+        p = np.atleast_1d(p)
         w = np.asarray(w, dtype=np.float64)
-        jw = np.exp(1j * w * dt)
+        jw = np.exp(-1j * w * dt)
 
-        numerator = np.prod(jw[:, None] - z[None, :], axis=1) if len(z) > 0 else np.ones_like(jw)
-        denominator = np.prod(jw[:, None] - p[None, :], axis=1) if len(p) > 0 else np.ones_like(jw)
+        numerator = np.prod(1.0 - z[None, :] * jw[:, None], axis=1) if z.size else np.ones(len(jw))
+        denominator = np.prod(1.0 - p[None, :] * jw[:, None], axis=1) if p.size else np.ones(len(jw))
+
         return k * numerator / denominator
 
     else:
@@ -78,7 +81,7 @@ def freqz_numpy(*args, dt=8e-9, worN=None):
         else:
             w = np.array(worN)
 
-        ejw = np.exp(1j * w[:, None] * np.arange(max(len(b), len(a))))
+        ejw = np.exp(-1j * w[:, None] * np.arange(max(len(b), len(a))))
         b_poly = np.sum(b * ejw[:, :len(b)], axis=1)
         a_poly = np.sum(a * ejw[:, :len(a)], axis=1)
         h = b_poly / a_poly
@@ -949,7 +952,7 @@ class IirFilter(object):
                 (self.frequencies, self.tf_partialfraction(),
                  'partialfraction'),
                 (self.frequencies, self.tf_discrete(), 'discrete'),
-                (self.frequencies, self.tf_coefficients(),
+                (self.frequencies, self.tf_coefficients_numpy(),
                     'coefficients'),
                 (self.frequencies, self.tf_rounded(), 'rounded'),
                 #(self.frequencies, self.tf_delay(), 'rounded+delay'),
@@ -1085,19 +1088,9 @@ class IirFilter(object):
             b = sos[:3]
             a = sos[3:]
 
-            # convert to zeros, poles, gain manually
-            # avoid division by zero
-            if len(b) > 0:
-                z = np.roots(b)
-            else:
-                z = np.array([], dtype=np.complex128)
-            if len(a) > 0:
-                p = np.roots(a)
-            else:
-                p = np.array([], dtype=np.complex128)
-            k = b[0] if len(b) > 0 else 1.0
-
-            hh = freqz_numpy((z, p, k), frequencies * 2 * np.pi, dt=self.dt)
+            # evaluate directly from TF coefficients (THIS MATCHES FPGA)
+            w = frequencies * 2 * np.pi * self.dt * self.loops
+            _, hh = freqz_numpy(b, a, worN=w)
 
             if delay:
                 hh *= delay_per_cycle ** (i + 1)
@@ -1131,7 +1124,7 @@ class IirFilter(object):
         -------
         np.array(..., dtype=complex)
         """
-        return self.tf_coefficients(frequencies=frequencies,
+        return self.tf_coefficients_numpy(frequencies=frequencies,
                                     coefficients=self.coefficients_rounded,
                                     delay=delay)
 
