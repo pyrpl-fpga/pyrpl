@@ -45,14 +45,6 @@ import concurrent.futures
 
 logger = logging.getLogger(name=__name__)
 
-# enable ipython QtGui support if needed
-try:
-    from IPython import get_ipython
-
-    IPYTHON = get_ipython()
-    IPYTHON.run_line_magic("gui", "qt")
-except BaseException as e:
-    logger.debug('Could not enable IPython gui support: %s.' % e)
 
 APP = QtWidgets.QApplication.instance()
 if APP is None:
@@ -69,22 +61,15 @@ FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
 FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
-INTERACTIVE = True  # True if we are in an interactive IPython session
+from pyrpl_utils import isnotebook 
 
-try:
-    shell = get_ipython().__class__.__name__
-    if shell == 'ZMQInteractiveShell':
-        msg = 'async_utils: Jupyter notebook or qtconsole'
-    elif shell == 'TerminalInteractiveShell':
-        msg = 'async_utils: Terminal running IPython'
-    else:
-        INTERACTIVE = False
-        msg = 'async_utils: # Other type (?)'
-except NameError:
-    INTERACTIVE = False
-    msg = 'async_utils: Probably standard Python interpreter'
+INTERACTIVE = isnotebook()  # True if we are in an interactive IPython session
 
-logger.debug(msg)
+if INTERACTIVE:
+    from IPython import get_ipython
+
+    IPYTHON = get_ipython()
+    IPYTHON.run_line_magic("gui", "qt")
 
 
 async def sleep_async(delay, result=None):
