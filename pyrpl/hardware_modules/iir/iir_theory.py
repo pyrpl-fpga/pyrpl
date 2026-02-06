@@ -17,61 +17,132 @@
 ###############################################################################
 
 
-import scipy.signal as sig
 import numpy as np
 import logging
 from ...errors import ExpectedPyrplError
 
 logger = logging.getLogger(name=__name__)
 
-# this is not strictly needed
-try:
-    import matplotlib.pyplot as plt
-except:
-    pass
 
-# this one is essentially a copy-paste from scipy 18 for being compatible with
-# lower versions of scipy
-def sos2zpk(sos):
+def freqz_numpy(*args, dt=8e-9, worN=None):
     """
-    Return zeros, poles, and gain of a series of second-order sections
+    Compute the frequency response of a system (ZPK or TF) using NumPy.
+
+    Usage:
+    --------
+    # ZPK form
+    h = freqz_numpy((zeros, poles, gain), w, dt=dt)
+
+    # TF coefficients form
+    w, h = freqz_numpy(b, a=1, worN=512)
 
     Parameters
     ----------
-    sos : array_like
-        Array of second-order filter coefficients, must have shape
-        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
-        specification.
+    args : tuple
+        - ZPK: (zeros, poles, gain), w
+        - TF: b, a=1, worN
+    dt : float
+        Sampling period for ZPK form
+    worN : int or array
+        Number of points or array of frequencies (for TF form)
+
+    Returns
+    -------
+    ZPK: h
+    TF: w, h
+    """
+    # detect form
+    if isinstance(args[0], tuple) and len(args[0]) == 3:
+        # ZPK form
+        (z, p, k), w = args
+        z = np.atleast_1d(z)
+        p = np.atleast_1d(p)
+        w = np.asarray(w, dtype=np.float64)
+        jw = np.exp(-1j * w * dt)
+
+        numerator = np.prod(1.0 - z[None, :] * jw[:, None], axis=1) if z.size else np.ones(len(jw))
+        denominator = np.prod(1.0 - p[None, :] * jw[:, None], axis=1) if p.size else np.ones(len(jw))
+
+        return k * numerator / denominator
+
+    else:
+        # TF form
+        b = np.atleast_1d(args[0])
+        a = np.atleast_1d(args[1]) if len(args) > 1 else np.array([1.])
+        if worN is None:
+            worN = 512
+        if np.isscalar(worN):
+            w = np.linspace(0, np.pi, worN, endpoint=False)
+        else:
+            w = np.array(worN)
+
+        ejw = np.exp(-1j * w[:, None] * np.arange(max(len(b), len(a))))
+        b_poly = np.sum(b * ejw[:, :len(b)], axis=1)
+        a_poly = np.sum(a * ejw[:, :len(a)], axis=1)
+        h = b_poly / a_poly
+        return w, h
+
+
+def tf2zpk_numpy(b, a):
+    """
+    NumPy replacement for scipy.signal.tf2zpk
+
+    Parameters
+    ----------
+    b : array-like
+        Numerator coefficients
+    a : array-like
+        Denominator coefficients
 
     Returns
     -------
     z : ndarray
-        Zeros of the transfer function.
+        Zeros of the transfer function
     p : ndarray
-        Poles of the transfer function.
+        Poles of the transfer function
     k : float
-        System gain.
+        Gain (leading coefficient of numerator divided by leading coefficient of denominator)
+    """
+    b = np.atleast_1d(b)
+    a = np.atleast_1d(a)
 
-    Notes
-    -----
-    .. versionadded:: 0.16.0
+    # remove leading zeros
+    while len(b) > 0 and b[0] == 0:
+        b = b[1:]
+    while len(a) > 0 and a[0] == 0:
+        a = a[1:]
+
+    if len(b) == 0:
+        z = np.array([], dtype=np.complex128)
+        k = 0.0
+    else:
+        z = np.roots(b)
+        k = b[0] / a[0] if len(a) > 0 else b[0]
+
+    p = np.roots(a) if len(a) > 0 else np.array([], dtype=np.complex128)
+    return z, p, k
+
+
+# this one is essentially a copy-paste from scipy 18 for being compatible with
+# lower versions of scipy
+def sos2zpk_numpy(sos):
+    """
+    Return zeros, poles, and gain of a series of second-order sections
+    using only NumPy
     """
     sos = np.asarray(sos)
     n_sections = sos.shape[0]
-    z = np.empty(n_sections*2, np.complex128)
-    p = np.empty(n_sections*2, np.complex128)
-    k = 1.
+    z = []
+    p = []
+    k = 1.0
     for section in range(n_sections):
         b, a = sos[section, :3], sos[section, 3:]
-        # remove leading zeros from numerator to avoid badcoefficient warning in scipy.signal.normaize
-        while b[0] == 0:
-            b = b[1:]
-        # convert to transfer function
-        zpk = sig.tf2zpk(b, a)
-        z[2*section:2*(section+1)] = zpk[0]
-        p[2*section:2*(section+1)] = zpk[1]
-        k *= zpk[2]
-    return z, p, k
+        zz, pp, kk = tf2zpk_numpy(b, a)
+        z.extend(zz)
+        p.extend(pp)
+        k *= kk
+    return np.array(z, dtype=np.complex128), np.array(p, dtype=np.complex128), k
+
 
 # functions of general use
 def freqs(sys, w):
@@ -116,31 +187,6 @@ def freqs_rp(r, p, c, w):
         h += freqs(([], [p[i]], r[i]), w)
     return h
 
-
-# this one is not tested, so probably not working satisfactorily
-def freqz_(sys, w, dt=8e-9):
-    """
-    This function computes the frequency response of a zpk system at an
-    array of frequencies.
-
-    It loosely mimicks 'scipy.signal.frequresp'.
-
-    Parameters
-    ----------
-    system: (zeros, poles, k)
-        zeros and poles both in rad/s, k is the actual coefficient, not DC gain
-    w: np.array
-        frequencies in rad/s
-    dt: sampling time
-
-    Returns
-    -------
-    np.array(..., dtype=complex) with the response
-    """
-    z, p, k = sys
-    b, a = sig.zpk2tf(z, p, k)
-    _, h = sig.freqz(b, a, worN=w*dt)
-    return h
 
 def residues(z, p, k):
     """ this function uses the residue method (Heaviside Cover-up method)
@@ -253,6 +299,7 @@ def bodeplot(data, xlog=True):
     figure:
     """
     try:
+        import matplotlib.pyplot as plt
         ax1 = plt.subplot(211)
     except:
         raise ExpectedPyrplError("No installation of matplotlib found. "
@@ -823,7 +870,7 @@ class IirFilter(object):
                 ranks.append(0)
             else:
 
-                z, p, k = sos2zpk([c])
+                z, p, k = sos2zpk_numpy([c])
                 # compute something proportional to the frequency of the pole
                 ppp = [np.abs(np.log(pp)) for pp in p if pp != 0]
                 if not ppp:
@@ -901,7 +948,7 @@ class IirFilter(object):
                 (self.frequencies, self.tf_partialfraction(),
                  'partialfraction'),
                 (self.frequencies, self.tf_discrete(), 'discrete'),
-                (self.frequencies, self.tf_coefficients(),
+                (self.frequencies, self.tf_coefficients_numpy(),
                     'coefficients'),
                 (self.frequencies, self.tf_rounded(), 'rounded'),
                 #(self.frequencies, self.tf_delay(), 'rounded+delay'),
@@ -998,56 +1045,56 @@ class IirFilter(object):
         h = freqs_rp(rc, pc, cc, frequencies * 2 * np.pi)
         return h * self.tf_inputfilter(frequencies=frequencies)
 
-    def tf_coefficients(self, frequencies=None, coefficients=None,
-                                delay=False):
+    def tf_coefficients_numpy(self, frequencies=None, coefficients=None,
+                          delay=False):
         """
-        computes implemented transfer function - assuming no delay and
-        infinite precision (actually floating-point precision)
-        Returns the discrete transfer function realized by coefficients at
-        frequencies.
+        Compute implemented discrete transfer function using pure NumPy.
 
         Parameters
         ----------
-        coefficients: np.array
-            coefficients as returned from iir module
-
-        frequencies: np.array
-            frequencies to compute the transfer function for
-
-        dt: float
-            discrete sampling time (seconds)
-
-        zoh: bool
-            If true, zero-order hold implementation is assumed. Otherwise,
-            the delay is expected to depend on the index of biquad.
+        coefficients : list of np.array
+            Each element is a biquad coefficient array: [b0, b1, 0, 1, a1, a2]
+        frequencies : np.array
+            Frequencies to evaluate transfer function at
+        delay : bool
+            If True, apply progressive delay per biquad
 
         Returns
         -------
-        np.array(..., dtype=complex)
+        np.array : complex frequency response
         """
         if frequencies is None:
             frequencies = self.frequencies
         frequencies = np.asarray(frequencies, dtype=np.float64)
+
         if coefficients is None:
             fcoefficients = self.coefficients
         else:
             fcoefficients = coefficients
-        # discrete frequency
+
         w = frequencies * 2 * np.pi * self.dt * self.loops
-        # the higher stages have progressively more delay to the output
+
         if delay:
             delay_per_cycle = np.exp(-1j * self.dt * frequencies * 2 * np.pi)
+
         h = np.zeros(len(w), dtype=np.complex128)
+
         for i in range(len(fcoefficients)):
             sos = np.asarray(fcoefficients[i], dtype=np.float64)
-            # later we can use sig.sosfreqz (very recent function, dont want
-            #  to update scipy now)
-            ww, hh = sig.freqz(sos[:3], sos[3:], worN=np.asarray(w,
-                                                           dtype=np.float64))
+            b = sos[:3]
+            a = sos[3:]
+
+            # evaluate directly from TF coefficients (THIS MATCHES FPGA)
+            w = frequencies * 2 * np.pi * self.dt * self.loops
+            _, hh = freqz_numpy(b, a, worN=w)
+
             if delay:
                 hh *= delay_per_cycle ** (i + 1)
+
             h += hh
+
         return h
+
 
     def tf_rounded(self, frequencies=None, delay=False):
         """
@@ -1073,7 +1120,7 @@ class IirFilter(object):
         -------
         np.array(..., dtype=complex)
         """
-        return self.tf_coefficients(frequencies=frequencies,
+        return self.tf_coefficients_numpy(frequencies=frequencies,
                                     coefficients=self.coefficients_rounded,
                                     delay=delay)
 

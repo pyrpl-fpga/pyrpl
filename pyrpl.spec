@@ -30,34 +30,45 @@ a = Analysis(['pyrpl/__main__.py'],
              hiddenimports=['scipy._lib.messagestream', '_sysconfigdata_m_darwin_'],
              hookspath=[],
              runtime_hooks=[],
-             excludes=['pytest',
+             excludes=[
+                 'cupy',
+                 'cupy.cuda',
+                 'cupy_backends',
+                 'cupyx',
+                 'pytest',
+                 'numba',
              'doctest',
              'setuptools',
              'pandas',
              'pkg_resources',
              'IPython',
              'matplotlib',
-             'mpl_toolkits'],
+             'mpl_toolkits',
+             'scipy'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
 
-exe = EXE(pyz,
-          a.scripts,
-          a.binaries,
-          a.zipfiles,
-          a.datas,
-          name='pyrpl',
-          debug=False,
-          strip=True,
-          upx=True,
-          console=True )
+# One file exe type
 
-# Use this to see if any library is too big in the final exe
+# exe = EXE(pyz,
+#           a.scripts,
+#           a.binaries,
+#           a.zipfiles,
+#           a.datas,
+#           name='pyrpl_no_scipy',
+#           debug=False,
+#           strip=True,
+#           upx=True,
+#           console=True )
 
-""" exe = EXE(
+
+
+# one dir exe type
+
+exe = EXE(
     pyz,
     a.scripts,
     [],
@@ -77,6 +88,6 @@ coll = COLLECT(
     strip=True,
     upx=True,
     name='pyrpl'
-) """
+)
 
 

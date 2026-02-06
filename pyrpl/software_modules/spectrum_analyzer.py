@@ -112,8 +112,44 @@ from ..acquisition_module import AcquisitionModule
 from ..widgets.module_widgets import SpecAnWidget
 
 import sys
-import scipy.signal as sig
-import scipy.fftpack as fft
+# import scipy.signal as sig
+# import scipy.fftpack as fft
+
+def get_window_numpy(name, N, fftbins=False): # Remove heavy scipy module
+        if isinstance(name, tuple):
+            window_type, param = name
+            window_type = window_type.lower()
+        else:
+            window_type = name.lower()
+            
+            param = None
+
+        if window_type == 'blackman':
+            return np.blackman(N)
+        elif window_type in ['boxcar', 'rect']:
+            return np.ones(N)
+        elif window_type == 'hamming':
+            return np.hamming(N)
+        elif window_type == 'flattop':
+            # Approximation of flat-top window (like scipy.signal.windows.flattop)
+            a0, a1, a2, a3, a4 = 1, 1.93, 1.29, 0.388, 0.032
+            n = np.arange(N)
+            w = (a0
+                - a1*np.cos(2*np.pi*n/(N-1))
+                + a2*np.cos(4*np.pi*n/(N-1))
+                - a3*np.cos(6*np.pi*n/(N-1))
+                + a4*np.cos(8*np.pi*n/(N-1)))
+            return w
+        elif window_type == 'gaussian':
+            if param is None:
+                std = N/10  # default
+            else:
+                std = float(param)
+            n = np.arange(0, N) - (N-1)/2
+            w = np.exp(-0.5 * (n/std)**2)
+            return w
+        else:
+            raise ValueError(f"Window {name} not implemented without scipy.")
 
 
 # Some initial remarks about spectrum estimation:
@@ -394,15 +430,16 @@ class SpectrumAnalyzer(AcquisitionModule):
         """
         :return: filter window
         """
-        if self.window=='gaussian':
-            #  a tuple with the std is needed for Gaussian window
+        if self.window == 'gaussian':
+            # a tuple with the std is needed for Gaussian window
             window_name = ('gaussian', self.data_length/10)
         else:
             window_name = self.window
-        window = sig.get_window(window_name, self.data_length, fftbins=False)
+        window = get_window_numpy(window_name, self.data_length, fftbins=False)
         # empirical value for scaling flattop to sqrt(W)/V
-        window/=(np.sum(window)/2)
+        window /= (np.sum(window)/2)
         return window
+
 
     def _get_iq_data(self):
         """
@@ -457,7 +494,7 @@ class SpectrumAnalyzer(AcquisitionModule):
             return np.fft.rfftfreq(self.data_length*self.PADDING_FACTOR,
                                    self.sampling_time)
         else:
-            return self.center + fft.fftshift( fft.fftfreq(
+            return self.center + np.fft.fftshift( np.fft.fftfreq(
                                   self.data_length*self.PADDING_FACTOR,
                                   self.sampling_time)) #[self.useful_index()]
 
@@ -612,7 +649,7 @@ class SpectrumAnalyzer(AcquisitionModule):
             return res/abs(self.transfer_function(self.frequencies))**2
         else:
             # Realize the complex fft of iq data
-            res = fft.fftshift(fft.fft(iq_data,
+            res = np.fft.fftshift(np.fft.fft(iq_data,
                                         self.data_length*self.PADDING_FACTOR))
             # at some point we need to cache the tf for performance
             self._last_curve_raw = np.abs(res)**2 # for debugging purpose

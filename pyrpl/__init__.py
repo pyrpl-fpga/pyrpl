@@ -28,12 +28,16 @@ logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
 
 # enable ipython QtGui support if needed
-try:
+
+from pyrpl_utils import isnotebook 
+
+INTERACTIVE = isnotebook()  # True if we are in an interactive IPython session
+
+if INTERACTIVE:
     from IPython import get_ipython
+
     IPYTHON = get_ipython()
-    IPYTHON.run_line_magic("gui","qt")
-except BaseException as e:
-    logger.debug('Could not enable IPython gui support: %s.' % e)
+    IPYTHON.run_line_magic("gui", "qt")
 
 # get QApplication instance
 from qtpy import QtCore, QtWidgets
