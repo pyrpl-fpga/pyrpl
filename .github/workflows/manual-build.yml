@@ -81,7 +81,7 @@ jobs:
           - name: arm64
             runner: macos-14
           - name: x86_64
-            runner: macos-13
+            runner: macos-14
 
     runs-on: ${{ matrix.arch.runner }}
 
