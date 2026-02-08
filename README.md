@@ -1,15 +1,12 @@
-[<img src="http://pyrpl.readthedocs.io/en/latest/_static/logo.png" width="250" alt="PyRPL">](http://www.pyrpl.org/)
-
-[![GitHub Actions CI](https://github.com/lneuhaus/pyrpl/actions/workflows/ci.yml/badge.svg)](https://github.com/lneuhaus/pyrpl/actions)
-[![code coverage](https://codecov.io/github/lneuhaus/pyrpl/coverage.svg?branch=master "Code coverage")](https://codecov.io/gh/lneuhaus/pyrpl)
-[![Python versions on PyPI](https://img.shields.io/pypi/pyversions/pyrpl.svg)](https://pypi.python.org/pypi/pyrpl/)
-[![PyRPL version on PyPI](https://img.shields.io/pypi/v/pyrpl.svg "PyRPL on PyPI")](https://pypi.python.org/pypi/pyrpl/)
-[![Download pyrpl](https://img.shields.io/sourceforge/dt/pyrpl.svg)](https://sourceforge.net/projects/pyrpl/files/)
-[![Documentation Status](https://readthedocs.org/projects/pyrpl/badge/?version=latest)](http://pyrpl.readthedocs.io/en/latest/)
+[<img src="https://pyrpl-fpga.github.io/pyrpl/_static/logo.png" width="250" alt="PyRPL">](https://www.pyrpl.org/)
+[![GitHub Actions CI](https://github.com/pyrpl-fpga/pyrpl/actions/workflows/ci.yml/badge.svg)](https://github.com/pyrpl-fpga/pyrpl/actions)
+[![code coverage](https://codecov.io/github/pyrpl-fpga/pyrpl/coverage.svg?branch=master "Code coverage")](https://codecov.io/gh/pyrpl-fpga/pyrpl)
+[![Python versions](https://img.shields.io/badge/python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12%20|%203.13-blue.svg)](https://github.com/pyrpl-fpga/pyrpl)
+[![Documentation Status](https://img.shields.io/badge/docs-github%20pages-blue)](https://pyrpl-fpga.github.io/pyrpl/)
 [![join chat on gitter](https://badges.gitter.im/JoinChat.svg "Join chat on gitter")](https://gitter.im/pyrpl-fpga/pyrpl)
-[![License](https://img.shields.io/pypi/l/pyrpl.svg)](https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE)
-
-[![Download PyRPL](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/pyrpl/files/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE)
+[![GitHub downloads](https://img.shields.io/github/downloads/pyrpl-fpga/pyrpl/total)](https://github.com/pyrpl-fpga/pyrpl/releases/latest)
+[![GitHub release](https://img.shields.io/github/v/release/pyrpl-fpga/pyrpl)](https://github.com/pyrpl-fpga/pyrpl/releases/latest)
 
 PyRPL (Python RedPitaya Lockbox) turns your RedPitaya into a powerful DSP device, especially suitable as a digital lockbox and measurement device in quantum optics experiments.
 
