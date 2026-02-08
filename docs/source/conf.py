@@ -25,8 +25,8 @@ if os.environ.get('READTHEDOCS') == 'True':
         from unittest.mock import MagicMock, Mock
 
     # must mock PyQt in order to get autodoc import running
-    MOCK_MODULES = ['numpy', 'scipy', 'qtpy', 'pyqtgraph', 'pandas',
-                    'asyncio', 'qasync', 'scipy.signal', 'scipy.fftpack',
+    MOCK_MODULES = ['numpy', 'qtpy', 'pyqtgraph',
+                    'asyncio', 'qasync',
                     'paramiko', 'scp']
     sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 

@@ -8,7 +8,7 @@ dynamic = ["version"]   # <-- version comes from pyrpl/_version.py
 description = "DSP servo controller for quantum optics with the RedPitaya"
 readme = "README.md"
 authors = [
-  { name = "Leonhard Neuhaus", email = "neuhaus@lkb.upmc.fr" },
+    { name = "Leonhard Neuhaus", email = "neuhaus@lkb.upmc.fr" },
     { name = "Michaël Croquette", email = "michael.croquette@gmail.com" }
 ]
 license = { text = "MIT" }
@@ -19,6 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: C",
     "Natural Language :: English",
     "Development Status :: 4 - Beta",
@@ -27,24 +29,49 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics"
 ]
 
+# Core dependencies only
 dependencies = [
     "scp",
-    "scipy",
     "pyyaml",
-    "pandas",
     "pyqtgraph",
     "numpy>=1.9",
     "paramiko>=2.0",
     "PyQt5",
     "qtpy",
-    "nbconvert",
-    "jupyter-client",
     "qasync"
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-cov", "sphinx", "sphinx_bootstrap_theme"]
-test = ["pytest", "pytest-cov"]
+# Development dependencies (includes all test dependencies plus docs/build tools)
+dev = [
+    "pytest", 
+    "pytest-cov",
+    "pytest-notebook",
+    "pytest-subtests",
+    "matplotlib", 
+    "nbconvert",
+    "nbformat",
+    "pyinstaller", 
+    "sphinx", 
+    "sphinx_bootstrap_theme"
+]
+
+# Test-only dependencies
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-notebook",
+    "pytest-subtests",
+    "matplotlib",
+    "nbconvert",
+    "nbformat"
+]
+
+# IPython/Jupyter dependencies (optional)
+ipython = [
+    "ipython",
+    "ipykernel<6.30"
+]
 
 [tool.setuptools]
 packages = { find = {} }
@@ -85,4 +112,3 @@ source = ["pyrpl"]
 [tool.coverage.report]
 # Show lines that weren't covered
 show_missing = true
-

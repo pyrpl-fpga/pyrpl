@@ -1,27 +1,9 @@
+# Install core dependencies from pyproject.toml
+# Use: pip install .
+# Or for editable install: pip install -e .
 
-ipython
-matplotlib
-nbconvert
-nbformat
-# netifaces
-numpy
-pandas
-paramiko
-PyQt5
-pyqtgraph
-# pysine
-PyYAML
-qasync
-QtPy
-ruamel.base
-scipy
-scp
-qasync
-pytest
-pytest-cov
-pytest-notebook
-pytest-subtests
-nbconvert
-matplotlib
-nbformat
-ipykernel<6.30 
+# This file exists for compatibility but all dependencies are defined in pyproject.toml
+# Install with optional dependencies using:
+#   pip install -e .[test]     # for testing
+#   pip install -e .[ipython]  # for IPython/Jupyter
+#   pip install -e .[dev]      # for development (all dependencies)

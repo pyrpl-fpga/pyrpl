@@ -1,4 +1,6 @@
 # summarize_importtime_clean.py
+# python -X importtime -m pyrpl 2> import.log
+# needs to be run in a console before
 import re
 from collections import defaultdict
 

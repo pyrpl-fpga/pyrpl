@@ -5,7 +5,7 @@ import os, sys; sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 __author__ = "Leonhard Neuhaus <neuhaus@lkb.upmc.fr>"
 __license__ = "MIT License"
 
-# manage warnings of numpy and scipy
+# manage warnings of numpy
 import warnings
 import numpy as np
 # pyqtgraph is throwing a warning on ScatterPlotItem

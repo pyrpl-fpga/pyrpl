@@ -28,11 +28,11 @@ This will pull the most recent code from Github and install the needed module. I
 
 If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
 ```
-conda install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+conda install numpy paramiko nose pip pyqt qtpy pyqtgraph pyyaml scp qasync
 ```
 Check [this documentation section](http://pyrpl-fpga.github.io/pyrpl//en/latest/user_guide/installation/common_problems.html#anaconda-problems) for hints if you are unable to execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands
 ```
-conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+conda create -y -n pyrpl-env numpy paramiko nose pip pyqt qtpy pyqtgraph pyyaml scp qasync
 conda activate pyrpl-env
 ```
 
@@ -45,19 +45,19 @@ or [download and extract](https://github.com/pyrpl-fpga/pyrpl/archive/master.zip
 If you are using pip, you can just navigate to the pyrpl directory and run 
 
 ```
-pip install -r requirements.txt
+pip install -e .
 ```
 if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
 
 ```
-pip install -e .
+pip install .
 ```
 for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
 
 If you want to use conda (which I no longer recommend given that pip seems very robust now and much faster than conda), you can run :
 
 ```
-conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
 conda activate pyrpl-env
 ```
 This will create an new conda environment named "pyrpl-env" and install all the needed modules inside. 
@@ -68,17 +68,24 @@ conda env create -f environment_pyrpl.yml
 conda activate pyrpl-env
 ```
 
-if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
+## Installation with Optional Dependencies
 
-```
-pip install -e .
-```
-for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
+### For Testing
 
-You can also use the environment config file "environment_pyrpl.yml"
+```bash
+pip install -e .[test]
 ```
-conda env create -f environment_pyrpl.yml
-conda activate pyrpl-env
+
+### For IPython/Jupyter Support
+
+```bash
+pip install -e .[ipython]
+```
+
+### For Development (all dependencies)
+
+```bash
+pip install -e .[dev]
 ```
 
 
@@ -97,6 +104,7 @@ We collect a list of common problems on the [documentation website](http://pyrpl
 ## Unit test
 If you want to check whether PyRPL works correctly on your machine, navigate with a command line terminal into the pyrpl root directory and type the  following commands (by substituting the ip-address / hostname of your Red Pitaya, of course)
 ```
+pip install pytest pytest-cov matplotlib nbconvert
 set REDPITAYA_HOSTNAME=your_redpitaya_ip_address
 pytest
 ```
