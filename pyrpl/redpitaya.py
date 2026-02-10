@@ -51,7 +51,9 @@ defaultparameters = dict(
     delay=0.05,  # delay between ssh commands - console is too slow otherwise
     autostart=True,  # autostart the client?
     reloadserver=False,  # reinstall the server at startup if not necessary?
-    reloadfpga=True,  # reload the fpga binfile at startup?
+    reloadfpga='auto',  # reload the fpga binfile at startup? True/False/'auto'
+    filename='fpga/red_pitaya.bin',  # default name of the binfile for the fpga
+    dtbo_filename='fpga/red_pitaya.dtbo',  # default name of device tree file
     serverbinfilename='fpga.bit.bin',  # name of the binfile on the server and in the device tree overlay file
     serverdtbofilename='fpga.dtbo',  # name of the device tree overlay file on the server
     serverdirname = "//opt//pyrpl//",  # server directory for server app and bitfile
@@ -90,9 +92,9 @@ class RedPitaya(object):
             delay=0.05,  # delay between ssh commands - console is too slow otherwise
             autostart=True,  # autostart the client?
             reloadserver=False,  # reinstall the server at startup if not necessary?
-            reloadfpga=True,  # reload the fpga bitfile at startup?
-            filename='fpga//red_pitaya.bin',  # name of the binfile for the fpga, None is default file
-            dtbo_filename='fpga//red_pitaya.dtbo', # name of device tree file, None is the default
+            reloadfpga='auto',  # reload the fpga bitfile at startup? True/False/'auto'
+            filename='fpga/red_pitaya.bin',  # name of the binfile for the fpga
+            dtbo_filename='fpga/red_pitaya.dtbo', # name of device tree file
             serverbinfilename='fpga.bit.bin',  # name of the binfile on the server and in the device tree overlay file
             serverdtbofilename='fpga.dtbo',  # name of the device tree overlay file on the server
             serverdirname = "//opt//pyrpl//",  # server directory for server app and bitfile
@@ -203,7 +205,12 @@ class RedPitaya(object):
         # connect to the redpitaya board
         self.start_ssh()
         # start other stuff
-        if self.parameters['reloadfpga']:  # flash fpga
+        self.get_os_version()  # get os version for later use
+        
+        # Handle reloadfpga with auto option
+        should_reload_fpga = self._should_reload_fpga()
+        
+        if should_reload_fpga:  # flash fpga
             self._update_fpga()
         if self.parameters['reloadserver']:  # reinstall server app
             self.installserver()
@@ -212,6 +219,62 @@ class RedPitaya(object):
         self.logger.info('Successfully connected to Redpitaya with hostname '
                          '%s.' % self.ssh.hostname)
         self.parent = self
+
+    def _should_reload_fpga(self):
+        """
+        Determine if FPGA should be reloaded based on reloadfpga parameter.
+        
+        Returns:
+            bool: True if FPGA should be reloaded, False otherwise
+        """
+        reloadfpga = self.parameters['reloadfpga']
+        
+        # Handle True/False cases
+        if reloadfpga is True or reloadfpga == 'true' or reloadfpga == 'True':
+            self.logger.debug("reloadfpga=True: FPGA will be reloaded")
+            return True
+        elif reloadfpga is False or reloadfpga == 'false' or reloadfpga == 'False':
+            self.logger.debug("reloadfpga=False: FPGA will not be reloaded")
+        
+        # Handle 'auto' case
+        elif reloadfpga == 'auto':
+            self.logger.debug("reloadfpga='auto': checking if proper image is loaded")
+            if self._is_correct_fpga_image_loaded():
+                self.logger.info("Correct FPGA image detected, skipping reload")
+                return False
+            else:
+                self.logger.info("Correct FPGA image not detected, will reload")
+                return True
+        else:
+            self.logger.warning("Unknown reloadfpga value '%s', defaulting to auto", reloadfpga)
+            return self._should_reload_fpga() if self.parameters['reloadfpga'] == 'auto' else True
+
+    def _is_correct_fpga_image_loaded(self):
+        """
+        Check if the correct FPGA image is currently loaded.
+        
+        Returns:
+            bool: True if correct image is loaded, False otherwise
+        """
+        try:
+            # Check /tmp/loaded_fpga.inf to see what's currently loaded
+            self.ssh.ask() # clear buffer
+            result = self.ssh.ask('cat /tmp/loaded_fpga.inf')
+            self.logger.debug('Current FPGA image: %s', result)
+            
+            
+            # If it says 'pyrpl', we consider it correct
+            if 'pyrpl' in result.lower():
+                self.logger.debug("FPGA already loaded with PyRPL image")
+                return True
+            else:
+                self.logger.debug("FPGA loaded with different image: %s", result)
+                return False
+                
+        except Exception as e:
+            self.logger.warning("Could not determine FPGA image status: %s", e)
+            # If we can't check, assume we need to reload
+            return False
 
     def start_ssh(self, attempt=0):
         """
@@ -291,101 +354,141 @@ class RedPitaya(object):
                 sleep(self.parameters['delay'])
             else:
                 break
+    def get_os_version(self):
+        self.ssh.ask() # clear buffer
+        result = self.ssh.ask('cat /root/.version')
+        self.logger.debug('cat /root/.version: {}'.format(result))
+        
+        # Parse version from response
+        version = None
+        for line in result.strip().split('\r\n'):
+            line = line.strip()
+            if line and 'cat' not in line and '@' not in line:
+                version = line
+                break
+        if version is None:
+            self.logger.warning('Could not parse OS version from response: {}'.format(result))
+            version = 'unknown'
+        self.logger.debug('OS version: %s', version)
+        self.os_version = version
 
     def update_fpga(self, filename=None, dtbo_filename=None):
-        if self.parameters['reloadfpga']:
-            self.logger.error('FPGA update not completed please configure reloadfpga=False')
+        should_reload = self._should_reload_fpga()
+        if not should_reload:
+            self.logger.error('FPGA update not completed - reloadfpga is False or auto-detected as not needed')
             return
 
         self._update_fpga(filename, dtbo_filename)
 
     def _update_fpga(self, filename=None, dtbo_filename=None):
-        # For version 2.07 and higher to load a custom fpga use overlay.sh script
-        update_custom = ''
-        update_cmd = '//opt//redpitaya//sbin//overlay.sh pyrpl'
         source = None
-        if 'filename' in self.parameters:
-            source = self.parameters['filename']
-
-        if not filename is None:
-            # override
+        # Determine the base directory for finding files
+        base_dir = os.path.abspath(os.path.dirname(__file__))
+        self.logger.debug('Base directory: %s', base_dir)
+        
+        # Get the source file, with priority order:
+        # 1. Function parameter
+        # 2. Config parameter
+        # 3. Default file (fpga/red_pitaya.bin in the package)
+        if filename is not None:
             source = filename
+        elif 'filename' in self.parameters and self.parameters['filename']:
+            source = self.parameters['filename']
+        else:
+            # Use default from package
+            source = 'fpga/red_pitaya.bin'
+        
+        # If source is relative, make it absolute relative to base_dir
+        if not os.path.isabs(source):
+            source = os.path.join(base_dir, source)
+        
+        # Check if file exists
+        self.logger.debug('Checking for FPGA binfile at: %s', source)
+        if not os.path.isfile(source):
+            # List what files are available in the expected directory for debugging
+            expected_dir = os.path.dirname(source)
+            if os.path.isdir(expected_dir):
+                self.logger.error('FPGA binfile not found at: %s', source)
+                self.logger.error('Files in %s: %s', expected_dir, os.listdir(expected_dir))
+            else:
+                self.logger.error('FPGA binfile not found at: %s', source)
+                self.logger.error('Directory does not exist: %s', expected_dir)
+            
+            raise IOError("FPGA binfile not found",
+                "The fpga binfile was not found at: " + source + "\n"
+                "Please ensure the file exists or specify a different file with the filename parameter.")
+        
+        self.logger.info('Found FPGA binfile at: %s', source)
 
-        if not source is None and os.path.isfile(source):
-            update_custom = 'custom'
+        # Get the dtbo source file with same priority order
+        dtbo_source = None
+        if dtbo_filename is not None:
+            dtbo_source = dtbo_filename
+        elif 'dtbo_filename' in self.parameters and self.parameters['dtbo_filename']:
+            dtbo_source = self.parameters['dtbo_filename']
+        else:
+            # Use default dtbo from package (optional)
+            dtbo_source = 'fpga/red_pitaya.dtbo'
+        
+        # If dtbo_source is relative, make it absolute relative to base_dir
+        if dtbo_source is not None and not os.path.isabs(dtbo_source):
+            dtbo_source = os.path.join(base_dir, dtbo_source)
+        
+        # Check if dtbo file exists (it's optional, so just warn if missing)
+        if dtbo_source is not None:
+            if os.path.isfile(dtbo_source):
+                self.logger.info('Found DTBO file at: %s', dtbo_source)
+            else:
+                self.logger.warning('DTBO file not found at: %s (continuing without it)', dtbo_source)
+                dtbo_source = None
 
+        # Prepare the system
         self.end()
         sleep(self.parameters['delay'])
         self.ssh.ask('rw')
         sleep(self.parameters['delay'])
-        self.ssh.ask('mkdir ' + self.parameters['serverdirname'])
+        self.ssh.ask('mkdir -p ' + self.parameters['serverdirname'])
         sleep(self.parameters['delay'])
-        if source is None or not os.path.isfile(source):
-            if source is not None:
-                self.logger.warning('Desired binfile "%s" does not exist. Using default installation.',
-                                    source)
-
-            # prior to version 2.0 fpga default is to use the default pyrpl fpga
-            source = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'fpga', 'red_pitaya.bin')
-
-            # after version 2.0 fpga default is to use the RedPitaya pyrpl fpga
-            update_custom = ''
-
-        if not os.path.isfile(source):
-            raise IOError("Wrong filename",
-                "The fpga binfile was not found at the expected location. Try passing the arguments "
-                "filename=\"c://github//pyrpl//pyrpl//red_pitaya.bin\" adapted to your installation "
-                          "directory of pyrpl: current filename: " + source)
-
-        if 0 < len(update_custom):
-            dtbo_source = None
-            if 'dtbo_filename' in self.parameters:
-                dtbo_source = self.parameters['dtbo_filename']
-
-            if not dtbo_filename is None:
-                # override
-                dtbo_source = dtbo_filename
-
-            if not dtbo_source is None:
-                # send device tree
-                update_custom = '{} dtbo'.format(update_custom)
-                if not os.path.isfile(dtbo_source):
-                    raise IOError("Wrong device tree filename",
-                                  "The fpga device tree was not found at the expected location. Try passing the arguments "
-                                  "dtbo_filename=\"c://github//pyrpl//pyrpl//red_pitaya.dtbo\" adapted to your installation "
-                                  "directory of pyrpl: current filename: " + dtbo_source)
-                self.put_file(dtbo_source,
-                              os.path.join(self.parameters['serverdirname'],
-                                           self.parameters['serverdtbofilename']))
 
         # send binfile after all checks
-        self.put_file(source, os.path.join(self.parameters['serverdirname'],
-                                           self.parameters['serverbinfilename']))
-
-        # add appropriate parameters to the update command line
-        update_cmd = '{} {}'.format(update_cmd, update_custom)
-
+        bin_file_path = os.path.join(self.parameters['serverdirname'], self.parameters['serverbinfilename'])
+        self.put_file(source, bin_file_path)
+        
+        update_cmd = '/opt/redpitaya/sbin/overlay.sh pyrpl {}'.format(bin_file_path)
+        
+        # add dtbo file to command if it exists
+        if dtbo_source is not None:
+            dtbo_file_path = os.path.join(self.parameters['serverdirname'], self.parameters['serverdtbofilename'])
+            self.put_file(dtbo_source, dtbo_file_path)
+            update_cmd = '{} {}'.format(update_cmd, dtbo_file_path)
+        
         # kill all other servers to prevent reading while fpga is flashed
         self.end()
         self.ssh.ask('killall nginx')
         self.ssh.ask('systemctl stop redpitaya_nginx') # for 0.94 and higher
         sleep(3) # sleep after stopping service
-        result = self.ssh.ask('cat /root/.version')
-        self.logger.debug('cat /root/.version: {}'.format(result))
-        if result.find('2.') != -1:
+        
+        if self.os_version.find('2.') != -1:
             self.ssh.ask(update_cmd)
             sleep(1)
+            self.ssh.ask()
+            self.ssh.ask('cat /tmp/update_fpga.txt')  # check if fpga is loaded
         else:
+            # Old OS version - use xdevcfg directly
+            self.logger.info('Loading FPGA via xdevcfg (old OS version)')
             self.ssh.ask('cat '
                          + os.path.join(self.parameters['serverdirname'], self.parameters['serverbinfilename'])
                          + ' > //dev//xdevcfg')
 
         sleep(3.0) # wait a bit for the fpga to be programmed
         self.logger.debug('About to restart the redpitaya service')
+        
+        # Clean up temporary files in serverdirname
         self.ssh.ask('rm -f '+ os.path.join(
             self.parameters['serverdirname'], self.parameters['serverdtbofilename']))
         self.ssh.ask('rm -f '+ os.path.join(
             self.parameters['serverdirname'], self.parameters['serverbinfilename']))
+        
         self.ssh.ask("nginx -p //opt//www//")
         self.ssh.ask('systemctl start redpitaya_nginx')  # for 0.94 and higher
         sleep(self.parameters['delay'])
@@ -498,14 +601,12 @@ class RedPitaya(object):
 
     def start(self):
         if self.parameters['leds_off']:
-            result = self.ssh.ask('cat /root/.version')
-            self.logger.debug('cat /root/.version: {}'.format(result))
-            if result.find('2.') != -1: # for os < 0.94
-                self.switch_led(gpiopin=0, state=False)
-                self.switch_led(gpiopin=7, state=False)
-            else: # for os > 0.94
+            if self.os_version.find('2.') != -1: # for os < 0.94
                 self.ssh.ask('\x03')
                 self.ssh.ask('/opt/redpitaya/bin/led_control -y=Off -e=Off -r=Off')
+            else: # for os > 0.94
+                self.switch_led(gpiopin=0, state=False)
+                self.switch_led(gpiopin=7, state=False)
         self.startserver()
         sleep(self.parameters['delay'])
         self.startclient()
