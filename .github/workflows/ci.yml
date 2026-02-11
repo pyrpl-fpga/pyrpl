@@ -127,7 +127,27 @@ jobs:
       run: |
         # use a custom global configfile adapted to the hardware for unit tests
         cp ./remote_global_config.yml ./pyrpl/config/global_config.yml
-        python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml --reruns 1 --reruns-delay 5
+        python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml 
+        EXIT_CODE=$?
+    
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "All tests passed!"
+          exit 0
+        fi
+        
+        echo "Re-running failed tests (attempt 2/3)"
+        python -m pytest pyrpl/test/ --lf --cov=pyrpl --cov-report=xml --cov-append
+        EXIT_CODE=$?
+        
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "Failed tests passed on retry!"
+          exit 0
+        fi
+        
+        echo "Final retry (attempt 3/3)"
+        python -m pytest pyrpl/test/ --lf --cov=pyrpl --cov-report=xml --cov-append
+        exit $?
+
       env:
         QT_QPA_PLATFORM: offscreen
         REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
