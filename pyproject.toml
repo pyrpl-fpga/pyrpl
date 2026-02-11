@@ -53,7 +53,7 @@ dev = [
     "nbformat",
     "pyinstaller", 
     "sphinx", 
-    "sphinx_bootstrap_theme"
+    "sphinx_bootstrap_theme",
     "scipy"
 ]
 
