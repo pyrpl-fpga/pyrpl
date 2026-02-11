@@ -65,7 +65,7 @@ test = [
     "pytest-subtests",
     "matplotlib",
     "nbconvert",
-    "nbformat"
+    "nbformat",
     "scipy"
 ]
 
