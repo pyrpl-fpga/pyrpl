@@ -645,10 +645,11 @@ class BoolAttributeWidget(BaseAttributeWidget):
         self.widget.stateChanged.connect(self.write_widget_value_to_attribute)
 
     def _get_widget_value(self):
-        return (self.widget.checkState() == 2)
+        return self.widget.isChecked()
 
     def _set_widget_value(self, new_value):
-        self.widget.setCheckState(new_value * 2)
+        self.widget.setChecked(bool(new_value))
+
 
 
 class BoolIgnoreAttributeWidget(BoolAttributeWidget):
@@ -656,9 +657,12 @@ class BoolIgnoreAttributeWidget(BoolAttributeWidget):
     Like BoolAttributeWidget with additional option 'ignore' that is
     shown as a grey check in GUI
     """
-    _gui_to_attribute_mapping = pyrpl_utils.Bijection({0: False,
-                                                       1: 'ignore',
-                                                       2: True})
+    
+    _gui_to_attribute_mapping = pyrpl_utils.Bijection({
+        QtCore.Qt.CheckState.Unchecked: False,
+        QtCore.Qt.CheckState.PartiallyChecked: 'ignore',
+        QtCore.Qt.CheckState.Checked: True
+    })
 
     def _make_widget(self):
         """
