@@ -71,7 +71,8 @@ test = [
     "matplotlib",
     "nbconvert",
     "nbformat",
-    "scipy"
+    "scipy",
+    "ipykernel<6.30"
 ]
 
 # IPython/Jupyter dependencies (optional)
