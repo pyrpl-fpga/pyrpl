@@ -7,7 +7,7 @@ import socket
 from collections import namedtuple
 
 # Import your project modules
-from .. import Pyrpl, RedPitaya, user_config_dir
+from .. import Pyrpl, RedPitaya, user_config_dir, global_config
 from ..pyrpl_utils import time
 from ..async_utils import sleep
 
@@ -162,3 +162,42 @@ def hardware_session():
         if not os.path.exists(tmp_conf):
             break
         sleep(0.1)
+
+@pytest.fixture(scope="session", autouse=True)
+def pyrpl_session_sanity(hardware_session):
+    """
+    Global hardware sanity check.
+    Runs exactly once per pytest session, no matter what tests are selected.
+    """
+
+    logger.info("Running session sanity checks...")
+
+    read_time = hardware_session.read_time
+    write_time = hardware_session.write_time
+    pyrpl = hardware_session.pyrpl
+
+    try:
+        maxtime = global_config.test.max_communication_time
+    except Exception:
+        pytest.exit(
+            "Error with global config file. Delete global_config.yml and retry!",
+            returncode=1,
+        )
+
+    if read_time >= maxtime:
+        pytest.exit(
+            f"Read operation too slow: {read_time:e}s (expected < {maxtime:e}s)",
+            returncode=1,
+        )
+
+    if write_time >= maxtime:
+        pytest.exit(
+            f"Write operation too slow: {write_time:e}s (expected < {maxtime:e}s)",
+            returncode=1,
+        )
+
+    if pyrpl is None and _require_full_pyrpl:
+        pytest.exit("Pyrpl instance was not created!", returncode=1)
+
+    logger.info("Hardware sanity checks passed.")
+

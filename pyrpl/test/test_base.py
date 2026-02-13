@@ -57,28 +57,5 @@ class TestPyrpl(object):
             while len(self.curves) > 0:
                 self.curves.pop().delete()
 
-    def test_read_write_time(self):
-        """Test that read/write times are within acceptable limits."""
-        try:
-            maxtime = global_config.test.max_communication_time
-        except:
-            raise ExpectedPyrplError("Error with global config file. "
-                                       "Please delete the file %s and retry!"
-                                       % os.path.join(user_config_dir,
-                                                      'global_config.yml'))
-        assert self.read_time < maxtime, \
-            "Read operation is very slow: %e s (expected < %e s). It is " \
-            "highly recommended that you improve the network connection to " \
-            "your Red Pitaya device. " % (self.read_time, maxtime)
-        assert self.write_time < maxtime, \
-            "Write operation is very slow: %e s (expected < %e s). It is " \
-            "highly recommended that you improve the network connection to " \
-            "your Red Pitaya device. " % (self.write_time, maxtime)
-
-    def test_pyrpl(self):
-        """Test that pyrpl instance exists."""
-        assert (self.pyrpl is not None)
-
-
 # only one test class per file is allowed due to conflicts with
 # inheritance from TestPyrpl base class
