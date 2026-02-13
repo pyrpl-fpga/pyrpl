@@ -59,6 +59,9 @@ jobs:
         pip install -r requirements.txt
         pip install coverage pytest pytest-cov pytest-notebook pytest-subtests pytest-rerunfailures
 
+    - name: Register Jupyter kernel
+      run: python -m ipykernel install --sys-prefix --name python3
+   
     - name: Install package
       run: |
         pip install -e ".[test, qt-pyqt5]"
@@ -89,6 +92,8 @@ jobs:
     - name: Run tests with retries
       shell: bash
       run: |
+        # use a custom global configfile adapted to the hardware for unit tests
+        cp ./remote_global_config.yml ./pyrpl/config/global_config.yml
         # Run full test suite
         echo "==========================================="
         echo "Running full test suite (attempt 1/3)"
