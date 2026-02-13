@@ -368,7 +368,7 @@ jobs:
 # Notification job
   notify:
     runs-on: ubuntu-latest
-    needs: [docs, test, build-linux, build-windows, build-macos, publish-release]
+    needs: [test, build-linux, build-windows, build-macos, publish-release]
     if: always()
 
     steps:
