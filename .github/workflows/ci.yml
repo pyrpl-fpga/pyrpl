@@ -56,15 +56,11 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install coverage pytest pytest-cov pytest-notebook pytest-subtests pytest-rerunfailures
+        pip install -e ".[test, qt-pyqt5]"
 
     - name: Register Jupyter kernel
       run: python -m ipykernel install --sys-prefix --name python3
    
-    - name: Install package
-      run: |
-        pip install -e ".[test, qt-pyqt5]"
     - name: Test RedPitaya connection
       run: | # restarts ssh to try to fix potential connection issues
     
