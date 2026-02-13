@@ -36,12 +36,17 @@ dependencies = [
     "pyqtgraph",
     "numpy>=1.9",
     "paramiko>=2.0",
-    "PyQt5",
     "qtpy",
     "qasync"
 ]
 
 [project.optional-dependencies]
+
+qt-pyqt5 = ["PyQt5"]
+qt-pyqt6 = ["PyQt6"]
+qt-pyside2 = ["PySide2"]
+qt-pyside6 = ["PySide6"]
+
 # Development dependencies (includes all test dependencies plus docs/build tools)
 dev = [
     "pytest", 

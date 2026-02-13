@@ -147,7 +147,18 @@ import logging
 import os
 import os.path as osp
 from shutil import copyfile
-from qtpy import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets, API_NAME
+
+if API_NAME is None:
+    raise RuntimeError(
+        "No Qt binding found.\n"
+        "Install one of:\n"
+        "  pip install pyrpl[qt-pyqt5]"
+        "  pip install pyrpl[qt-pyqt6]\n"
+        "  pip install pyrpl[qt-pyside6]\n"
+        "  pip install pyrpl[qt-pyside2]\n"
+        
+    )
 
 from .widgets.pyrpl_widget import PyrplWidget
 from . import software_modules

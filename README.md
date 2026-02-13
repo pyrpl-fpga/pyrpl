@@ -19,7 +19,7 @@ The easiest and fastest way to get PyRPL is to download and execute the [precomp
 If instead you would like to use and/or modify the source code, make sure you have an
 installation of Python (3.7 to 3.13). The easiest way to install the PyRPL python module cleanly is to run 
 ```
-pip install git+https://github.com/pyrpl-fpga/pyrpl.git
+pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 ```
 This will pull the most recent code from Github and install the needed module. It is recommended to use a new environment. DO NOT USE `pip install pyrpl` ! The code hosted on pypi is outdated.
 
@@ -42,16 +42,23 @@ or [download and extract](https://github.com/pyrpl-fpga/pyrpl/archive/master.zip
 If you are using pip, you can just navigate to the pyrpl directory and run 
 
 ```
-pip install -e .
+pip install -e .[qt-pyqt5]
 ```
-if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
+if you want an editable installation of pyrpl or 
 
 ```
-pip install .
+pip install .[qt-pyqt5]
 ```
-for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
+for a regular installation (if you have no instention of modifying the code). I recommend using pip as conda tends to become very slow at solving environments. Note that pyrpl requires a Qt binding but it is compatible with PyQt5, PyQt6, PySide2 and PySide6 so you can also run :
 
-If you want to use conda (which I no longer recommend given that pip seems very robust now and much faster than conda), you can run :
+```
+pip install -e .[qt-pyqt6]
+pip install -e .[qt-pyside2]  
+pip install -e .[qt-pyside6]
+```
+
+
+If you want to use conda, you can run :
 
 ```
 conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
