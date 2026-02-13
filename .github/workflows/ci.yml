@@ -61,7 +61,7 @@ jobs:
 
     - name: Install package
       run: |
-        pip install -e .[test, qt-pyqt5]
+        pip install -e ".[test, qt-pyqt5]""
     - name: Test RedPitaya connection
       run: | # restarts ssh to try to fix potential connection issues
     
