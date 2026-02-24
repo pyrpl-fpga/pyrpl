@@ -13,13 +13,15 @@ def isnotebook():
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
             msg = 'async_utils: Jupyter notebook or qtconsole'
+            return True
         elif shell == 'TerminalInteractiveShell':
             msg = 'async_utils: Terminal running IPython'
+            return True
         else:
-            INTERACTIVE = False
+            return False
             msg = 'async_utils: # Other type (?)'
     except NameError:
-        INTERACTIVE = False
+        return False
         msg = 'async_utils: Probably standard Python interpreter'
     logger.debug(msg)
 
