@@ -109,14 +109,14 @@ def hardware_session():
     if _require_full_pyrpl:
         # --- HEAVY PATH ---
         logger.info(f"Initializing Full Pyrpl with source: {_source_config_file}")
-        pyrpl_obj = Pyrpl(config=tmp_file, source=_source_config_file)
+        pyrpl_obj = Pyrpl(config=tmp_file, source=_source_config_file, reloadfpga=True)
         rp_obj = pyrpl_obj.rp
     else:
         # --- LIGHT PATH ---
         logger.info("Initializing Light RedPitaya (No Pyrpl App config)")
         # This uses environment variables or defaults defined in RedPitaya class
         # Assuming 'hostname' is handled by RedPitaya's internal logic checking env vars
-        rp_obj = RedPitaya(config=None, autostart=True) 
+        rp_obj = RedPitaya(config=None, autostart=True, reloadfpga=True) 
 
     # --- APPLY FIXES ---
     _apply_keepalive(rp_obj)

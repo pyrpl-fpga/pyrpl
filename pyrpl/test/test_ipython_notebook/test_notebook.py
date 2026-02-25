@@ -1,6 +1,5 @@
 import pytest
 
-@pytest.mark.notebook
 def test_scope_notebook():
     import nbformat
     from nbconvert.preprocessors import ExecutePreprocessor
