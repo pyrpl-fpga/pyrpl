@@ -68,7 +68,7 @@ class NaWidget(AcquisitionModuleWidget):
         self.win = pg.GraphicsLayoutWidget(title="Magnitude")
 
         self.label_benchmark = pg.LabelItem(justify='right')
-        self.win.addItem(self.label_benchmark, row=1,col=0)
+        self.win.addItem(self.label_benchmark, row=0,col=0)
         self._last_benchmark_value = np.nan
 
         self.win_phase = pg.GraphicsLayoutWidget(title="Phase")

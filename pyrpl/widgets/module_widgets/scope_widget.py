@@ -145,7 +145,7 @@ class ScopeWidget(AcquisitionModuleWidget):
         #self.button_layout.addWidget(self.button_save)
         #self.button_layout.addWidget(aws['curve_name'])
         #aws['curve_name'].setMaximumWidth(250)
-        self.main_layout.addLayout(self.button_layout)
+        # self.main_layout.addLayout(self.button_layout)
 
         #self.button_single.clicked.connect(self.run_single_clicked)
         #self.button_continuous.clicked.connect(self.run_continuous_clicked)

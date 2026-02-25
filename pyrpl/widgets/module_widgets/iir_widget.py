@@ -11,8 +11,10 @@ from ... import APP
 
 
 class MyGraphicsWindow(pg.GraphicsLayoutWidget):
-    def __init__(self, title, parent):
-        super().__init__(parent=parent, title=title)
+    def __init__(self, title, graph_widget, module_widget):
+        super().__init__(parent=graph_widget, title=title)
+        self._graph_widget = graph_widget
+        self._module_widget = module_widget
         self.setToolTip("-----plot legend---------------\n"
                         "yellow: theoretical IIR transfer function\n"
                         "green: data curve\n"
@@ -38,10 +40,10 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         self.doubleclicked = False
         self.storeevent(event)
         if self.button == QtCore.Qt.LeftButton and self.modifier == 0:  # left button, no key
-            self.parent.module.select_pole_or_zero(self.x)
+            self._module_widget.module.select_pole_or_zero(self.x)
         if not self.mouse_clicked_timer.isActive():
             self.mouse_clicked_timer.start()
-        return super(MyGraphicsWindow, self).mousePressEvent(event)
+        return super().mousePressEvent(event)
 
     def mouseDoubleClickEvent(self, event):
         self.doubleclicked = True
@@ -49,7 +51,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         if self.mouse_clicked_timer.isActive():
             self.mouse_clicked_timer.stop()
             self.mouse_clicked()
-        return super(MyGraphicsWindow, self).mouseDoubleClickEvent(event)
+        return super().mouseDoubleClickEvent(event)
 
     def storeevent(self, event):
         self.button = event.button()
@@ -58,7 +60,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         pos = it.mapToScene(event.pos())  #  + it.vb.pos()
         point = it.vb.mapSceneToView(pos)
         self.x, self.y = point.x(), point.y()
-        if self.parent.xlog:
+        if self._graph_widget.xlog:
             self.x = 10 ** self.x  # takes logscale into account
 
     def mouse_clicked(self):
@@ -68,38 +70,33 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
             if self.doubleclicked:
                 new = -default_damping - 1.j * self.x
                 if self.modifier == QtCore.Qt.CTRL:
-                    self.parent.module.complex_poles.append(new)
+                    self._module_widget.module.complex_poles.append(new)
                 if self.modifier == QtCore.Qt.SHIFT:
-                    self.parent.module.complex_zeros.append(new)
+                    self._module_widget.module.complex_zeros.append(new)
             else:  # single click
                 new = -self.x
                 if self.modifier == 0:
                     pass # see above in mousePressEvent()
                 if self.modifier == QtCore.Qt.CTRL:
                     # make a new real pole
-                    self.parent.module.real_poles.append(new)
+                    self._module_widget.module.real_poles.append(new)
                 if self.modifier == QtCore.Qt.SHIFT:
                     # make a new real zero
-                    self.parent.module.real_zeros.append(new)
+                    self._module_widget.module.real_zeros.append(new)
 
     def keyPressEvent(self, event):
         """ not working properly yet"""
-        try:
-            name = self.parent.module._selected_pole_or_zero
-            index = self.parent.module._selected_index
-            return self.parent.parent.attribute_widgets[name].widgets[index].keyPressEvent(event)
-        except:
-            return super(MyGraphicsWindow, self).keyPressEvent(event)
+        name = self._module_widget.module._selected_pole_or_zero
+        index = self._module_widget.module._selected_index
+        return self._module_widget.attribute_widgets[name].widgets[index].keyPressEvent(event)
+
 
     def keyReleaseEvent(self, event):
         """ not working properly yet"""
-        def keyPressEvent(self, event):
-            try:
-                name = self.parent.module._selected_pole_or_zero
-                index = self.parent.module._selected_index
-                return self.parent.parent.attribute_widgets[name].widgets[index].keyReleaseEvent(event)
-            except:
-                return super(MyGraphicsWindow, self).keyReleaseEvent(event)
+        name = self._module_widget.module._selected_pole_or_zero
+        index = self._module_widget.module._selected_index
+        return self._module_widget.attribute_widgets[name].widgets[index].keyReleaseEvent(event)
+
 
 
 class IirGraphWidget(QtWidgets.QGroupBox):
@@ -109,12 +106,12 @@ class IirGraphWidget(QtWidgets.QGroupBox):
     def __init__(self, parent):
         # graph
         self.name = "Transfer functions"
-        super(IirGraphWidget, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
         self.layout = QtWidgets.QVBoxLayout(self)
-        self.win = MyGraphicsWindow(title="Amplitude", parent=self)
-        self.win_phase = MyGraphicsWindow(title="Phase", parent=self)
+        self.win = MyGraphicsWindow("Amplitude", self, self.parent)
+        self.win_phase = MyGraphicsWindow("Phase", self, self.parent)
         # self.proxy = pg.SignalProxy(self.win.scene().sigMouseClicked,
         # rateLimit=60, slot=self.mouse_clicked)
         self.mag = self.win.addPlot(title="Magnitude (dB)")
@@ -191,7 +188,7 @@ class IirButtonWidget(QtWidgets.QGroupBox):
     def __init__(self, parent):
         # buttons and standard attributes
         self.name = "General settings"
-        super(IirButtonWidget, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -213,7 +210,7 @@ class IirBottomWidget(QtWidgets.QGroupBox):
     def __init__(self, parent):
         # widget for poles and zeros
         self.name = "Filter poles and zeros"
-        super(IirBottomWidget, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
         self.layout = QtWidgets.QHBoxLayout(self)
@@ -380,14 +377,12 @@ class IirWidget(ModuleWidget):
             index = self.module._selected_index
             return self.attribute_widgets[name].widgets[index].keyPressEvent(event)
         except:
-            return super(MyGraphicsWindow, self).keyPressEvent(event)
+            return super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
-        """ not working properly yet"""
-        def keyPressEvent(self, event):
-            try:
-                name = self.module._selected_pole_or_zero
-                index = self.module._selected_index
-                return self.attribute_widgets[name].widgets[index].keyReleaseEvent(event)
-            except:
-                return super(MyGraphicsWindow, self).keyReleaseEvent(event)
+        try:
+            name = self.module._selected_pole_or_zero
+            index = self.module._selected_index
+            return self.attribute_widgets[name].widgets[index].keyReleaseEvent(event)
+        except Exception:
+            return super().keyReleaseEvent(event)
