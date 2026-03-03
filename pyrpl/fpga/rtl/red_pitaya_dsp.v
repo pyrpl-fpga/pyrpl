@@ -198,6 +198,7 @@ endgenerate
 localparam CHANNELS = 2**LOG_MODULES; //not the same as MODULES+EXTRAMODULES
 reg  signed [   14+LOG_MODULES-1: 0] presum1 [CHANNELS-1-1:0]; 
 reg  signed [   14+LOG_MODULES-1: 0] presum2 [CHANNELS-1-1:0]; 
+reg [LOG_MODULES-1:0] vco_select [MODULES-1:0];  // which signal drives each IQ's VCO
 
 always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
@@ -271,6 +272,10 @@ always @(posedge clk_i) begin
       
       input_select [PWM0] <= NONE;
       input_select [PWM1] <= NONE;
+
+      vco_select[IQ0] <= NONE;
+      vco_select[IQ1] <= NONE;
+      vco_select[IQ2] <= NONE;
       
       sync <= {MODULES{1'b1}} ;  // all modules on by default
    end
@@ -279,6 +284,8 @@ always @(posedge clk_i) begin
          if (sys_addr[16-1:0]==16'h00)     input_select[sys_addr[16+LOG_MODULES-1:16]] <= sys_wdata[ LOG_MODULES-1:0];
          if (sys_addr[16-1:0]==16'h04)    output_select[sys_addr[16+LOG_MODULES-1:16]] <= sys_wdata[ 2-1:0];
          if (sys_addr[16-1:0]==16'h0C)                                            sync <= sys_wdata[MODULES-1:0];
+         if (sys_addr[16-1:0]==16'h14 && sys_addr[16+LOG_MODULES-1:16] < MODULES)
+            vco_select[sys_addr[16+LOG_MODULES-1:16]] <= sys_wdata[LOG_MODULES-1:0];
       end
    end
 end
@@ -297,6 +304,8 @@ end else begin
 	  20'h08 : begin sys_ack <= sys_en;          sys_rdata <= {{32- 2{1'b0}},dat_b_saturated,dac_a_saturated}; end
 	  20'h0C : begin sys_ack <= sys_en;          sys_rdata <= {{32-MODULES{1'b0}},sync} ; end
       20'h10 : begin sys_ack <= sys_en;          sys_rdata <= {{32- 14{1'b0}},output_signal[sys_addr[16+LOG_MODULES-1:16]]} ; end
+      20'h14 : begin sys_ack <= sys_en; sys_rdata <= {{32-LOG_MODULES{1'b0}},
+                vco_select[sys_addr[16+LOG_MODULES-1:16]]}; end
 
      default : begin sys_ack <= module_ack[sys_addr[16+LOG_MODULES-1:16]];    sys_rdata <=  module_rdata[sys_addr[16+LOG_MODULES-1:16]]  ; end
    endcase
@@ -396,6 +405,8 @@ generate for (j = 5; j < 7; j = j+1) begin
 	     .rstn_i       (  rstn_i         ),  // reset - active low
          .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
 	     .dat_i        (  input_signal [j] ),  // input data
+        .vco_i   ((vco_select[j]==NONE) ? 14'h0 :   // NEW
+                   output_signal[vco_select[j]]),    // routes any module output
 	     .dat_o        (  output_direct[j]),  // output data
 		 .signal_o     (  output_signal[j]),  // output signal
 
@@ -423,6 +434,7 @@ generate for (j = 7; j < 8; j = j+1) begin
          .rstn_i       (  rstn_i         ),  // reset - active low
          .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
          .dat_i        (  input_signal [j] ),  // input data
+         .vco_i  ((vco_select[j]==NONE) ? 14'h0 : output_signal[vco_select[j]]),
          .dat_o        (  output_direct[j]),  // output data
          .signal_o     (  output_signal[j]),  // output signal
          .signal2_o    (  output_signal[j*2]),  // output signal 2
