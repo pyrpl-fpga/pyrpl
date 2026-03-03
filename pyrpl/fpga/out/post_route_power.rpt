@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version     : Vivado v.2024.2 (win64) Build 5239630 Fri Nov 08 22:35:27 MST 2024
-| Date             : Mon Feb  2 21:14:49 2026
+| Date             : Fri Feb 27 17:47:24 2026
 | Host             : PCLDY-ESGT-419 running 64-bit major release  (build 9200)
 | Command          : report_power -file out/post_route_power.rpt
 | Design           : red_pitaya_top
@@ -30,14 +30,14 @@ Table of Contents
 ----------
 
 +--------------------------+--------------+
-| Total On-Chip Power (W)  | 2.250        |
+| Total On-Chip Power (W)  | 2.324        |
 | Design Power Budget (W)  | Unspecified* |
 | Power Budget Margin (W)  | NA           |
-| Dynamic (W)              | 2.108        |
-| Device Static (W)        | 0.142        |
+| Dynamic (W)              | 2.180        |
+| Device Static (W)        | 0.144        |
 | Effective TJA (C/W)      | 11.5         |
-| Max Ambient (C)          | 59.1         |
-| Junction Temperature (C) | 50.9         |
+| Max Ambient (C)          | 58.2         |
+| Junction Temperature (C) | 51.8         |
 | Confidence Level         | Low          |
 | Setting File             | ---          |
 | Simulation Activity File | ---          |
@@ -52,23 +52,23 @@ Table of Contents
 +-------------------------+-----------+----------+-----------+-----------------+
 | On-Chip                 | Power (W) | Used     | Available | Utilization (%) |
 +-------------------------+-----------+----------+-----------+-----------------+
-| Clocks                  |     0.062 |       14 |       --- |             --- |
-| Slice Logic             |     0.115 |    34953 |       --- |             --- |
-|   LUT as Logic          |     0.099 |    16041 |     17600 |           91.14 |
-|   CARRY4                |     0.011 |     1458 |      4400 |           33.14 |
-|   Register              |     0.005 |    14204 |     35200 |           40.35 |
-|   F7/F8 Muxes           |    <0.001 |      556 |     17600 |            3.16 |
+| Clocks                  |     0.068 |       14 |       --- |             --- |
+| Slice Logic             |     0.123 |    35964 |       --- |             --- |
+|   LUT as Logic          |     0.106 |    16682 |     17600 |           94.78 |
+|   CARRY4                |     0.011 |     1482 |      4400 |           33.68 |
+|   Register              |     0.005 |    14338 |     35200 |           40.73 |
+|   F7/F8 Muxes           |    <0.001 |      687 |     17600 |            3.90 |
 |   LUT as Shift Register |    <0.001 |       43 |      6000 |            0.72 |
-|   Others                |     0.000 |      400 |       --- |             --- |
-| Signals                 |     0.157 |    28520 |       --- |             --- |
+|   Others                |     0.000 |      398 |       --- |             --- |
+| Signals                 |     0.209 |    30536 |       --- |             --- |
 | Block RAM               |     0.094 |       34 |        60 |           56.67 |
 | PLL                     |     0.097 |        1 |         2 |           50.00 |
-| DSPs                    |     0.044 |       46 |        80 |           57.50 |
+| DSPs                    |     0.051 |       52 |        80 |           65.00 |
 | I/O                     |     0.243 |       91 |       100 |           91.00 |
 | XADC                    |     0.004 |        1 |       --- |             --- |
 | PS7                     |     1.292 |        1 |       --- |             --- |
-| Static Power            |     0.142 |          |           |                 |
-| Total                   |     2.250 |          |           |                 |
+| Static Power            |     0.144 |          |           |                 |
+| Total                   |     2.324 |          |           |                 |
 +-------------------------+-----------+----------+-----------+-----------------+
 
 
@@ -78,8 +78,8 @@ Table of Contents
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
 | Source    | Voltage (V) | Total (A) | Dynamic (A) | Static (A) | Powerup (A) | Budget (A)  | Margin (A) |
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
-| Vccint    |       1.000 |     0.484 |       0.473 |      0.010 |       NA    | Unspecified | NA         |
-| Vccaux    |       1.800 |     0.065 |       0.056 |      0.009 |       NA    | Unspecified | NA         |
+| Vccint    |       1.000 |     0.556 |       0.546 |      0.011 |       NA    | Unspecified | NA         |
+| Vccaux    |       1.800 |     0.066 |       0.056 |      0.009 |       NA    | Unspecified | NA         |
 | Vcco33    |       3.300 |     0.070 |       0.069 |      0.001 |       NA    | Unspecified | NA         |
 | Vcco25    |       2.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | Vcco18    |       1.800 |     0.002 |       0.001 |      0.001 |       NA    | Unspecified | NA         |
@@ -91,7 +91,7 @@ Table of Contents
 | MGTAVcc   |       1.000 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | MGTAVtt   |       1.200 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
 | MGTVccaux |       1.800 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
-| Vccpint   |       1.000 |     0.715 |       0.678 |      0.037 |       NA    | Unspecified | NA         |
+| Vccpint   |       1.000 |     0.716 |       0.678 |      0.039 |       NA    | Unspecified | NA         |
 | Vccpaux   |       1.800 |     0.038 |       0.027 |      0.010 |       NA    | Unspecified | NA         |
 | Vccpll    |       1.800 |     0.017 |       0.014 |      0.003 |       NA    | Unspecified | NA         |
 | Vcco_ddr  |       1.500 |     0.356 |       0.354 |      0.002 |       NA    | Unspecified | NA         |
@@ -161,61 +161,63 @@ Table of Contents
 +-----------------------------+-----------+
 | Name                        | Power (W) |
 +-----------------------------+-----------+
-| red_pitaya_top              |     2.108 |
+| red_pitaya_top              |     2.180 |
 |   i_ams                     |     0.002 |
-|   i_asg                     |     0.059 |
+|   i_asg                     |     0.063 |
 |     adv_trig_a              |     0.001 |
-|     ch[0]                   |     0.026 |
-|     ch[1]                   |     0.025 |
-|     prng                    |     0.001 |
-|   i_dsp                     |     0.332 |
+|     adv_trig_b              |     0.001 |
+|     ch[0]                   |     0.027 |
+|     ch[1]                   |     0.027 |
+|     prng                    |     0.002 |
+|   i_dsp                     |     0.395 |
 |     dac_saturate[0]         |     0.002 |
 |     dac_saturate[1]         |     0.002 |
-|     genblk2[0].i_pid        |     0.023 |
-|       pidfilter             |     0.012 |
-|     genblk2[1].i_pid        |     0.023 |
-|       pidfilter             |     0.012 |
-|     genblk2[2].i_pid        |     0.023 |
-|       pidfilter             |     0.012 |
-|     genblk3[3].i_trigger    |     0.006 |
-|       triggerfilter         |     0.003 |
-|     genblk4[4].iir          |     0.037 |
-|       iir_inputfilter       |     0.002 |
+|     genblk2[0].i_pid        |     0.028 |
+|       pidfilter             |     0.015 |
+|     genblk2[1].i_pid        |     0.027 |
+|       pidfilter             |     0.015 |
+|     genblk2[2].i_pid        |     0.027 |
+|       pidfilter             |     0.015 |
+|     genblk3[3].i_trigger    |     0.008 |
+|       triggerfilter         |     0.004 |
+|     genblk4[4].iir          |     0.040 |
+|       iir_inputfilter       |     0.003 |
 |       p_ay1_module          |     0.003 |
 |       p_bx1_module          |     0.003 |
 |       s_y0_module           |     0.005 |
-|     genblk5[5].iq           |     0.059 |
+|     genblk5[5].iq           |     0.073 |
 |       demodulator           |     0.003 |
-|       inputfilter           |     0.003 |
-|       iq_fgen               |     0.017 |
-|       iqfilter[0]           |     0.009 |
-|       iqfilter[1]           |     0.010 |
+|       inputfilter           |     0.004 |
+|       iq_fgen               |     0.019 |
+|       iqfilter[0]           |     0.012 |
+|       iqfilter[1]           |     0.013 |
 |       modulator             |     0.010 |
-|     genblk5[6].iq           |     0.059 |
+|     genblk5[6].iq           |     0.069 |
 |       demodulator           |     0.003 |
 |       inputfilter           |     0.003 |
-|       iq_fgen               |     0.017 |
-|       iqfilter[0]           |     0.009 |
-|       iqfilter[1]           |     0.010 |
+|       iq_fgen               |     0.019 |
+|       iqfilter[0]           |     0.011 |
+|       iqfilter[1]           |     0.011 |
 |       modulator             |     0.010 |
-|     genblk6[7].iq_2_outputs |     0.081 |
+|     genblk6[7].iq_2_outputs |     0.095 |
 |       demodulator           |     0.003 |
-|       inputfilter           |     0.003 |
-|       iq_fgen               |     0.016 |
-|       iqfilter[0]           |     0.019 |
-|       iqfilter[1]           |     0.019 |
+|       inputfilter           |     0.004 |
+|       iq_fgen               |     0.018 |
+|       iqfilter[0]           |     0.022 |
+|       iqfilter[1]           |     0.023 |
 |       modulator             |     0.012 |
+|       pfd_block             |     0.001 |
 |   i_hk                      |     0.001 |
-|   i_ps                      |     1.315 |
+|   i_ps                      |     1.317 |
 |     axi_slave_gp0           |     0.004 |
-|     system_i                |     1.310 |
-|       system_i              |     1.310 |
-|   i_scope                   |     0.047 |
+|     system_i                |     1.312 |
+|       system_i              |     1.312 |
+|   i_scope                   |     0.048 |
 |   pll                       |     0.097 |
-|   pwm[0]                    |     0.001 |
-|   pwm[1]                    |     0.001 |
-|   pwm[2]                    |     0.001 |
-|   pwm[3]                    |     0.001 |
+|   pwm[0]                    |     0.002 |
+|   pwm[1]                    |     0.002 |
+|   pwm[2]                    |     0.002 |
+|   pwm[3]                    |     0.002 |
 +-----------------------------+-----------+
 
 
