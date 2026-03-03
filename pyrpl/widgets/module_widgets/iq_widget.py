@@ -117,5 +117,12 @@ class IqWidget(ModuleWidget):
         self.attribute_layout.addWidget(self.attribute_widgets["output_signal"])
         self.attribute_widgets["output_signal"].layout_v.insertWidget(3,
                                                                       self.attribute_widgets["output_direct"])
+
+        # VCO block: vco_input and vco_on in the same column, vco_gain below
+        self.attribute_layout.addWidget(self.attribute_widgets["vco_input"])
+        self.attribute_widgets["vco_input"].layout_v.insertWidget(3,
+                                                                   self.attribute_widgets["vco_on"])
+        self.attribute_layout.addWidget(self.attribute_widgets["vco_range"])
+
         self.attribute_layout.setStretch(0,0)
         self.attribute_layout.addStretch(1)
