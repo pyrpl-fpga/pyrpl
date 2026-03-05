@@ -5,7 +5,7 @@ Installing PyRPL
 Running from binary files (fastest)
 ====================================
 
-The easiest and fastest way to get PyRPL running is to download and execute the `precompiled executable for windows "pyrpl-windows.exe" <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl.exe>`__ or `linux "pyrpl-linux" <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl>`__ or `Mac OS X "pyrpl-mac" <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl_mac>`__. This option requires no extra programs to be installed on the computer. If you want the Pyrpl binaries for a Mac, please let us know `by creating a new issue <https://www.github.com/pyrpl-fpga/pyrpl/issues/new>`_ and we will prepare them for you.
+The easiest and fastest way to get PyRPL running is to download and execute the binaries from the `latest GitHub release assets <https://github.com/pyrpl-fpga/pyrpl/releases/latest>`__. This option requires no extra programs to be installed on the computer.
 
 
 
@@ -27,20 +27,20 @@ There are many ways to get the Python working with Pyrpl. The following list is 
 Option 1: Installation from Anaconda
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the `Anaconda <https://www.continuum.io/downloads>`__ Python distribution, which allows to install all PyRPL dependencies via::
+If you are new to Python or inexperienced with installation issues, it is recommended to install the `Anaconda <https://www.anaconda.com/download>`__ Python distribution, which allows you to install all PyRPL dependencies via::
 
-    conda install numpy scipy paramiko nose pip pyqt qtpy pyqtgraph pyyaml qasync
+    conda install numpy scipy paramiko pip pyqt qtpy pyqtgraph pyyaml qasync
 
 Check :ref:`anaconda_problems` for hints if you cannot execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands::
 
-    conda create -y -n pyrpl-env numpy scipy paramiko nose pip pyqt qtpy pyqtgraph pyyaml qasync
+    conda create -y -n pyrpl-env numpy scipy paramiko pip pyqt qtpy pyqtgraph pyyaml qasync
     activate pyrpl-env
 
 
 Option 2: Installation on a regular (non-Anaconda) python version
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are not using Anaconda, I recommend using pip and running 
+If you are not using Anaconda, use pip and run:
     pip install git+https://github.com/pyrpl-fpga/pyrpl.git
 
 to install the latest pyrpl version and all its dependencies directly from the github repository.
@@ -56,7 +56,7 @@ Various channels are available to obtain the PyRPL source code.
 Option 1: Installation with pip (Not recommended as the version on pypi is outdated ! )
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have pip correctly installed, executing the following line in a command line should install pyrpl and all missing dependencies::
+If you have pip correctly installed, the following command installs PyRPL and all missing dependencies::
 
     pip install pyrpl
 
@@ -69,4 +69,4 @@ If you have a `git client <https://git-scm.com/downloads>`__ installed (recommen
 
     git clone https://github.com/pyrpl-fpga/pyrpl.git YOUR_PYRPL_DESTINATION_FOLDER
 
-If you do not want to install git on your computer, just download and extract the repository `from github.com <https://github.com/pyrpl-fpga/pyrpl/archive/master.zip>`__ () the repository.
+If you do not want to install git on your computer, download and extract the repository `from github.com <https://github.com/pyrpl-fpga/pyrpl/archive/refs/heads/master.zip>`__.

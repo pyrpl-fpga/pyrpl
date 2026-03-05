@@ -1,6 +1,15 @@
 ﻿
+:orphan:
+
 Introduction to pyrpl
 =====================
+
+.. warning::
+
+   This page is a legacy tutorial kept for reference. Some parts are outdated
+   (for example Python 2 syntax and old GUI examples). For current
+   installation and usage guidance, prefer :doc:`../installation/index`,
+   :doc:`../../installation`, :doc:`../../gui` and :doc:`../../api`.
 
 1) Introduction
 ---------------
@@ -17,7 +26,7 @@ the Verilog source code is provided together with this package and may
 be modified to customize the software to your needs.
 
 2) Table of contents
-====================
+--------------------
 
 In this document, you will find the following sections: 1. Introduction
 2. ToC 3. Installation 4. First steps 5. RedPitaya Modules 6. The Pyrpl
@@ -39,7 +48,7 @@ described in section 5. Please, read section 7 for a quick description
 of the GUI.
 
 3) Installation
-===============
+---------------
 
 Option 3: Simple clone from GitHub (developers)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1181,26 +1190,6 @@ integrator will naturally drift into the resonance and stay there:
             pid.ival = 1.2 #overshoot a little
             pid.i /= 2
     print "Resonance approch successful"
-
-::
-
-    Questions to users: what parameters do you know?
-    finesse of the cavity? 1000
-    length? 1.57m
-    what error signals are available? transmission direct, reflection AC -> directement pdh analogique
-
-    are modulators available n/a
-
-    what cavity length / laser frequency actuators are available? PZT mephisto DC - 10kHz, 48MHz opt./V, V_rp apmplifie x20
-    temperature du laser <1 Hz 2.5~GHz/V, apres AOM
-
-    what is known about them (displacement, bandwidth, amplifiers)?
-
-    what analog filters are present? YAG PZT a 10kHz
-
-    imposer le design des sorties
-
-More to come
 
 .. code:: ipython3
 

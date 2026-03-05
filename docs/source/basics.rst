@@ -175,7 +175,7 @@ In addition, to prevent a hardware resource from being used twice, HardwareModul
    # reserve the scope for user 'username'
     with pyrpl.scopes.pop('username') as mod:
          curve = mod.single() # acquire a curve
-   # The scope is freed for latter use at this point
+   # The scope is freed for later use at this point
 
 
 The Proprety descriptors
@@ -221,7 +221,7 @@ with the configuration file. This is particularly useful for GUI users who would
 
 .. warning:: The config file is *not* kept in-sync with modules that are reserved by a user or another module. It is the responsibility of the user-script or owner module to keep track of the slave module state. Moreover, the slave-module is restored to the last current state whenever it becomes free.
 
-The state of a module can be saved for latter use in a separate section of the config file. The following example shows the basic use of the load/save API:
+The state of a module can be saved for later use in a separate section of the config file. The following example shows the basic use of the load/save API:
 
 .. code-block:: python
     
@@ -243,8 +243,8 @@ Automatic GUI creation
 +++++++++++++++++++++++++
 
 Designing Graphical User Interface can be a tedious work. However, since module attributes are defined in a uniform fashion across the project, 
-most of the GUI creation can be handled automatically. Our GUI is based on the very popular and cross platform library `PyQt <https://riverbankcomputing.com/software/pyqt/intro>`_ 
-in conjonction with the `qtpy <https://pypi.python.org/pypi/QtPy>`_ abstraction layer to make PyRPL compatible with PyQt4, PyQt5 and PySide APIs.
+most of the GUI creation can be handled automatically. Our GUI is based on the very popular and cross-platform library `PyQt <https://riverbankcomputing.com/software/pyqt/intro>`_
+in conjunction with the `qtpy <https://pypi.org/project/QtPy/>`_ abstraction layer.
 
 Each PyRPL module is represented by a widget in the Main PyRPL window. The list of attributes to display in the GUI is defined in the Module class by the class member **_gui_attributes**.
 When the module widget is created, sub-widgets are automatically created to manipulate the value of each attribute listed in **_gui_attributes**.

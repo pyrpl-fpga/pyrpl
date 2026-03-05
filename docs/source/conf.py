@@ -51,9 +51,16 @@ if os.environ.get('READTHEDOCS') == 'True':
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../..'))
+#
+# docs/source/conf.py -> ../../ points to the repository root containing the
+# actual `pyrpl` package directory. Using ../../.. would point to the parent of
+# the repository and can make Python resolve `pyrpl` as a namespace package.
+sys.path.insert(0, os.path.abspath('../..'))
 
-exclude_patterns = ["*.test.rst",]
+exclude_patterns = [
+    "*.test.rst",
+    "indices_and_tables/*",
+]
 
 # -- General configuration ------------------------------------------------
 
@@ -73,6 +80,9 @@ extensions = [
     'sphinx.ext.inheritance_diagram',
     'sphinx.ext.graphviz'
 ]
+
+# `dot` is not always present in minimal dev environments.
+suppress_warnings = ['graphviz.dot']
 
 # Include todo directives.
 todo_include_todos = False
@@ -135,7 +145,6 @@ release = version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
