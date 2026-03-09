@@ -15,13 +15,13 @@ If you have not already set up your Red Pitaya, follow the current `official Red
 Installing PyRPL
 =================
 
-The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable for:
-
-* **Windows**: from the `latest release assets <https://github.com/pyrpl-fpga/pyrpl/releases/latest>`__,
-* **Linux**: from the `latest release assets <https://github.com/pyrpl-fpga/pyrpl/releases/latest>`__,
-* **macOS**: from the `latest release assets <https://github.com/pyrpl-fpga/pyrpl/releases/latest>`__.
+The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable from the `PyRPL releases page <https://github.com/pyrpl-fpga/pyrpl/releases>`__.
 
 If you prefer an installation from source code, go to :ref:`installation_from_source`.
+
+.. warning::
+
+   Do **not** use ``pip install pyrpl``. The package on PyPI is outdated. Use the GitHub-based installation documented in :doc:`user_guide/installation/pyrpl_installation`.
 
 
 Compiling the FPGA code (optional)

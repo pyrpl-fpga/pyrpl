@@ -5,8 +5,7 @@ Installing PyRPL
 Running from binary files (fastest)
 ====================================
 
-The easiest and fastest way to get PyRPL running is to download and execute the binaries from the `latest GitHub release assets <https://github.com/pyrpl-fpga/pyrpl/releases/latest>`__. This option requires no extra programs to be installed on the computer.
-
+The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable from `the releases page <https://github.com/pyrpl-fpga/pyrpl/releases>`__. This option requires no extra programs to be installed on the computer.
 
 
 .. _installation_from_source:
@@ -14,59 +13,67 @@ The easiest and fastest way to get PyRPL running is to download and execute the 
 Running the Python source code
 ===================================
 
-If you would like to use and/or modify the source code, make sure you have an installation of Python (tested up to python 3.13).
+If you would like to use and/or modify the source code, make sure you have an installation of Python (3.7 to 3.13, as in the project README).
 
 
-Prerequisites: Getting the right Python installation
+Prerequisites: Getting a working Python environment
 -------------------------------------------------------
 
-There are many ways to get the Python working with Pyrpl. The following list is non-exhaustive
+There are many ways to get Python working with PyRPL. The following list is non-exhaustive.
 
 .. _anaconda_installation:
 
-Option 1: Installation from Anaconda
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 1: Installation from Anaconda (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are new to Python or inexperienced with installation issues, it is recommended to install the `Anaconda <https://www.anaconda.com/download>`__ Python distribution, which allows you to install all PyRPL dependencies via::
+If you are new to Python or unexperienced with dependency issues, install the `Anaconda <https://www.continuum.io/downloads>`__ distribution, then create and activate a dedicated environment::
 
-    conda install numpy scipy paramiko pip pyqt qtpy pyqtgraph pyyaml qasync
+    conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
+    conda activate pyrpl-env
 
-Check :ref:`anaconda_problems` for hints if you cannot execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands::
-
-    conda create -y -n pyrpl-env numpy scipy paramiko pip pyqt qtpy pyqtgraph pyyaml qasync
-    activate pyrpl-env
+Check :ref:`anaconda_problems` for hints if you cannot execute conda in a terminal.
 
 
-Option 2: Installation on a regular (non-Anaconda) python version
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 2: Installation on a regular Python environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you are not using Anaconda, use pip and run:
-    pip install git+https://github.com/pyrpl-fpga/pyrpl.git
+Use pip to install the latest code directly from GitHub::
 
-to install the latest pyrpl version and all its dependencies directly from the github repository.
+    pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
+
+PyRPL requires a Qt binding. You can replace ``qt-pyqt5`` with ``qt-pyqt6``, ``qt-pyside2`` or ``qt-pyside6``.
+
 
 .. _actual_installation:
 
 Downloading and installing PyRPL from source
 -------------------------------------------------------
 
-Various channels are available to obtain the PyRPL source code.
+Option 1: Clone/download the repository (recommended for developers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you have a `git client <https://git-scm.com/downloads>`__ installed (recommended), clone the pyrpl repository::
+
+    git clone https://github.com/pyrpl-fpga/pyrpl.git
+
+If you do not want to install git, you can download and extract the repository `from GitHub <https://github.com/pyrpl-fpga/pyrpl/archive/master.zip>`__.
+
+From the project root directory, install PyRPL with pip::
+
+    pip install -e .[qt-pyqt5]
+
+For a non-editable installation, use::
+
+    pip install .[qt-pyqt5]
 
 
-Option 1: Installation with pip (Not recommended as the version on pypi is outdated ! )
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 2: Direct pip install from GitHub (quick setup)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you have pip correctly installed, the following command installs PyRPL and all missing dependencies::
+If you do not need a local clone, install directly from GitHub::
 
-    pip install pyrpl
+    pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 
+.. warning::
 
-
-Option 2: From github.com (for developers and tinkerers)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you have a `git client <https://git-scm.com/downloads>`__ installed (recommended), clone the pyrpl repository to your computer with::
-
-    git clone https://github.com/pyrpl-fpga/pyrpl.git YOUR_PYRPL_DESTINATION_FOLDER
-
-If you do not want to install git on your computer, download and extract the repository `from github.com <https://github.com/pyrpl-fpga/pyrpl/archive/refs/heads/master.zip>`__.
+    Do **not** use ``pip install pyrpl``. The PyPI package is outdated.
