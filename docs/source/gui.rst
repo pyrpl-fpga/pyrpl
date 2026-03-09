@@ -31,7 +31,7 @@ just launch the executable and the GUI should start. Passing the command-line
 argument :code:`--help` to the executable shows a list of optional
 command-line arguments.
 
-If instead you have :ref:`a source code installation <_installation_from_source>`,
+If instead you have :ref:`a source code installation <installation_from_source>`,
 then you can either launch PyRPL from a terminal with
 
 .. code-block:: bash

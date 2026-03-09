@@ -41,69 +41,57 @@ of the GUI.
 3) Installation
 ===============
 
-Option 3: Simple clone from GitHub (developers)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 1: Install latest PyRPL from GitHub with pip (recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If instead you plan to synchronize with github on a regular basis, you
-can also leave the downloaded code where it is and add the parent
-directory of the pyrpl folder to the PYTHONPATH environment variable as
-described in this thread:
-http://stackoverflow.com/questions/3402168/permanently-add-a-directory-to-pythonpath.
-For all beta-testers and developers, this is the preferred option. So
-the typical PYTHONPATH environment variable should look somewhat like
-this: :math:`\texttt{PYTHONPATH=C:\OTHER_MODULE;C:\GITHUB\PYRPL}`
+The package published on PyPI is outdated. Install PyRPL from GitHub instead
+(preferably in a fresh environment):
 
-If you are experiencing problems with the dependencies on other python
-packages, executing the following command in the pyrpl directory might
-help:
+.. code:: bash
 
-:math:`\texttt{python setup.py install develop}`
+    pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 
-If at a later point, you have the impression that updates from github
-are not reflected in the program's behavior, try this:
+
+You can replace ``qt-pyqt5`` with ``qt-pyqt6``, ``qt-pyside2`` or
+``qt-pyside6``.
+
+.. code:: ipython3
+
+    #no-test
+    !pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 
 .. code:: ipython3
 
     import pyrpl
-    print pyrpl.__file__
+    print(pyrpl.__version__)
+    print(pyrpl.__file__)
 
-Should the directory not be the one of your local github installation,
-you might have an older version of pyrpl installed. Just delete any such
-directories other than your principal github clone and everything should
-work.
+Option 2: Clone the repository (developers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Option 2: from GitHub using setuptools (beta version)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you have a `git client <https://git-scm.com/downloads>`__ installed
+(recommended), clone the repository and install from the project root:
 
-Download the code manually from
-https://github.com/pyrpl-fpga/pyrpl/archive/master.zip and unzip it or get
-it directly from git by typing
+.. code:: bash
 
-:math:`\texttt{git clone https://github.com/pyrpl-fpga/pyrpl.git YOUR_DESTINATIONFOLDER}`
+    git clone https://github.com/pyrpl-fpga/pyrpl.git
+    cd pyrpl
+    pip install -e .[qt-pyqt5]
 
-In a command line shell, navigate into your new local pyrplockbox
-directory and execute
+For a non-editable installation, use ``pip install .[qt-pyqt5]``.
 
-:math:`\texttt{python setup.py install}`
+Option 3: Conda environment (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This copies the files into the side-package directory of python. The
-setup should make sure that you have the python libraries paramiko
-(http://www.paramiko.org/installing.html) and scp
-(https://pypi.python.org/pypi/scp) installed. If this is not the case
-you will get a corresponding error message in a later step of this
-tutorial.
+If you prefer conda, create and activate a dedicated environment first:
 
-Option 1: with pip (coming soon)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: bash
 
-If you have pip correctly installed, executing the following line in a
-command line should install pyrplockbox and all dependencies:
+    conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
+    conda activate pyrpl-env
 
-:math:`\texttt{pip install pyrpl}`
-
-.. code:: ipython3
-
-    !pip install pyrpl #if you look at this file in ipython notebook, just execute this cell to install pyrplockbox
+Then install PyRPL from GitHub as shown above. Do not use
+``pip install pyrpl`` because the PyPI package is outdated.
 
 Compiling the server application (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,7 +101,7 @@ The software comes with a precompiled version of the server application
 automatically when you start the connection. If you made changes to this
 file, you can recompile it by typing
 
-:math:`\texttt{python setup.py compile_server}`
+``python setup.py compile_server``
 
 For this to work, you must have gcc and the cross-compiling libraries
 installed. Basically, if you can compile any of the official RedPitaya
@@ -122,7 +110,7 @@ working cross-compiler installed on your UserPC, you can also compile
 directly on the RedPitaya (tested with ecosystem v0.95). To do so, you
 must upload the directory pyrpl/monitor\_server on the redpitaya, and
 launch the compilation with the command
-:math:`\texttt{make CROSS_COMPILE=}`
+``make CROSS_COMPILE=``
 
 Compiling the FPGA bitfile (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,14 +126,14 @@ following commands. You should adapt the path in the first and second
 commands to the locations of the Vivado installation / the fpga
 directory in your filesystem:
 
-:math:`\texttt{source /opt/Xilinx/Vivado/2015.4/settings64.sh}`
+``source /opt/Xilinx/Vivado/2015.4/settings64.sh``
 
-:math:`\texttt{cd /home/myusername/fpga}`
+``cd /home/myusername/fpga``
 
-:math:`\texttt{make}`
+``make``
 
 The compilation should take between 15 and 30 minutes. The result will
-be the file :math:`\texttt{fpga/red_pitaya.bin}`. To test the new FPGA
+be the file ``fpga/red_pitaya.bin``. To test the new FPGA
 design, make sure that this file in the fpga subdirectory of your pyrpl
 code directory. That is, if you used a virtual machine for the
 compilation, you must copy the file back to the original machine on
@@ -169,11 +157,11 @@ functionality of all major submodules against reference benchmarks
 To run the test, navigate in command line into the pyrpl directory and
 type
 
-:math:`\texttt{set REDPITAYA=192.168.1.100}` (in windows) or
+``set REDPITAYA=192.168.1.100`` (in windows) or
 
-:math:`\texttt{export REDPITAYA=192.168.1.100}` (in linux)
+``export REDPITAYA=192.168.1.100`` (in linux)
 
-:math:`\texttt{python setup.py nosetests}`
+``python setup.py nosetests``
 
 The first command tells the test at which IP address it can find a
 RedPitaya. The last command runs the actual test. After a few seconds,
@@ -184,8 +172,8 @@ After you have implemented additional features, you are encouraged to
 add unitary tests to consolidate the changes. If you immediately
 validate your changes with unitary tests, this will result in a huge
 productivity improvement for you. You can find all test files in the
-folder :math:`\texttt{pyrpl/pyrpl/test}`, and the existing examples
-(notably :math:`\texttt{test_example.py}`) should give you a good point
+folder ``pyrpl/pyrpl/test``, and the existing examples
+(notably ``test_example.py``) should give you a good point
 to start. As long as you add a function starting with 'test\_' in one of
 these files, your test should automatically run along with the others.
 As you add more tests, you will see the number of total tests increase
@@ -889,7 +877,7 @@ poles > number of zeros) - poles (zeros) either real or
 complex-conjugate pairs - no three or more identical real poles (zeros)
 - no two or more identical pairs of complex conjugate poles (zeros) -
 pole and zero frequencies should be larger than
-:math:`\frac{f_\rm{nyquist}}{1000}` (but you can optimize the nyquist
+:math:`\frac{f_{\mathrm{nyquist}}}{1000}` (but you can optimize the nyquist
 frequency of your filter by tuning the 'loops' parameter) - the DC-gain
 of the filter must be 1.0. Despite the FPGA implemention being more
 flexible, we found this constraint rather practical. If you need

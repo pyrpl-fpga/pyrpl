@@ -19,13 +19,13 @@ For PyRPL to work, you must have a working `Red Pitaya / StemLab <http://www.red
 Installing PyRPL
 =================
 
-The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable for
-
-* **windows**: `pyrpl-windows.exe <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl.exe>`__,
-* **linux**: `pyrpl-linux <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl>`__, or
-* **Mac OS X**: `pyrpl-mac <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl_mac>`__.
+The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable from the `PyRPL releases page <https://github.com/pyrpl-fpga/pyrpl/releases>`__.
 
 If you prefer an installation from source code, go to :ref:`installation_from_source`.
+
+.. warning::
+
+   Do **not** use ``pip install pyrpl``. The package on PyPI is outdated. Use the GitHub-based installation documented in :doc:`user_guide/installation/pyrpl_installation`.
 
 
 Compiling the FPGA code (optional)
