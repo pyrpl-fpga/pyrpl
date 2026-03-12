@@ -65,7 +65,7 @@ docs = [
     "nbconvert",
     "nbformat",
     "sphinx",
-    "sphinx_bootstrap_theme",
+    "furo",
 ]
 
 # Test-only dependencies

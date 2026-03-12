@@ -14,39 +14,20 @@
 
 import sys
 import os
-import sphinx_bootstrap_theme
+# import sphinx_bootstrap_theme
 
 
-# http://read-the-docs.readthedocs.org/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-if os.environ.get('READTHEDOCS') == 'True':
-    try:
-        from mock import MagicMock, Mock
-    except:  # python > 3.3
-        from unittest.mock import MagicMock, Mock
-
-    # must mock PyQt in order to get autodoc import running
-    MOCK_MODULES = ['numpy', 'qtpy', 'pyqtgraph',
-                    'asyncio', 'qasync',
-                    'paramiko', 'scp']
-    sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
-
-    # the following code fixes various errors with mocked objects
-    from qtpy import QtWidgets, QtCore
-    import asyncio
-    mod_cls_list = [(QtWidgets, 'QWidget'),
-                    (QtWidgets, 'QLabel'),
-                    (QtWidgets, 'QGroupBox'),
-                    (QtWidgets, 'QLabel'),
-                    (QtCore, 'QObject'),
-                    (asyncio, 'Future')]
-    for module, cls_name in mod_cls_list:
-        # set the problematic class to a dummy class
-        setattr(module, cls_name, type(cls_name, (object,), {}))
-        # make sure the class appears to be in the containing module
-        setattr(getattr(module, cls_name), '__module__', module)
-    import numpy
-    numpy.pi = 3.141
-
+# ReadTheDocs: avoid importing heavy/GUI dependencies
+if os.environ.get("READTHEDOCS") == "True":
+    autodoc_mock_imports = [
+        "numpy",
+        "qtpy",
+        "pyqtgraph",
+        "asyncio",
+        "qasync",
+        "paramiko",
+        "scp",
+    ]
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -81,17 +62,22 @@ extensions = [
     'sphinx.ext.graphviz'
 ]
 
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+
 # `dot` is not always present in minimal dev environments.
-suppress_warnings = ['graphviz.dot']
+# suppress_warnings = ['graphviz.dot']
 
 # Include todo directives.
-todo_include_todos = False
+todo_include_todos = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {
+    ".rst": "restructuredtext",
+}
 
 # The encoding of source files.
 #source_encoding = 'utf-8-sig'
@@ -175,83 +161,84 @@ pygments_style = 'sphinx'  # 'friendly'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#html_theme = 'default' # 'nature'
-html_theme = 'bootstrap'
+# html_theme = 'default' # 'nature'
+# html_theme = 'bootstrap'
+html_theme = "furo"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-    # Navigation bar title. (Default: ``project`` value)
-    'navbar_title': "PyRPL",
+# html_theme_options = {
+#     # Navigation bar title. (Default: ``project`` value)
+#     'navbar_title': "PyRPL",
 
-    # Tab name for entire site. (Default: "Site")
-    'navbar_site_name': "Navigation",
+#     # Tab name for entire site. (Default: "Site")
+#     'navbar_site_name': "Navigation",
 
-    # A list of tuples containing pages or urls to link to.
-    # Valid tuples should be in the following forms:
-    #    (name, page)                 # a link to a page
-    #    (name, "/aa/bb", 1)          # a link to an arbitrary relative url
-    #    (name, "http://example.com", True) # arbitrary absolute url
-    # Note the "1" or "True" value above as the third argument to indicate
-    # an arbitrary url.
-    'navbar_links': [
-        ("Home", "index"),
-        #("Gallery", "gallery/index"),
-        ("Installation", "installation"),
-        ("Graphical user interface", "gui"),
-        ("API", "api"),
-        ("How PyRPL works", "basics"),
-        ("Infos for Developers", "developer_guide/index"),
-    ],
+#     # A list of tuples containing pages or urls to link to.
+#     # Valid tuples should be in the following forms:
+#     #    (name, page)                 # a link to a page
+#     #    (name, "/aa/bb", 1)          # a link to an arbitrary relative url
+#     #    (name, "http://example.com", True) # arbitrary absolute url
+#     # Note the "1" or "True" value above as the third argument to indicate
+#     # an arbitrary url.
+#     'navbar_links': [
+#         ("Home", "index"),
+#         #("Gallery", "gallery/index"),
+#         ("Installation", "installation"),
+#         ("Graphical user interface", "gui"),
+#         ("API", "api"),
+#         ("How PyRPL works", "basics"),
+#         ("Infos for Developers", "developer_guide/index"),
+#     ],
 
-    # Render the next and previous page links in navbar. (Default: true)
-    'navbar_sidebarrel': False,
+#     # Render the next and previous page links in navbar. (Default: true)
+#     'navbar_sidebarrel': False,
 
-    # Render the current pages TOC in the navbar. (Default: true)
-    'navbar_pagenav': False,
+#     # Render the current pages TOC in the navbar. (Default: true)
+#     'navbar_pagenav': False,
 
-    # Tab name for the current pages TOC. (Default: "Page")
-    'navbar_pagenav_name': "Page sections",
+#     # Tab name for the current pages TOC. (Default: "Page")
+#     'navbar_pagenav_name': "Page sections",
 
-    # Global TOC depth for "site" navbar tab. (Default: 1)
-    # Switching to -1 shows all levels.
-    'globaltoc_depth': 2,
+#     # Global TOC depth for "site" navbar tab. (Default: 1)
+#     # Switching to -1 shows all levels.
+#     'globaltoc_depth': 2,
 
-    # Include hidden TOCs in Site navbar?
-    #
-    # Note: If this is "false", you cannot have mixed ``:hidden:`` and
-    # non-hidden ``toctree`` directives in the same page, or else the build
-    # will break.
-    #
-    # Values: "true" (default) or "false"
-    'globaltoc_includehidden': "true",
+#     # Include hidden TOCs in Site navbar?
+#     #
+#     # Note: If this is "false", you cannot have mixed ``:hidden:`` and
+#     # non-hidden ``toctree`` directives in the same page, or else the build
+#     # will break.
+#     #
+#     # Values: "true" (default) or "false"
+#     'globaltoc_includehidden': "true",
 
-    # HTML navbar class (Default: "navbar") to attach to <div> element.
-    # For black navbar, do "navbar navbar-inverse"
-    'navbar_class': "navbar navbar-inverse",
+#     # HTML navbar class (Default: "navbar") to attach to <div> element.
+#     # For black navbar, do "navbar navbar-inverse"
+#     'navbar_class': "navbar navbar-inverse",
 
-    # Fix navigation bar to top of page?
-    # Values: "true" (default) or "false"
-    'navbar_fixed_top': "true",
+#     # Fix navigation bar to top of page?
+#     # Values: "true" (default) or "false"
+#     'navbar_fixed_top': "true",
 
-    # Location of link to source.
-    # Options are "nav" (default), "footer" or anything else to exclude.
-    'source_link_position': "footer",
+#     # Location of link to source.
+#     # Options are "nav" (default), "footer" or anything else to exclude.
+#     'source_link_position': "footer",
 
-    # Bootswatch (http://bootswatch.com/) theme.
-    #
-    # Options are nothing (default) or the name of a valid theme
-    # such as "cosmo" or "sandstone". "united",
-    #'bootswatch_theme': "united", #
+#     # Bootswatch (http://bootswatch.com/) theme.
+#     #
+#     # Options are nothing (default) or the name of a valid theme
+#     # such as "cosmo" or "sandstone". "united",
+#     #'bootswatch_theme': "united", #
 
-    # Choose Bootstrap version.
-    # Values: "3" (default) or "2" (in quotes)
-    'bootstrap_version': "3",
-}
+#     # Choose Bootstrap version.
+#     # Values: "3" (default) or "2" (in quotes)
+#     'bootstrap_version': "3",
+# }
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+# html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -273,7 +260,7 @@ html_favicon = 'icon.ico'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []  #['_static']
+html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
