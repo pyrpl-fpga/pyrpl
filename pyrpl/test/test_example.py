@@ -1,10 +1,12 @@
 import logging
 logger = logging.getLogger(name=__name__)
 from .test_base import TestPyrpl
+import pytest
 
 
 class TestExample(TestPyrpl):
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_asg(self):
         self.asg = self.pyrpl.rp.asg0
 
     #you are welcome to change the following silly tests to something useful

@@ -50,7 +50,8 @@ module red_pitaya_iq_block #(
 	  //quadrature low-pass parameter
 	  parameter QUADRATUREFILTERSTAGES = 2,
       parameter QUADRATUREFILTERSHIFTBITS = 5,
-      parameter QUADRATUREFILTERMINBW = 10
+      parameter QUADRATUREFILTERMINBW = 10,
+      parameter VCO_BITS = 14
 )
 (
    // data
@@ -58,6 +59,7 @@ module red_pitaya_iq_block #(
    input                 rstn_i          ,  // reset - active low
    input                 sync_i          ,  // synchronization input, active high
    input      [ 14-1: 0] dat_i           ,  // input data
+   input signed [VCO_BITS-1:0]   vco_i,       // control signal from PID
    output     [ 14-1: 0] dat_o           ,  // output data
    output     [ 14-1: 0] signal_o        ,  // output data
    output     [ 14-1: 0] signal2_o       ,  // output data 2 (orthogonal quadrature)
@@ -99,6 +101,25 @@ reg signed [GAINBITS-1:0] g4;
 reg [32-1:0] input_filter;
 reg [32-1:0] quadrature_filter;
 
+// VCO registers
+reg                          vco_on;               // enable VCO mode
+reg signed [PHASEBITS-1:0]   vco_gain;             // phase units per VCO input unit
+
+// VCO computation - registered to avoid timing issues
+wire signed [PHASEBITS+VCO_BITS-1:0] vco_product;
+assign vco_product = $signed(vco_gain) * $signed(vco_i);
+
+reg [PHASEBITS-1:0] shift_phase_effective;
+always @(posedge clk_i) begin
+    if (rstn_i == 1'b0)
+        shift_phase_effective <= {PHASEBITS{1'b0}};
+    else if (vco_on)
+        shift_phase_effective <= shift_phase + 
+            vco_product[PHASEBITS+VCO_BITS-2:VCO_BITS-1];
+    else
+        shift_phase_effective <= shift_phase;
+end
+
 //  System bus connection
 always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
@@ -116,16 +137,18 @@ always @(posedge clk_i) begin
       g2 <= {GAINBITS{1'b0}};
       g3 <= {GAINBITS{1'b0}};
       g4 <= {GAINBITS{1'b0}};
-      na_averages = 32'd0;
-      na_sleepcycles = 32'd0;
-      pfd_on <= 1'b1;
-  	  output_select <= QUADRATURE;
+      na_averages    <= 32'd0;
+      na_sleepcycles <= 32'd0;
+      pfd_on         <= 1'b1;
+      output_select  <= QUADRATURE;
+      vco_on         <= 1'b0;           // VCO off by default
+      vco_gain       <= {PHASEBITS{1'b0}};
    end
    else begin
       if (wen) begin
 		 // on was replaced by sync_i
 		 // if (addr==16'h100)   {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on, on}   <= wdata[6-1:0];
-		 if (addr==16'h100)   {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on} <= wdata[6-1:1];
+		 if (addr==16'h100) {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on,vco_on} <= wdata[6-1:0];
          if (addr==16'h104)   start_phase   <= wdata[PHASEBITS-1:0];
          if (addr==16'h108)   shift_phase   <= wdata[PHASEBITS-1:0];
          if (addr==16'h10C)   output_select <= wdata[4-1:0];
@@ -133,15 +156,15 @@ always @(posedge clk_i) begin
          if (addr==16'h114)   g2 <= wdata[GAINBITS-1:0];
          if (addr==16'h118)   g3 <= wdata[GAINBITS-1:0];
          if (addr==16'h11C)   g4 <= wdata[GAINBITS-1:0];
-         if (addr==16'h120)   input_filter  <= wdata;
+         if (addr==16'h120)   input_filter       <= wdata;
          if (addr==16'h124)   quadrature_filter  <= wdata;
-         if (addr==16'h130)   na_averages <= wdata;
-         if (addr==16'h134)   na_sleepcycles <= wdata;
-         if (addr==16'h134)   na_sleepcycles <= wdata;
+         if (addr==16'h128)   vco_gain           <= wdata[PHASEBITS-1:0]; // NEW
+         if (addr==16'h130)   na_averages        <= wdata;
+         if (addr==16'h134)   na_sleepcycles     <= wdata;
       end
 
 	  casez (addr)
-	     16'h100 : begin ack <= wen|ren; rdata <= {{32-6{1'b0}},cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on,on}; end
+	     16'h100 : begin ack <= wen|ren; rdata <= {{32-6{1'b0}},cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on,vco_on}; end
 	     16'h104 : begin ack <= wen|ren; rdata <= {{32-PHASEBITS{1'b0}},start_phase}; end
 	     16'h108 : begin ack <= wen|ren; rdata <= {{32-PHASEBITS{1'b0}},shift_phase}; end
 	     16'h10C : begin ack <= wen|ren; rdata <= {{32-4{1'b0}},output_select}; end
@@ -172,7 +195,7 @@ always @(posedge clk_i) begin
 	     16'h230 : begin ack <= wen|ren; rdata <= QUADRATUREFILTERSTAGES; end
 	     16'h234 : begin ack <= wen|ren; rdata <= QUADRATUREFILTERSHIFTBITS; end
 	     16'h238 : begin ack <= wen|ren; rdata <= QUADRATUREFILTERMINBW; end
-
+         16'h23C : begin ack <= wen|ren; rdata <= VCO_BITS; end           // NEW
 	     default: begin ack <= wen|ren;  rdata <=  32'h0; end
 	  endcase
    end
@@ -219,7 +242,7 @@ iq_fgen
   .sin_shifted_at_2f   (  sin_shifted_at_2f ),
   .cos_shifted_at_2f   (  cos_shifted_at_2f ),
   .start_phase         (  start_phase    ),
-  .shift_phase         (  shift_phase    ),
+  .shift_phase         (  shift_phase_effective ),
   .sin_o               (  sin            ),
   .cos_o               (  cos            ),
   .sin_shifted_o       (  sin_shifted    ),

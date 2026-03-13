@@ -24,7 +24,7 @@ class TestRegisters(TestRedpitaya):
     #                     yield self.register_validation, module, modulekey, \
     #                           regclass, regkey
                         
-    def test_generator_pytest(self):
+    def test_generator_pytest(self, subtests):
         # same test as above but without the yield not supported by pytest, 
         # I don't think it changes anything here keeping both for nosetests
         if self.r is None:
@@ -35,8 +35,9 @@ class TestRegisters(TestRedpitaya):
                 for regkey, regclass in type(module).__dict__.items():
                     if isinstance(regclass, BaseRegister):
                         logger.info("Scanning register %s...", regkey)
-                        self.register_validation(module, modulekey, \
-                              regclass, regkey)
+                        with subtests.test(modulekey = modulekey, regkey=regkey):
+                            self.register_validation(module, modulekey, \
+                                                     regclass, regkey)
 
     def register_validation(self, module, modulekey, reg, regkey):
         logger.debug("%s %s", modulekey, regkey)

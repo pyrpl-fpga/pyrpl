@@ -146,7 +146,7 @@ class PfdErrorSignal(PllInput, InputSignal):
         except InsufficientResourceError:
             # scope is blocked
             self._logger.warning("No free scopes left for sweep_acquire. ")
-            return None, None
+            return None, None, None
 
     def calibrate(self, autosave=False):
         """
@@ -154,11 +154,11 @@ class PfdErrorSignal(PllInput, InputSignal):
         the curve is needed by expected_signal.
         """
         curve1, curve2, times = self.sweep_acquire()
-        if curve1 or curve2 is None:
+        if curve1 is None or curve2 is None or times is None:
             self._logger.warning('Aborting calibration because no scope is available...')
             return None
 
-        self.calibration_data.get_stats_from_curve(curve)
+        self.calibration_data.get_stats_from_curve(curve1)
         # log calibration values
         self._logger.info("%s calibration successful - Min: %.3f  Max: %.3f  Mean: %.3f  Rms: %.3f",
                           self.name,
@@ -172,7 +172,7 @@ class PfdErrorSignal(PllInput, InputSignal):
         if autosave:
             params = self.calibration_data.setup_attributes
             params['name'] = self.name+"_calibration"
-            newcurve = self._save_curve(times, curve, **params)
+            newcurve = self._save_curve(times, curve1, **params)
             self.calibration_data.curve = newcurve
             return newcurve
         else:

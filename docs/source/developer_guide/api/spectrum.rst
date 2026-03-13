@@ -1,3 +1,5 @@
+.. _How a spectrum is computed in PyRPL:
+
 How a spectrum is computed in PyRPL
 **********************************************************
 
@@ -123,7 +125,7 @@ over frequency give the right variances.
 
 Let's take a white noise of variance 1. 
 
-<x[k] x[k']> = delta(k-k').
+``<x[k] x[k']> = delta(k-k')``
 
 We would like the total spectrum in units of Vrms^2/Hz, integrated from 0 to Nyquist frequency 
 to yield the same variance of 1. This is ensured by the Equivalent noise bandwidth of the filter window. 
@@ -131,15 +133,15 @@ To convert from V_pk^2 to V_rms^2/Hz, the spectrum is divided by the residual ba
 
 Let's calculate:
 
-sum_r <|Y[r]|^2> = (...) = N sum_k w[k]^2 <|x[k]|^2>
+``sum_r <|Y[r]|^2> = (...) = N sum_k w[k]^2 <|x[k]|^2>``
 
-If we remind that x[k] is a white noise following <|x[k]|^2> = 1, we get:
+If we remind that x[k] is a white noise following ``<|x[k]|^2> = 1``, we get:
 
-sum_r <|Y[r]|^2> = N sum_k w[k]^2
+``sum_r <|Y[r]|^2> = N sum_k w[k]^2``
 
 So, since we want:
 
-sum_r <|Z[r]|^2> df = 2, (indeed, we want to work with single-sided spectra, such that integrating over positive frequencies is enough)
+``sum_r <|Z[r]|^2> df = 2`` (indeed, we want to work with single-sided spectra, such that integrating over positive frequencies is enough)
 
 with df the frequency step in the FFT, we need to choose:
 

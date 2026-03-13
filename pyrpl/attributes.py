@@ -1192,13 +1192,14 @@ class SelectProperty(BaseProperty):
                     options = OrderedDict()
         if not hasattr(options, "keys"):
             options = OrderedDict([(v, v) for v in options])
-        if len(options) == 0:
-            logger.debug("SelectProperty %s of module %s has no options!", self.name, instance)
-            options = {None: None}
+        
         # check whether options keys have changed w.r.t. last time and emit a signal in that
         # case. Also create a list of valid options in the parent module called
         # self.name+'_options'.
         if instance is not None:
+            if len(options) == 0:
+                logger.debug("SelectProperty %s of module %s has no options!", self.name, instance)
+                options = {None: None}
             try:
                 lastoptions = getattr(instance, '_' + self.name + '_lastoptions')
             except AttributeError:

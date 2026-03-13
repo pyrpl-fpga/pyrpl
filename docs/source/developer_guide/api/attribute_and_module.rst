@@ -86,18 +86,18 @@ methods to implement in derived class:
 
 -  \_init\_module(): initializes the module at startup. During this
    initialization, attributes can be initialized without overwriting
-   config file values. Practical to use instead of **init** to avoid
-   calling super().\ **init**\ ()
+   config file values. Practical to use instead of overriding
+   ``__init__``, to avoid calling ``super().__init__()``.
 -  \_setup(): sets the module ready for acquisition/output with the
    current attribute's values. The metaclass of the module autogenerates
-   a function like this: def setup(self, **kwds): **\ \* docstring of
-   function \_setup *** *** for attribute in self.setup\_attributes:
-   print-attribute-docstring-here \*\*\*\*
+   a function like this:
 
    ::
 
-       self.set_setup_attributes(kwds)
-       return self._setup()
+      def setup(self, **kwds):
+          # docstring of _setup and setup attributes are injected
+          self.set_setup_attributes(kwds)
+          return self._setup()
 
 -  \_ownership\_changed(old, new): this function is called when the
    module owner changes it can be used to stop the acquisition for

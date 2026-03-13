@@ -8,7 +8,8 @@ from pyrpl.hardware_modules import *
 from pyrpl.modules import *
 from pyrpl import APP
 from qtpy import QtCore
-from .test_load_save import scramble_values
+from pyrpl.test.test_load_save import scramble_values
+from pyrpl.test.test_attribute import DummyModule
 
 
 class TestValidateAndNormalize(TestPyrpl):
@@ -31,15 +32,16 @@ class TestValidateAndNormalize(TestPyrpl):
     #             except:
     #                 pass
 
-    def test_validate_and_normalize_pytest(self):
+    def test_validate_and_normalize_pytest(self, subtests):
         # same test as above but without the yield not supported by pytest, 
         # I don't think it changes anything here keeping both for nosetests
         for mod in self.pyrpl.modules:
-            for exclude in [Lockbox]:  # lockbox is too complicated here
+            for exclude in [Lockbox, DummyModule]:  # lockbox is too complicated here
                 if isinstance(mod, exclude):
                     break
             else:
-                self.assert_validate_and_normalize(mod)
+                with subtests.test(mod=mod):
+                    self.assert_validate_and_normalize(mod)
                 # make sure all modules are stopped at the end of this test
                 try:
                     mod.stop()

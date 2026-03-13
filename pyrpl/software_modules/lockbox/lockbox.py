@@ -152,7 +152,7 @@ class Lockbox(LockboxModule):
                              %(unit1+'_in_'+unit2))
 
     def _unit_in_setpoint_unit(self, unit):
-        # helper function to convert setpoint_unit into unit
+        # helper function to convert unit into setpoint_unit
         return self._unit1_in_unit2(unit, self.setpoint_unit)
 
     def _setpoint_unit_in_unit(self, unit):
@@ -233,14 +233,14 @@ class Lockbox(LockboxModule):
             self._asg = self.pyrpl.asgs.pop(self.name)
         return self._asg
 
-    def calibrate_all(self, autosave=False):
+    def calibrate_all(self, autosave=False, timeout_min=1):
         """
         Calibrates successively all inputs
         """
         curves = []
         for input in self.inputs:
             try:
-                c = input.calibrate(autosave=autosave)
+                c = input.calibrate(autosave=autosave, timeout_min=timeout_min)
                 if c is not None:
                     curves.append(c)
             except BaseException as e:

@@ -6,11 +6,12 @@ import os
 from ..widgets.attribute_widgets import SelectAttributeWidget, BoolAttributeWidget, NumberAttributeWidget
 from ..attributes import BoolProperty, NumberProperty, SelectProperty
 from .test_base import TestPyrpl
+import pytest
 
 
 class TestModuleWidgets(TestPyrpl):
-    @classmethod
-    def setup(self):
+    @pytest.fixture(autouse=True)
+    def setup_do_gui_tests(self):
         ## these tests currently do not run on travis.
         ## our workaround is this: detect from environment variable
         ## if tests are executed on travis and refuse the gui tests

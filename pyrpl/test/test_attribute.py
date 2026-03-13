@@ -38,7 +38,7 @@ class DummyModule(Module):
 
 
 class TestAttributeClass(TestPyrpl):
-    source_config_file = "nosetests_source_dummy_module"
+    # source_config_file = "nosetests_source_dummy_module"
 
     def test_config_file(self):
         assert("DummyModule" in self.pyrpl.c.pyrpl.modules)

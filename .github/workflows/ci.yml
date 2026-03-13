@@ -1,0 +1,384 @@
+name: CI/CD Pipeline
+
+concurrency:
+  group: redpitaya-hardware
+  cancel-in-progress: false
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [published]
+  workflow_dispatch:  # Allows manual triggering from GitHub UI
+
+env:
+  REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
+  REDPITAYA_PASSWORD: ${{ secrets.REDPITAYA_PASSWORD }}  
+  PYPI_PSW: ${{ secrets.PYPI_PSW }}
+
+jobs:
+  # Unit tests across multiple Python versions and OS with real RedPitaya
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ['3.13']
+ 
+      max-parallel: 1   # ensures only one platform runs at a time
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Set up display (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        export DISPLAY=:99
+        sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
+    - name: Install system dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qt5-qmake
+
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install qt5
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e ".[test, qt-pyqt5]"
+
+    - name: Register Jupyter kernel
+      run: python -m ipykernel install --sys-prefix --name python3
+   
+    - name: Test RedPitaya connection
+      run: | # restarts ssh to try to fix potential connection issues
+    
+
+        python -c "
+        import paramiko
+        import sys
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect('${{ secrets.REDPITAYA_PUBLIC_IP }}', 
+                       port=22, 
+                       username='${{ secrets.REDPITAYA_USER }}',
+                       password='${{ secrets.REDPITAYA_PASSWORD }}',
+                       timeout=10)
+            stdin, stdout, stderr = ssh.exec_command('echo RedPitaya connected successfully')
+            print(stdout.read().decode().strip())
+            ssh.close()
+            print('RedPitaya connection test passed')
+        except Exception as e:
+            print(f'RedPitaya connection failed: {e}')
+            sys.exit(1)
+        "
+
+    - name: Run tests with retries
+      shell: bash
+      run: |
+        # use a custom global configfile adapted to the hardware for unit tests
+        cp ./remote_global_config.yml ./pyrpl/config/global_config.yml
+        # Run full test suite
+        echo "==========================================="
+        echo "Running full test suite (attempt 1/3)"
+        echo "==========================================="
+        if python -m pytest pyrpl/test/ --cov=pyrpl --cov-report=xml; then
+          echo "All tests passed!"
+          exit 0
+        fi
+        
+        # First retry of failed tests
+        echo ""
+        echo "==========================================="
+        echo "Re-running failed tests (attempt 2/3)"
+        echo "==========================================="
+        if python -m pytest pyrpl/test/ --lf --cov=pyrpl --cov-report=xml --cov-append; then
+          echo "All previously failed tests passed!"
+          exit 0
+        fi
+        
+        # Final retry of failed tests
+        echo ""
+        echo "==========================================="
+        echo "Final retry (attempt 3/3)"
+        echo "==========================================="
+        python -m pytest pyrpl/test/ --lf --cov=pyrpl --cov-report=xml --cov-append
+        # Exit with the result of this final attempt
+
+      env:
+        QT_QPA_PLATFORM: offscreen
+        REDPITAYA_HOSTNAME: ${{ secrets.REDPITAYA_PUBLIC_IP }}
+        REDPITAYA_USER: ${{ secrets.REDPITAYA_USER }}
+        REDPITAYA_PASSWORD: ${{ secrets.REDPITAYA_PASSWORD }}
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+
+  # Build Linux binary
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Set up display
+      run: |
+        export DISPLAY=:99
+        sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qt5-qmake psmisc
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        
+    - name: Install package
+      run: pip install -e .[qt-pyqt5]
+
+    - name: Build binary
+      run: |
+        pyinstaller pyrpl.spec
+        mv dist/pyrpl ./pyrpl-linux-${{ github.ref_name }}
+        chmod +x pyrpl-linux-${{ github.ref_name }}
+      env:
+        QT_QPA_PLATFORM: offscreen
+
+    - name: Test binary
+      run: |
+        timeout 30s ./pyrpl-linux-${{ github.ref_name }} config=test_linux hostname=_FAKE_ || true
+        sleep 5
+        pkill -f pyrpl-linux || true
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-linux-binary
+        path: pyrpl-linux-${{ github.ref_name }}
+
+  # Build Windows binary
+  build-windows:
+    runs-on: windows-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Install package
+      run: pip install -e .[qt-pyqt5]
+
+    - name: Build binary
+      run: |
+        pyinstaller pyrpl.spec
+        move dist\pyrpl.exe .\pyrpl-windows-${{ github.ref_name }}.exe
+      env:
+        QT_QPA_PLATFORM_PLUGIN_PATH: ${{ env.Python_ROOT_DIR }}\Lib\site-packages\PyQt5\Qt5\plugins\platforms
+
+    - name: Test binary
+      run: |
+        Start-Process -FilePath ".\pyrpl-windows-${{ github.ref_name }}.exe" -ArgumentList "config=test_windows hostname=_FAKE_" -NoNewWindow
+        Start-Sleep -Seconds 20
+        Get-Process -Name "pyrpl-windows-*" -ErrorAction SilentlyContinue | Stop-Process -Force
+      shell: powershell
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-windows-binary
+        path: pyrpl-windows-${{ github.ref_name }}.exe
+
+    # Uncomment when you have SourceForge credentials
+    # - name: Deploy to SourceForge
+    #   if: github.event_name == 'push'
+    #   run: |
+    #     python .deploy_to_sourceforge.py pyrpl-windows-${{ github.ref_name }}.exe
+
+  # Build macOS binary
+  build-macos:
+    runs-on: macos-latest
+    needs: test
+    if: github.event_name == 'push' || github.event_name == 'release'
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install system dependencies
+      run: brew install qt5
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+
+    - name: Install package
+      run: pip install -e .[qt-pyqt5]
+
+    - name: Build binary
+      run: |
+        pyinstaller pyrpl.spec
+        mv dist/pyrpl ./pyrpl-macos-${{ github.ref_name }}
+        chmod +x pyrpl-macos-${{ github.ref_name }}
+
+    - name: Test binary
+      run: |
+        timeout 30s ./pyrpl-macos-${{ github.ref_name }} config=test_osx hostname=_FAKE_ || true
+        sleep 5
+        pkill -f pyrpl-macos || true
+
+    - name: Upload binary artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-macos-binary
+        path: pyrpl-macos-${{ github.ref_name }}
+
+  # Build and publish Python package
+  # build-package:
+  #   runs-on: ubuntu-latest
+  #   needs: test
+  #   if: github.event_name == 'push' || github.event_name == 'release'
+
+  #   steps:
+  #   - uses: actions/checkout@v4
+
+  #   - name: Set up Python
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: '3.9'
+
+  #   - name: Install dependencies
+  #     run: |
+  #       python -m pip install --upgrade pip
+  #       pip install build twine
+  #       sudo apt-get install -y pandoc
+
+  #   - name: Convert README
+  #     run: |
+  #       pandoc --from=markdown --to=rst --output=README.rst README.md
+
+  #   - name: Build package
+  #     run: |
+  #       python -m build
+
+  #   - name: Upload package artifacts
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: python-package
+  #       path: dist/
+
+    # Uncomment when you have PyPI credentials
+    # - name: Publish to PyPI
+    #   if: github.event_name == 'release'
+    #   uses: pypa/gh-action-pypi-publish@release/v1
+    #   with:
+    #     password: ${{ secrets.PYPI_API_TOKEN }}
+
+  
+  # Publish compiled binaries to a GitHub Release
+  publish-release:
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-windows, build-macos]
+    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-assets
+
+    - name: Create GitHub Release (if not already created)
+      id: create_release
+      uses: actions/create-release@v1
+      if: github.event_name != 'release'
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Release ${{ github.ref_name }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Linux binary
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-linux-binary/pyrpl-linux-${{ github.ref_name }}
+        asset_name: pyrpl-linux-${{ github.ref_name }}
+        asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Windows binary
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-windows-binary/pyrpl-windows-${{ github.ref_name }}.exe
+        asset_name: pyrpl-windows-${{ github.ref_name }}.exe
+        asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload macOS binary
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-macos-binary/pyrpl-macos-${{ github.ref_name }}
+        asset_name: pyrpl-macos-${{ github.ref_name }}
+        asset_content_type: application/octet-stream
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+# Notification job
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, build-linux, build-windows, build-macos, publish-release]
+    if: always()
+
+    steps:
+    - name: Notify on success
+      if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+      run: echo "All jobs completed successfully!"
+
+    - name: Notify on failure
+      if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+      run: |
+        echo "Some jobs failed or were cancelled"
+        exit 1

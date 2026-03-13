@@ -1,15 +1,14 @@
 import logging
 logger = logging.getLogger(name=__name__)
 from pyrpl.test.test_base import TestPyrpl
+import pytest
 
 
 class TestInput(TestPyrpl):
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_sampler(self):
         self.p = self.pyrpl
         self.sampler = self.r.sampler
-
-    def teardown_method(self):
-        pass
 
     def test_sampler(self):
         with self.pyrpl.asgs.pop('test_sampler') as asg:

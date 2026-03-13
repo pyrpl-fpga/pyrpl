@@ -1,19 +1,17 @@
-[<img src="http://pyrpl.readthedocs.io/en/latest/_static/logo.png" width="250" alt="PyRPL">](http://www.pyrpl.org/)
-[![Pyversions](https://img.shields.io/pypi/pyversions/ibm-analytics-engine-python.svg?style=flat-square)](https://pypi.python.org/pypi/ibm-analytics-engine-python)
+[<img src="https://pyrpl-fpga.github.io/pyrpl/_static/logo.png" width="250" alt="PyRPL">](https://www.pyrpl.org/)
+[![GitHub Actions CI](https://github.com/pyrpl-fpga/pyrpl/actions/workflows/ci.yml/badge.svg)](https://github.com/pyrpl-fpga/pyrpl/actions)
 [![code coverage](https://codecov.io/github/pyrpl-fpga/pyrpl/coverage.svg?branch=master "Code coverage")](https://codecov.io/gh/pyrpl-fpga/pyrpl)
-[![Python versions on PyPI](https://img.shields.io/pypi/pyversions/pyrpl.svg)](https://pypi.python.org/pypi/pyrpl/)
-[![PyRPL version on PyPI](https://img.shields.io/pypi/v/pyrpl.svg "PyRPL on PyPI")](https://pypi.python.org/pypi/pyrpl/)
-[![Download pyrpl](https://img.shields.io/sourceforge/dt/pyrpl.svg)](https://sourceforge.net/projects/pyrpl/files/)
-[![Documentation Status](https://readthedocs.org/projects/pyrpl/badge/?version=latest)](http://pyrpl.readthedocs.io/en/latest/)
+[![Python versions](https://img.shields.io/badge/python-3.8%20|%203.9%20|%203.10%20|%203.11%20|%203.12%20|%203.13-blue.svg)](https://github.com/pyrpl-fpga/pyrpl)
+[![Documentation Status](https://img.shields.io/badge/docs-github%20pages-blue)](https://pyrpl-fpga.github.io/pyrpl/)
 [![join chat on gitter](https://badges.gitter.im/JoinChat.svg "Join chat on gitter")](https://gitter.im/pyrpl-fpga/pyrpl)
-[![License](https://img.shields.io/pypi/l/pyrpl.svg)](https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE)
-
-[![Download PyRPL](https://a.fsdn.com/con/app/sf-download-button)](https://sourceforge.net/projects/pyrpl/files/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE)
+[![GitHub downloads](https://img.shields.io/github/downloads/pyrpl-fpga/pyrpl/total)](https://github.com/pyrpl-fpga/pyrpl/releases/latest)
+[![GitHub release](https://img.shields.io/github/v/release/pyrpl-fpga/pyrpl)](https://github.com/pyrpl-fpga/pyrpl/releases/latest)
 
 PyRPL (Python RedPitaya Lockbox) turns your RedPitaya into a powerful DSP device, especially suitable as a digital lockbox and measurement device in quantum optics experiments.
 
 ## Website
-The new official PyRPL website address is [http://pyrpl-fpga.github.io/pyrpl/](http://pyrpl-fpga.github.io/pyrpl/) . The information on the website [http://pyrpl.readthedocs.io/](http://pyrpl.readthedocs.io) is outdated.
+The official PyRPL website address is [http://pyrpl.readthedocs.io/](http://pyrpl.readthedocs.io).
 
 ## Installation
 The easiest and fastest way to get PyRPL is to download and execute the [precompiled executable for windows, mac and linux](https://github.com/pyrpl-fpga/pyrpl/releases). This option requires no extra programs to be installed on the computer.
@@ -21,24 +19,19 @@ The easiest and fastest way to get PyRPL is to download and execute the [precomp
 If instead you would like to use and/or modify the source code, make sure you have an
 installation of Python (3.7 to 3.13). The easiest way to install the PyRPL python module cleanly is to run 
 ```
-pip install git+https://github.com/pyrpl-fpga/pyrpl.git
+pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 ```
 This will pull the most recent code from Github and install the needed module. It is recommended to use a new environment. DO NOT USE `pip install pyrpl` ! The code hosted on pypi is outdated.
 
 If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
 ```
-conda install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+conda install numpy paramiko nose pip pyqt qtpy pyqtgraph pyyaml scp qasync
 ```
 Check [this documentation section](http://pyrpl-fpga.github.io/pyrpl//en/latest/user_guide/installation/common_problems.html#anaconda-problems) for hints if you are unable to execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands
 ```
-conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+conda create -y -n pyrpl-env numpy paramiko nose pip pyqt qtpy pyqtgraph pyyaml scp qasync
 conda activate pyrpl-env
 ```
-If you are not using Anaconda, and using pip, you can just run: 
-```
-pip install numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
-```
-or clone the reposetory before and use the requirements.txt.
 
 Next, clone (if you have a [git client](https://git-scm.com/downloads) installed - recommended option) the pyrpl repository to your computer with 
 ```
@@ -49,19 +42,26 @@ or [download and extract](https://github.com/pyrpl-fpga/pyrpl/archive/master.zip
 If you are using pip, you can just navigate to the pyrpl directory and run 
 
 ```
-pip install -r requirements.txt
+pip install -e .[qt-pyqt5]
 ```
-if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
+if you want an editable installation of pyrpl or 
 
 ```
-pip install -e .
+pip install .[qt-pyqt5]
 ```
-for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
-
-If you want to use conda (which I no longer recommend given that pip seems very robust now and much faster than conda), you can run :
+for a regular installation (if you have no instention of modifying the code). I recommend using pip as conda tends to become very slow at solving environments. Note that pyrpl requires a Qt binding but it is compatible with PyQt5, PyQt6, PySide2 and PySide6 so you can also run :
 
 ```
-conda create -y -n pyrpl-env numpy scipy paramiko pandas nose pip pyqt qtpy pyqtgraph pyyaml nbconvert scp qasync
+pip install -e .[qt-pyqt6]
+pip install -e .[qt-pyside2]  
+pip install -e .[qt-pyside6]
+```
+
+
+If you want to use conda, you can run :
+
+```
+conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
 conda activate pyrpl-env
 ```
 This will create an new conda environment named "pyrpl-env" and install all the needed modules inside. 
@@ -72,17 +72,24 @@ conda env create -f environment_pyrpl.yml
 conda activate pyrpl-env
 ```
 
-if you want a manual installation of pyrpl (it will not be automatically added to your python modules list) or 
+## Installation with Optional Dependencies
 
-```
-pip install -e .
-```
-for an automatic installation. I recommend this method as conda tends to become very slow at solving environments.
+### For Testing
 
-You can also use the environment config file "environment_pyrpl.yml"
+```bash
+pip install -e .[test]
 ```
-conda env create -f environment_pyrpl.yml
-conda activate pyrpl-env
+
+### For IPython/Jupyter Support
+
+```bash
+pip install -e .[ipython]
+```
+
+### For Development (all dependencies)
+
+```bash
+pip install -e .[dev]
 ```
 
 
@@ -101,6 +108,7 @@ We collect a list of common problems on the [documentation website](http://pyrpl
 ## Unit test
 If you want to check whether PyRPL works correctly on your machine, navigate with a command line terminal into the pyrpl root directory and type the  following commands (by substituting the ip-address / hostname of your Red Pitaya, of course)
 ```
+pip install pytest pytest-cov matplotlib nbconvert
 set REDPITAYA_HOSTNAME=your_redpitaya_ip_address
 pytest
 ```
@@ -111,7 +119,6 @@ The full html documentation is hosted at [http://pyrpl-fpga.github.io/pyrpl/](ht
 
 ## Updates
 Since PyRPL is continuously improved, you should install upgrades if you expect bugfixes. 
-If you have cloned the GitHub repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
 If you have cloned the GitHub repository (recommended for bleeding-edge updates), navigate into the pyrpl root directory on your local harddisk computer and type
 ```
 git pull

@@ -63,15 +63,17 @@ jobs:
     - name: Build Linux binary
       run: |
         pyinstaller pyrpl.spec
-        mv dist/pyrpl pyrpl-linux-${{ inputs.ref }}
-        chmod +x pyrpl-linux-${{ inputs.ref }}
+        # PyInstaller creates a directory, so we need to archive it
+        cd dist
+        tar -czf pyrpl-linux-${{ inputs.ref }}.tar.gz pyrpl
+        cd ..
       env:
         QT_QPA_PLATFORM: offscreen
 
     - uses: actions/upload-artifact@v4
       with:
         name: pyrpl-linux
-        path: pyrpl-linux-${{ inputs.ref }}
+        path: dist/pyrpl-linux-${{ inputs.ref }}.tar.gz
 
   build-macos:
     if: inputs.build_macos
@@ -100,21 +102,24 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pyinstaller
-          pip install -r requirements.txt
+          pip install .
 
       - name: Build pyrpl (macOS ${{ matrix.arch.name }})
         run: |
           pyinstaller pyrpl.spec
-          mv dist/pyrpl pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
-          chmod +x pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
+          # Create a zip archive of the directory
+          cd dist
+          zip -r pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}.zip pyrpl
+          cd ..
 
-      - name: Verify architecture
+      - name: Verify build
         run: |
-          file pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
+          file dist/pyrpl/pyrpl
+          
       - uses: actions/upload-artifact@v4
         with:
             name: pyrpl-macos-${{ matrix.arch.name }}
-            path: pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
+            path: dist/pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}.zip
 
   build-windows:
     if: inputs.build_windows
@@ -137,20 +142,47 @@ jobs:
 
     - name: Build Windows binary
       run: |
-        pyinstaller pyrpl.spec
-        move dist\pyrpl.exe pyrpl-windows-${{ inputs.ref }}.exe
+        # Clean any previous builds
+        if (Test-Path "build") { Remove-Item -Recurse -Force build }
+        if (Test-Path "dist") { Remove-Item -Recurse -Force dist }
+        
+        # Build with verbose output
+        pyinstaller --clean pyrpl.spec
+        
+        # Debug: List what's in dist
+        Write-Host "`nContents of dist directory:"
+        Get-ChildItem -Path dist -Force | Format-Table Name, Length, Mode
+        
+        Write-Host "`nFull directory structure:"
+        Get-ChildItem -Path dist -Recurse -Force | Select-Object FullName
+        
+        # Check if it's a directory or single file
+        if (Test-Path "dist\pyrpl" -PathType Container) {
+          Write-Host "`nFound pyrpl directory, creating zip..."
+          Compress-Archive -Path dist\pyrpl -DestinationPath dist\pyrpl-windows-${{ inputs.ref }}.zip
+        } elseif (Test-Path "dist\pyrpl.exe" -PathType Leaf) {
+          Write-Host "`nWARNING: Found single pyrpl.exe file instead of directory!"
+          Write-Host "The spec file should create a directory, but PyInstaller created a single file."
+          Write-Host "Creating zip of single exe file..."
+          Compress-Archive -Path dist\pyrpl.exe -DestinationPath dist\pyrpl-windows-${{ inputs.ref }}.zip
+        } else {
+          Write-Host "`nERROR: Could not find dist\pyrpl or dist\pyrpl.exe"
+          exit 1
+        }
       env:
         QT_QPA_PLATFORM_PLUGIN_PATH: ${{ env.Python_ROOT_DIR }}\Lib\site-packages\PyQt5\Qt5\plugins\platforms
 
     - uses: actions/upload-artifact@v4
       with:
         name: pyrpl-windows
-        path: pyrpl-windows-${{ inputs.ref }}.exe
+        path: dist/pyrpl-windows-${{ inputs.ref }}.zip
 
   publish-release:
     if: inputs.publish_release
     needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Download artifacts
@@ -172,20 +204,31 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-linux/pyrpl-linux-${{ inputs.ref }}
-        asset_name: pyrpl-linux-${{ inputs.ref }}
-        asset_content_type: application/octet-stream
+        asset_path: release-assets/pyrpl-linux/pyrpl-linux-${{ inputs.ref }}.tar.gz
+        asset_name: pyrpl-linux.tar.gz
+        asset_content_type: application/gzip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Upload macOS binary
+    - name: Upload macOS arm64 binary
       if: inputs.build_macos
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-macos/pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
-        asset_name: pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}
-        asset_content_type: application/octet-stream
+        asset_path: release-assets/pyrpl-macos-arm64/pyrpl-macos-arm64-${{ inputs.ref }}.zip
+        asset_name: pyrpl-macos-arm64.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload macOS x86_64 binary
+      if: inputs.build_macos
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-macos-x86_64/pyrpl-macos-x86_64-${{ inputs.ref }}.zip
+        asset_name: pyrpl-macos-x86_64.zip
+        asset_content_type: application/zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -194,8 +237,8 @@ jobs:
       uses: actions/upload-release-asset@v1
       with:
         upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-windows/pyrpl-windows-${{ inputs.ref }}.exe
-        asset_name: pyrpl-windows-${{ inputs.ref }}.exe
-        asset_content_type: application/octet-stream
+        asset_path: release-assets/pyrpl-windows/pyrpl-windows-${{ inputs.ref }}.zip
+        asset_name: pyrpl-windows.zip
+        asset_content_type: application/zip
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,5 @@
 .. _building_fpga:
+
 Building the FPGA firmware
 ****************************
 

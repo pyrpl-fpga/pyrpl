@@ -10,7 +10,7 @@ from pyrpl import APP
 from pyrpl.async_utils import sleep
 from qtpy import QtCore
 import pytest
-
+from pyrpl.test.test_attribute import DummyModule
 
 def scramble_values(mod,
                     str_val='foo',
@@ -93,18 +93,19 @@ class TestLoadSave(TestPyrpl):
     #             except:
     #                 pass
 
-    def test_load_save_pytest(self):
+    def test_load_save_pytest(self, subtests):
         # same test as above but without the yield not supported by pytest, 
         # I don't think it changes anything here keeping both for nosetests
         for mod in self.pyrpl.modules:
             #for exclude in [Lockbox, Scope]: # scope has an unknown bug
             # here (nosetests freezes at a  later time)
-            for exclude in [Lockbox]:  # lockbox is tested elsewhere
+            for exclude in [Lockbox, DummyModule]:  # lockbox is tested elsewhere
                 if isinstance(mod, exclude):
                     break
             else:
                 print(mod)
-                self.assert_load_save_module(mod)
+                with subtests.test(mod=mod):
+                    self.assert_load_save_module(mod)
                 # make sure all modules are stopped at the end of this test
                 try:
                     mod.stop()

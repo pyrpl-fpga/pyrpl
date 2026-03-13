@@ -4,12 +4,8 @@ Installation
 Preparing the hardware
 =========================
 
-For PyRPL to work, you must have a working `Red Pitaya / StemLab <http://www.redpitaya.com>`_ (`official documentation <http://redpitaya.readthedocs.io/en/latest/>`_) connected to the same local area network (LAN) as the computer PyRPL is running on. PyRPL is compatible with all operating system versions of the Red Pitaya and does not require any customization of the Red Pitaya. If you have not already set up your Red Pitaya:
-
-* download and unzip the `Red Pitaya OS Version 0.92 image <https://sourceforge.net/projects/pyrpl/files/SD_Card_RedPitayaOS_v0.92.img.zip/download>`_,
-* flash this image on 4 GB (or larger) micro SD card using `Win32DiskImager <https://sourceforge.net/projects/win32diskimager/>`_ (see a `step-by-step guide for all operating systems <http://redpitaya.readthedocs.io/en/latest/quickStart/SDcard/SDcard.html>`_), and insert the card into your Red Pitaya, and
-* the latest version of pyrpl is also compatible with os version 2.0x and 1.x
-* connect the Red Pitaya to your LAN and connect its power supply.
+For PyRPL to work, you need a working `Red Pitaya / STEMlab <https://www.redpitaya.com/>`_ connected to the same local area network (LAN) as the computer running PyRPL.
+If you have not already set up your Red Pitaya, follow the current `official Red Pitaya quick-start documentation <https://redpitaya.readthedocs.io/en/latest/>`_ and make sure you can reach the board from your computer.
 
 :doc:`user_guide/installation/hardware_installation` gives more detailed instructions in case you are experiencing any trouble.
 
@@ -19,13 +15,13 @@ For PyRPL to work, you must have a working `Red Pitaya / StemLab <http://www.red
 Installing PyRPL
 =================
 
-The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable for
-
-* **windows**: `pyrpl-windows.exe <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl.exe>`__,
-* **linux**: `pyrpl-linux <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl>`__, or
-* **Mac OS X**: `pyrpl-mac <https://github.com/pyrpl-fpga/pyrpl/releases/download/0.9.7.0/pyrpl_mac>`__.
+The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable from the `PyRPL releases page <https://github.com/pyrpl-fpga/pyrpl/releases>`__.
 
 If you prefer an installation from source code, go to :ref:`installation_from_source`.
+
+.. warning::
+
+   Do **not** use ``pip install pyrpl``. The package on PyPI is outdated. Use the GitHub-based installation documented in :doc:`user_guide/installation/pyrpl_installation`.
 
 
 Compiling the FPGA code (optional)
