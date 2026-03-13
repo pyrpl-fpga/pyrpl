@@ -11,7 +11,7 @@
 PyRPL (Python RedPitaya Lockbox) turns your RedPitaya into a powerful DSP device, especially suitable as a digital lockbox and measurement device in quantum optics experiments.
 
 ## Website
-The new official PyRPL website address is [http://pyrpl-fpga.github.io/pyrpl/](http://pyrpl-fpga.github.io/pyrpl/) . The information on the website [http://pyrpl.readthedocs.io/](http://pyrpl.readthedocs.io) is outdated.
+The official PyRPL website address is [http://pyrpl.readthedocs.io/](http://pyrpl.readthedocs.io).
 
 ## Installation
 The easiest and fastest way to get PyRPL is to download and execute the [precompiled executable for windows, mac and linux](https://github.com/pyrpl-fpga/pyrpl/releases). This option requires no extra programs to be installed on the computer.
