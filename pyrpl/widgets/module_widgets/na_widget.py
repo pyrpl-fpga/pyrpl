@@ -18,8 +18,8 @@ output selected in :code:`output_direct`.
   defines the number of frequency points in the recorded transfer function.
 * :attr:`~pyrpl.software_modules.network_analyzer.NetworkAnalyzer.rbw` is
   the cutoff frequency of the low-pass filter after demodulation. Furthermore,
-  the time :math:`\\tau` spent to record each point is
-  :math:`\\tau=\\texttt{average_per_point} / \\texttt{rbw}`.
+  the time :math:`\tau` spent to record each point is
+  :math:`\tau =` :code:`average_per_point` / :code:`rbw`.
 * :attr:`~pyrpl.software_modules.network_analyzer.NetworkAnalyzer.average_per_point`:
   Each point is averaged inside the FPGA before being retrieved by the
   client computer that runs PyRPL. You should increase this parameter or
