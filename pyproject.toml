@@ -57,9 +57,15 @@ dev = [
     "nbconvert",
     "nbformat",
     "pyinstaller", 
-    "sphinx", 
-    "sphinx_bootstrap_theme",
     "scipy"
+]
+
+# dependencies to build docs
+docs = [
+    "nbconvert",
+    "nbformat",
+    "sphinx",
+    "furo",
 ]
 
 # Test-only dependencies
