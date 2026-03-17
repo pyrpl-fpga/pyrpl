@@ -60,7 +60,7 @@ the scope:
     # launch a single (asynchronous) curve acquisition, the asynchronous
     # acquisition means that the function returns immediately, eventhough the
     # data-acquisition is still going on.
-    res = s.curve_async()
+    res = s.single_async()
 
     print("Before turning on asg:")
     print("Curve ready:", s.curve_ready()) # trigger should still be armed
@@ -75,7 +75,7 @@ the scope:
     print("Trigger event age [ms]:",8e-9*((
     s.current_timestamp&0xFFFFFFFFFFFFFFFF) - s.trigger_timestamp)*1000)
 
-    # The function curve_async returns a *future* (or promise) of the curve. To
+    # The function single_async returns a *future* (or promise) of the curve. To
     # access the actual curve, use result()
     ch1, ch2 = res.result()
 

@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 ---------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version : Vivado v.2024.2 (win64) Build 5239630 Fri Nov 08 22:35:27 MST 2024
-| Date         : Fri Feb 27 17:47:29 2026
+| Date         : Mon Feb  2 21:14:57 2026
 | Host         : PCLDY-ESGT-419 running 64-bit major release  (build 9200)
 | Command      : report_drc -file out/post_imp_drc.rpt
 | Design       : red_pitaya_top
@@ -24,21 +24,21 @@ Table of Contents
       Design limits: <entire design considered>
            Ruledeck: default
              Max checks: <unlimited>
-             Checks found: 282
+             Checks found: 228
 +----------+----------+----------------------------+--------+
 | Rule     | Severity | Description                | Checks |
 +----------+----------+----------------------------+--------+
-| DPIP-1   | Warning  | Input pipelining           | 77     |
-| DPOP-1   | Warning  | PREG Output pipelining     | 44     |
-| DPOP-2   | Warning  | MREG Output pipelining     | 49     |
+| DPIP-1   | Warning  | Input pipelining           | 72     |
+| DPOP-1   | Warning  | PREG Output pipelining     | 38     |
+| DPOP-2   | Warning  | MREG Output pipelining     | 43     |
 | PDRC-132 | Warning  | SLICE_PairEqSame_A6A5_WARN | 2      |
-| PDRC-134 | Warning  | SLICE_PairEqSame_B6B5_WARN | 9      |
-| PDRC-136 | Warning  | SLICE_PairEqSame_C6C5_WARN | 18     |
-| PDRC-138 | Warning  | SLICE_PairEqSame_D6D5_WARN | 30     |
-| PDRC-140 | Warning  | SLICE_PairEqSame_A6A5_WARN | 2      |
-| PDRC-142 | Warning  | SLICE_PairEqSame_B6B5_WARN | 11     |
-| PDRC-144 | Warning  | SLICE_PairEqSame_C6C5_WARN | 14     |
-| PDRC-146 | Warning  | SLICE_PairEqSame_D6D5_WARN | 26     |
+| PDRC-134 | Warning  | SLICE_PairEqSame_B6B5_WARN | 7      |
+| PDRC-136 | Warning  | SLICE_PairEqSame_C6C5_WARN | 17     |
+| PDRC-138 | Warning  | SLICE_PairEqSame_D6D5_WARN | 26     |
+| PDRC-140 | Warning  | SLICE_PairEqSame_A6A5_WARN | 1      |
+| PDRC-142 | Warning  | SLICE_PairEqSame_B6B5_WARN | 7      |
+| PDRC-144 | Warning  | SLICE_PairEqSame_C6C5_WARN | 8      |
+| PDRC-146 | Warning  | SLICE_PairEqSame_D6D5_WARN | 7      |
 +----------+----------+----------------------------+--------+
 
 2. REPORT DETAILS
@@ -280,152 +280,127 @@ Related violations: <none>
 
 DPIP-1#48 Warning
 Input pipelining  
-DSP i_dsp/genblk5[5].iq/vco_product input i_dsp/genblk5[5].iq/vco_product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/demodulator/product1_reg input i_dsp/genblk5[6].iq/demodulator/product1_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#49 Warning
 Input pipelining  
-DSP i_dsp/genblk5[5].iq/vco_product__0 input i_dsp/genblk5[5].iq/vco_product__0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/demodulator/product2_reg input i_dsp/genblk5[6].iq/demodulator/product2_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#50 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/demodulator/product1_reg input i_dsp/genblk5[6].iq/demodulator/product1_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#51 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/demodulator/product2_reg input i_dsp/genblk5[6].iq/demodulator/product2_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#52 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#53 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#54 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product input i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#55 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product input i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product input i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#56 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product input i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 input i_dsp/genblk5[6].iq/modulator/secondproduct1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#57 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product input i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 input i_dsp/genblk5[6].iq/modulator/secondproduct1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#58 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 input i_dsp/genblk5[6].iq/modulator/secondproduct1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk5[6].iq/modulator/secondproduct2 input i_dsp/genblk5[6].iq/modulator/secondproduct2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#59 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 input i_dsp/genblk5[6].iq/modulator/secondproduct1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg input i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#60 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/secondproduct2 input i_dsp/genblk5[6].iq/modulator/secondproduct2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg input i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#61 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/vco_product input i_dsp/genblk5[6].iq/vco_product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#62 Warning
 Input pipelining  
-DSP i_dsp/genblk5[6].iq/vco_product__0 input i_dsp/genblk5[6].iq/vco_product__0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#63 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg input i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#64 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg input i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#65 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#66 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#67 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#68 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product input i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#69 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 input i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#70 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 input i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#71 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2 input i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPIP-1#72 Warning
 Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product input i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
-Related violations: <none>
-
-DPIP-1#73 Warning
-Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 input i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
-Related violations: <none>
-
-DPIP-1#74 Warning
-Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 input i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
-Related violations: <none>
-
-DPIP-1#75 Warning
-Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2 input i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2/A[29:0] is not pipelined. Pipelining DSP48 input will improve performance.
-Related violations: <none>
-
-DPIP-1#76 Warning
-Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/vco_product input i_dsp/genblk6[7].iq_2_outputs/vco_product/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
-Related violations: <none>
-
-DPIP-1#77 Warning
-Input pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/vco_product__0 input i_dsp/genblk6[7].iq_2_outputs/vco_product__0/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2 input i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2/B[17:0] is not pipelined. Pipelining DSP48 input will improve performance.
 Related violations: <none>
 
 DPOP-1#1 Warning
@@ -545,107 +520,77 @@ Related violations: <none>
 
 DPOP-1#24 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[5].iq/vco_product output i_dsp/genblk5[5].iq/vco_product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk5[6].iq/demodulator/product1_reg output i_dsp/genblk5[6].iq/demodulator/product1_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#25 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[5].iq/vco_product__0 output i_dsp/genblk5[5].iq/vco_product__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk5[6].iq/demodulator/product2_reg output i_dsp/genblk5[6].iq/demodulator/product2_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#26 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/demodulator/product1_reg output i_dsp/genblk5[6].iq/demodulator/product1_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product output i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#27 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/demodulator/product2_reg output i_dsp/genblk5[6].iq/demodulator/product2_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product output i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#28 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product output i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product output i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#29 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product output i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 output i_dsp/genblk5[6].iq/modulator/secondproduct1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#30 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product output i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk5[6].iq/modulator/secondproduct2 output i_dsp/genblk5[6].iq/modulator/secondproduct2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#31 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 output i_dsp/genblk5[6].iq/modulator/secondproduct1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg output i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#32 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/secondproduct2 output i_dsp/genblk5[6].iq/modulator/secondproduct2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg output i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#33 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/vco_product output i_dsp/genblk5[6].iq/vco_product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product output i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#34 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/vco_product__0 output i_dsp/genblk5[6].iq/vco_product__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product output i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#35 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg output i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product output i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#36 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg output i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product output i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#37 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product output i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 output i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-1#38 Warning
 PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product output i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
-Related violations: <none>
-
-DPOP-1#39 Warning
-PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product output i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
-Related violations: <none>
-
-DPOP-1#40 Warning
-PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product output i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
-Related violations: <none>
-
-DPOP-1#41 Warning
-PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 output i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
-Related violations: <none>
-
-DPOP-1#42 Warning
-PREG Output pipelining  
 DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2 output i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
-Related violations: <none>
-
-DPOP-1#43 Warning
-PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/vco_product output i_dsp/genblk6[7].iq_2_outputs/vco_product/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
-Related violations: <none>
-
-DPOP-1#44 Warning
-PREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/vco_product__0 output i_dsp/genblk6[7].iq_2_outputs/vco_product__0/P[47:0] is not pipelined (PREG=0). Pipelining the DSP48 output will improve performance and often saves power so it is suggested whenever possible to fully pipeline this function.  If this DSP48 function was inferred, it is suggested to describe an additional register stage after this function.  If the DSP48 was instantiated in the design, it is suggested to set the PREG attribute to 1.
 Related violations: <none>
 
 DPOP-2#1 Warning
@@ -790,667 +735,452 @@ Related violations: <none>
 
 DPOP-2#29 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[5].iq/vco_product multiplier stage i_dsp/genblk5[5].iq/vco_product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk5[6].iq/demodulator/product1_reg multiplier stage i_dsp/genblk5[6].iq/demodulator/product1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#30 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[5].iq/vco_product__0 multiplier stage i_dsp/genblk5[5].iq/vco_product__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk5[6].iq/demodulator/product2_reg multiplier stage i_dsp/genblk5[6].iq/demodulator/product2_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#31 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/demodulator/product1_reg multiplier stage i_dsp/genblk5[6].iq/demodulator/product1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product multiplier stage i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#32 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/demodulator/product2_reg multiplier stage i_dsp/genblk5[6].iq/demodulator/product2_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product multiplier stage i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#33 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product multiplier stage i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product multiplier stage i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#34 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product multiplier stage i_dsp/genblk5[6].iq/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 multiplier stage i_dsp/genblk5[6].iq/modulator/secondproduct1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#35 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product multiplier stage i_dsp/genblk5[6].iq/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk5[6].iq/modulator/secondproduct2 multiplier stage i_dsp/genblk5[6].iq/modulator/secondproduct2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#36 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/secondproduct1 multiplier stage i_dsp/genblk5[6].iq/modulator/secondproduct1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg multiplier stage i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#37 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/modulator/secondproduct2 multiplier stage i_dsp/genblk5[6].iq/modulator/secondproduct2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg multiplier stage i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#38 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/vco_product multiplier stage i_dsp/genblk5[6].iq/vco_product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#39 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk5[6].iq/vco_product__0 multiplier stage i_dsp/genblk5[6].iq/vco_product__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#40 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg multiplier stage i_dsp/genblk6[7].iq_2_outputs/demodulator/product1_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#41 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg multiplier stage i_dsp/genblk6[7].iq_2_outputs/demodulator/product2_reg/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#42 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[0]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
+DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 DPOP-2#43 Warning
 MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/firstproduct_saturation[1]/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
-Related violations: <none>
-
-DPOP-2#44 Warning
-MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/i0_product_and_sat/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
-Related violations: <none>
-
-DPOP-2#45 Warning
-MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/q0_product_and_sat/product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
-Related violations: <none>
-
-DPOP-2#46 Warning
-MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1 multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct1/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
-Related violations: <none>
-
-DPOP-2#47 Warning
-MREG Output pipelining  
 DSP i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2 multiplier stage i_dsp/genblk6[7].iq_2_outputs/modulator/secondproduct2/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
-Related violations: <none>
-
-DPOP-2#48 Warning
-MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/vco_product multiplier stage i_dsp/genblk6[7].iq_2_outputs/vco_product/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
-Related violations: <none>
-
-DPOP-2#49 Warning
-MREG Output pipelining  
-DSP i_dsp/genblk6[7].iq_2_outputs/vco_product__0 multiplier stage i_dsp/genblk6[7].iq_2_outputs/vco_product__0/P[47:0] is not pipelined (MREG=0). Pipelining the multiplier function will improve performance and will save significant power so it is suggested whenever possible to fully pipeline this function.  If this multiplier was inferred, it is suggested to describe an additional register stage after this function.  If there is no registered adder/accumulator following the multiply function, two pipeline stages are suggested to allow both the MREG and PREG registers to be used.  If the DSP48 was instantiated in the design, it is suggested to set both the MREG and PREG attributes to 1 when performing multiply functions.
 Related violations: <none>
 
 PDRC-132#1 Warning
 SLICE_PairEqSame_A6A5_WARN  
-Luts A6LUT and A5LUT in use in site SLICE_X40Y16 with different equations without A6 pin connected to Global Logic High.
+Luts A6LUT and A5LUT in use in site SLICE_X19Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-132#2 Warning
 SLICE_PairEqSame_A6A5_WARN  
-Luts A6LUT and A5LUT in use in site SLICE_X7Y63 with different equations without A6 pin connected to Global Logic High.
+Luts A6LUT and A5LUT in use in site SLICE_X23Y62 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-134#1 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X11Y27 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X17Y29 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-134#2 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X23Y49 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X19Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-134#3 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X29Y56 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X23Y62 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-134#4 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X2Y27 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X36Y12 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-134#5 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X33Y53 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X41Y35 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-134#6 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X36Y26 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X43Y8 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-134#7 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X37Y59 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-134#8 Warning
-SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X40Y16 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-134#9 Warning
-SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X5Y27 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X7Y46 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#1 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X11Y27 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X11Y93 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#2 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X13Y63 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X14Y91 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#3 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X13Y94 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X15Y18 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#4 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X17Y79 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X15Y69 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#5 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X19Y67 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X17Y29 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#6 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X1Y55 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X17Y90 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#7 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X1Y82 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X19Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#8 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X23Y49 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X1Y73 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#9 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X26Y98 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X2Y69 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#10 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X29Y44 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X2Y73 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#11 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X29Y56 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X33Y73 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#12 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X2Y27 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X35Y43 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#13 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X2Y82 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X36Y12 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#14 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X2Y85 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X36Y44 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#15 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X33Y53 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X43Y8 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#16 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X36Y26 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X5Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-136#17 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X37Y59 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-136#18 Warning
-SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X5Y27 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X7Y92 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#1 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X11Y27 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X11Y93 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#2 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X11Y45 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X14Y91 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#3 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X13Y63 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X14Y99 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#4 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X13Y94 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X15Y18 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#5 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X14Y20 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X17Y29 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#6 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X14Y95 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X17Y90 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#7 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X15Y26 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X18Y98 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#8 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X19Y67 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X19Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#9 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X19Y82 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X21Y86 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#10 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X1Y55 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X26Y18 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#11 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X1Y82 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X2Y27 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#12 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X21Y63 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X2Y69 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#13 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X23Y49 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X2Y87 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#14 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X26Y98 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X35Y43 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#15 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X29Y44 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X36Y12 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#16 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X29Y46 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X36Y67 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#17 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X29Y56 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X37Y85 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#18 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X29Y99 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X37Y95 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#19 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X2Y67 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X3Y31 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#20 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X2Y82 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X41Y35 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#21 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X2Y85 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X41Y67 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#22 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X33Y53 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X43Y8 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#23 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X36Y26 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X5Y30 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#24 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X37Y59 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X5Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#25 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X3Y30 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X5Y90 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-138#26 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X40Y16 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-138#27 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X41Y15 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-138#28 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X5Y27 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-138#29 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X7Y25 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-138#30 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X9Y98 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X7Y92 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-140#1 Warning
 SLICE_PairEqSame_A6A5_WARN  
-Luts A6LUT and A5LUT in use in site SLICE_X6Y69 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-140#2 Warning
-SLICE_PairEqSame_A6A5_WARN  
-Luts A6LUT and A5LUT in use in site SLICE_X8Y72 with different equations without A6 pin connected to Global Logic High.
+Luts A6LUT and A5LUT in use in site SLICE_X8Y77 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-142#1 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X20Y47 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X20Y30 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-142#2 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X30Y55 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X28Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-142#3 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X32Y35 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X30Y95 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-142#4 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X32Y54 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X32Y96 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-142#5 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X32Y78 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X34Y13 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-142#6 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X34Y53 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X34Y71 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-142#7 Warning
 SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X34Y58 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-142#8 Warning
-SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X34Y78 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-142#9 Warning
-SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X38Y16 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-142#10 Warning
-SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X42Y38 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-142#11 Warning
-SLICE_PairEqSame_B6B5_WARN  
-Luts B6LUT and B5LUT in use in site SLICE_X6Y26 with different equations without A6 pin connected to Global Logic High.
+Luts B6LUT and B5LUT in use in site SLICE_X42Y39 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#1 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X12Y50 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X0Y68 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#2 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X16Y97 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X28Y75 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#3 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X20Y47 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X30Y95 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#4 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X24Y16 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X34Y13 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#5 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X24Y85 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X34Y49 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#6 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X28Y44 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X42Y39 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#7 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X30Y55 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X4Y69 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-144#8 Warning
 SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X32Y78 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-144#9 Warning
-SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X34Y58 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-144#10 Warning
-SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X34Y78 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-144#11 Warning
-SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X38Y16 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-144#12 Warning
-SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X42Y38 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-144#13 Warning
-SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X6Y26 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-144#14 Warning
-SLICE_PairEqSame_C6C5_WARN  
-Luts C6LUT and C5LUT in use in site SLICE_X6Y83 with different equations without A6 pin connected to Global Logic High.
+Luts C6LUT and C5LUT in use in site SLICE_X6Y51 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-146#1 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X0Y86 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X0Y68 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-146#2 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X10Y32 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X10Y67 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-146#3 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X10Y47 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X24Y14 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-146#4 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X10Y65 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X32Y58 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-146#5 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X10Y96 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X34Y49 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-146#6 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X12Y50 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X42Y39 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 PDRC-146#7 Warning
 SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X12Y74 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#8 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X16Y20 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#9 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X16Y79 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#10 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X16Y97 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#11 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X24Y16 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#12 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X24Y85 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#13 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X28Y44 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#14 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X30Y42 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#15 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X30Y55 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#16 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X30Y56 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#17 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X32Y54 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#18 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X32Y78 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#19 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X34Y67 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#20 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X34Y78 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#21 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X38Y16 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#22 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X4Y29 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#23 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X6Y26 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#24 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X6Y36 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#25 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X6Y83 with different equations without A6 pin connected to Global Logic High.
-Related violations: <none>
-
-PDRC-146#26 Warning
-SLICE_PairEqSame_D6D5_WARN  
-Luts D6LUT and D5LUT in use in site SLICE_X8Y40 with different equations without A6 pin connected to Global Logic High.
+Luts D6LUT and D5LUT in use in site SLICE_X6Y51 with different equations without A6 pin connected to Global Logic High.
 Related violations: <none>
 
 

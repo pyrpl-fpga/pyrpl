@@ -200,7 +200,7 @@ from ..attributes import BoolRegister, FloatRegister, SelectRegister, \
 from ..widgets.module_widgets import IqWidget
 from ..pyrpl_utils import sorted_dict
 
-from . import FilterModule, InputSelectRegister
+from . import FilterModule
 
 
 class IqGain(FloatProperty):
@@ -251,10 +251,7 @@ class Iq(FilterModule):
                          "phase",
                          "output_direct",
                          "modulation_at_2f",
-                         "demodulation_at_2f",
-                         "vco_on",
-                         "vco_input", 
-                         "vco_range"]
+                         "demodulation_at_2f"]
 
     _gui_attributes = _setup_attributes  # + ["synchronize_iqs"]  # function calls auto-gui only works in develop-0.9.3 branch
 
@@ -292,19 +289,6 @@ class Iq(FilterModule):
     pfd_on = BoolRegister(0x100, 1,
                           doc="If True: Turns on the PFD module,\
                         if False: turns it off and resets integral")
-    
-    vco_on = BoolRegister(0x100, 0,
-                      doc="If True, enables VCO mode: IQ frequency tracks vco_input * vco_gain")
-    
-    
-    vco_input = InputSelectRegister(0x14,
-                            doc="Signal routed to VCO control input")
-    
-    vco_range = FloatRegister(0x128, bits=32, 
-                          norm=2**32 / 125e6,
-                          doc="Maximum frequency deviation of VCO [Hz]. "
-                              "At full-scale VCO input "
-                              "frequency shifts by this amount around the set frequency.")
 
     # raw flags, not useful in most cases since sin and cos-flag must be
     # written in the same clock cycle

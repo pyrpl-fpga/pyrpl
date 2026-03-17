@@ -147,7 +147,7 @@ def wait(future, timeout=None):
            won't block the eventloop while waiting for other events.
            ex:
            def curve(self):
-               curve = scope.curve_async()
+               curve = scope.single_async()
                return wait(curve)
 
            BEWARE: never use wait in a coroutine (use builtin await instead)

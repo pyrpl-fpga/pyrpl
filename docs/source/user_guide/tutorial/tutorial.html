@@ -8346,12 +8346,12 @@ If this works, we can load the python interface of pyrplockbox by specifying the
 <span class="n">s</span><span class="o">.</span><span class="n">input2</span> <span class="o">=</span> <span class="s1">'pid0'</span>
 
 <span class="c1"># trig at zero volt crossing</span>
-<span class="n">s</span><span class="o">.</span><span class="n">threshold_ch1</span> <span class="o">=</span> <span class="mi">0</span> 
+<span class="n">s</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="mi">0</span> 
 
 <span class="c1"># positive/negative slope is detected by waiting for input to </span>
 <span class="c1"># sweept through hysteresis around the trigger threshold in </span>
 <span class="c1"># the right direction </span>
-<span class="n">s</span><span class="o">.</span><span class="n">hysteresis_ch1</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">s</span><span class="o">.</span><span class="n">hysteresis</span> <span class="o">=</span> <span class="mf">0.01</span>
 
 <span class="c1"># trigger on the input signal positive slope</span>
 <span class="n">s</span><span class="o">.</span><span class="n">trigger_source</span> <span class="o">=</span> <span class="s1">'ch1_positive_edge'</span>
@@ -8414,7 +8414,7 @@ If this works, we can load the python interface of pyrplockbox by specifying the
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># useful functions for scope diagnostics</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Curve ready:"</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">curve_ready</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Trigger source:"</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">trigger_source</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">"Trigger threshold [V]:"</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">threshold_ch1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Trigger threshold [V]:"</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Averaging:"</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">average</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Trigger delay [s]:"</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">trigger_delay</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Trace duration [s]: "</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">duration</span><span class="p">)</span>

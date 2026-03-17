@@ -57,7 +57,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller
+        pip install pyinstaller pyqt5
         pip install .
 
     - name: Build Linux binary
@@ -101,7 +101,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller
+          pip install pyinstaller pyqt5
           pip install .
 
       - name: Build pyrpl (macOS ${{ matrix.arch.name }})
@@ -137,7 +137,7 @@ jobs:
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller
+        pip install pyinstaller pyqt5
         pip install .
 
     - name: Build Windows binary
