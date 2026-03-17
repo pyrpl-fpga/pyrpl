@@ -186,7 +186,7 @@ Additional Resources
 .. |Download pyrpl| image:: https://img.shields.io/sourceforge/dt/pyrpl.svg
    :target: https://github.com/pyrpl-fpga/pyrpl/releases
 .. |join chat on gitter| image:: https://badges.gitter.im/JoinChat.svg
-   :target: https://gitter.im/pyrpl-fpga/pyrpl
+   :target: https://gitter.im/lneuhaus/pyrpl
 .. |License| image:: https://img.shields.io/pypi/l/pyrpl.svg
    :target: https://github.com/pyrpl-fpga/pyrpl/blob/master/LICENSE
 
