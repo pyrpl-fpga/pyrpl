@@ -8,7 +8,9 @@
 [![GitHub downloads](https://img.shields.io/github/downloads/pyrpl-fpga/pyrpl/total)](https://github.com/pyrpl-fpga/pyrpl/releases/latest)
 [![GitHub release](https://img.shields.io/github/v/release/pyrpl-fpga/pyrpl)](https://github.com/pyrpl-fpga/pyrpl/releases/latest)
 
-PyRPL (Python RedPitaya Lockbox) turns your RedPitaya into a powerful DSP device, especially suitable as a digital lockbox and measurement device in quantum optics experiments.
+PyRPL (Python RedPitaya Lockbox) turns your RedPitaya into a powerful DSP device, especially suitable as a digital lockbox and measurement device in quantum optics experiments. A detailed scientific article describing PyRPL's architecture and functions can be found here:
+
+[Python Red Pitaya Lockbox (PyRPL): An open source software package for digital feedback control in quantum optics experiments](https://pubs.aip.org/aip/rsi/article-abstract/95/3/033003/3269904/Python-Red-Pitaya-Lockbox-PyRPL-An-open-source?redirectedFrom=fulltext)
 
 ## Website
 The official PyRPL website address is [http://pyrpl.readthedocs.io/](http://pyrpl.readthedocs.io).
