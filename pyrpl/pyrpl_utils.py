@@ -1,6 +1,7 @@
 import time
 from timeit import default_timer
 import logging
+
 logger = logging.getLogger(__file__)
 from collections import OrderedDict, Counter
 
@@ -11,13 +12,18 @@ def isnotebook():
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
-            return True   # Jupyter notebook or qtconsole
+            msg = 'async_utils: Jupyter notebook or qtconsole'
+            return True
         elif shell == 'TerminalInteractiveShell':
-            return False  # Terminal running IPython
+            msg = 'async_utils: Terminal running IPython'
+            return True
         else:
-            return False  # Other type (?)
+            return False
+            msg = 'async_utils: # Other type (?)'
     except NameError:
-        return False      # Probably standard Python interpreter
+        return False
+        msg = 'async_utils: Probably standard Python interpreter'
+    logger.debug(msg)
 
 
 def time():

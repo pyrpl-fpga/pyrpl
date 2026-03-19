@@ -1,3 +1,5 @@
+.. _How a spectrum is computed in PyRPL:
+
 How a spectrum is computed in PyRPL
 **********************************************************
 
@@ -100,7 +102,7 @@ We deduce using (1), that the estimated spectrum is:
 Y[r] = 1/2 (W[r - m] + W[r - (N-m)])
 
 With the discrete fourier transform convention used here, we need to pay attention that 
-the DC-component is for r=0, and the “negative frequencies” are actually located in the second 
+the DC-component is for r=0, and the ï¿½negative frequenciesï¿½ are actually located in the second 
 half of the interval [N/2, N]. If we take the single sided convention where the negative frequency 
 side is simply ignored, the correct normalization in terms of V_pk (for which the maximum of the 
 spectrum corresponds to the amplitude of the sinusoid) is the one for where max(W[r]) = 2.
@@ -123,7 +125,7 @@ over frequency give the right variances.
 
 Let's take a white noise of variance 1. 
 
-<x[k] x[k']> = delta(k-k').
+``<x[k] x[k']> = delta(k-k')``
 
 We would like the total spectrum in units of Vrms^2/Hz, integrated from 0 to Nyquist frequency 
 to yield the same variance of 1. This is ensured by the Equivalent noise bandwidth of the filter window. 
@@ -131,15 +133,15 @@ To convert from V_pk^2 to V_rms^2/Hz, the spectrum is divided by the residual ba
 
 Let's calculate:
 
-sum_r <|Y[r]|^2> = (...) = N sum_k w[k]^2 <|x[k]|^2>
+``sum_r <|Y[r]|^2> = (...) = N sum_k w[k]^2 <|x[k]|^2>``
 
-If we remind that x[k] is a white noise following <|x[k]|^2> = 1, we get:
+If we remind that x[k] is a white noise following ``<|x[k]|^2> = 1``, we get:
 
-sum_r <|Y[r]|^2> = N sum_k w[k]^2
+``sum_r <|Y[r]|^2> = N sum_k w[k]^2``
 
 So, since we want:
 
-sum_r <|Z[r]|^2> df = 2, (indeed, we want to work with single-sided spectra, such that integrating over positive frequencies is enough)
+``sum_r <|Z[r]|^2> df = 2`` (indeed, we want to work with single-sided spectra, such that integrating over positive frequencies is enough)
 
 with df the frequency step in the FFT, we need to choose:
 
@@ -323,13 +325,13 @@ elliptical filter for maximum steepness):
     plt.axis([min(w/ww), max(w/ww), min(h_abs)-5, max(h_abs)+5])
     plt.legend()
     plt.show()
-    plt.savefig('c://lneuhaus//github//pyrpl//doc//specan_filter.png',DPI=300)
+    plt.savefig('c://pyrpl-fpga//github//pyrpl//doc//specan_filter.png',DPI=300)
 
     print "Final biquad coefficients [b0, b1, b2, a0, a1, a2]:"
     for biquad in signal.zpk2sos(z, p, k):
         print biquad
 
-.. figure:: https://github.com/lneuhaus/pyrpl/blob/master/doc/specan_filter.png
+.. figure:: https://github.com/pyrpl-fpga/pyrpl/blob/master/doc/specan_filter.png
    :alt: Resulting filter
 
    Resulting filter

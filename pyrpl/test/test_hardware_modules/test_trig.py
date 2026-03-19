@@ -5,14 +5,17 @@ import numpy as np
 from time import sleep
 from qtpy import QtCore, QtWidgets
 from pyrpl.test.test_base import TestPyrpl
+import pytest
 
 
 class TestScope(TestPyrpl):
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_asg(self):
         self.asg = self.pyrpl.asgs.pop("trigtest")
         self.t = self.pyrpl.rp.trig
 
-    def teardown_method(self):
+        yield  # Test runs here
+        
         self.pyrpl.asgs.free(self.asg)
 
     def test_trigger(self):

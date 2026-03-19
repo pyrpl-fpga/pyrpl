@@ -147,7 +147,18 @@ import logging
 import os
 import os.path as osp
 from shutil import copyfile
-from qtpy import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets, API_NAME
+
+if API_NAME is None:
+    raise RuntimeError(
+        "No Qt binding found.\n"
+        "Install one of:\n"
+        "  pip install pyrpl[qt-pyqt5]"
+        "  pip install pyrpl[qt-pyqt6]\n"
+        "  pip install pyrpl[qt-pyside6]\n"
+        "  pip install pyrpl[qt-pyside2]\n"
+        
+    )
 
 from .widgets.pyrpl_widget import PyrplWidget
 from . import software_modules
@@ -166,16 +177,10 @@ from .software_modules.lockbox import models
 from . import user_config_dir
 from ._version import __version__
 
-# input is the wrong function in python 2
-try:
-    raw_input
-except NameError:  # Python 3
-    raw_input = input
 
-try:
-    basestring  # in python 2
-except:
-    basestring = (str, bytes)
+raw_input = input
+
+basestring = (str, bytes)
 
 
 default_pyrpl_config = {'name': 'default_pyrpl_instance',

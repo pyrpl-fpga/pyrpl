@@ -1,0 +1,128 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyrpl"
+dynamic = ["version"]   # <-- version comes from pyrpl/_version.py
+description = "DSP servo controller for quantum optics with the RedPitaya"
+readme = "README.md"
+authors = [
+    { name = "Leonhard Neuhaus", email = "neuhaus@lkb.upmc.fr" },
+    { name = "Michaël Croquette", email = "michael.croquette@gmail.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.8"
+keywords = ["RedPitaya", "DSP", "FPGA", "IIR", "PDH", "servo", "quantum optics"]
+classifiers = [
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: C",
+    "Natural Language :: English",
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Human Machine Interfaces",
+    "Topic :: Scientific/Engineering :: Physics"
+]
+
+# Core dependencies only
+dependencies = [
+    "scp",
+    "pyyaml",
+    "pyqtgraph",
+    "numpy>=1.9",
+    "paramiko>=2.0",
+    "qtpy",
+    "qasync"
+]
+
+[project.optional-dependencies]
+
+qt-pyqt5 = ["PyQt5"]
+qt-pyqt6 = ["PyQt6"]
+qt-pyside2 = ["PySide2"]
+qt-pyside6 = ["PySide6"]
+
+# Development dependencies (includes all test dependencies plus docs/build tools)
+dev = [
+    "pytest", 
+    "pytest-cov",
+    "pytest-notebook",
+    "pytest-subtests",
+    "matplotlib", 
+    "nbconvert",
+    "nbformat",
+    "pyinstaller", 
+    "scipy"
+]
+
+# dependencies to build docs
+docs = [
+    "nbconvert",
+    "nbformat",
+    "sphinx",
+    "furo",
+]
+
+# Test-only dependencies
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-notebook",
+    "pytest-subtests",
+    "matplotlib",
+    "nbconvert",
+    "nbformat",
+    "scipy",
+    "ipykernel<6.30"
+]
+
+# IPython/Jupyter dependencies (optional)
+ipython = [
+    "ipython",
+    "ipykernel<6.30"
+]
+
+[tool.setuptools]
+packages = { find = {} }
+
+[tool.setuptools.package-data]
+pyrpl = ["fpga/*", "monitor_server/*", "config/*", "widgets/images/*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pyrpl._version.__version__" }
+
+[tool.pytest.ini_options]
+# verbosity=3 → -vv or -vvv
+addopts = [
+    "-vv",                          # High verbosity
+    "-s",                           # nocapture - show print/log output
+    "--log-cli-level=INFO",         # nologcapture - show logs
+    "--log-cli-format=%(levelname)s %(name)s: %(message)s",
+    "--cov=pyrpl",                  # coverage for pyrpl package
+    "--cov-report=term-missing",    # show missing lines in terminal
+    "--cov-report=html",            # generate HTML coverage report
+    "--junit-xml=unit_tests.xml",   # xunit output file
+]
+
+# Show logs in real-time during test execution
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(levelname)s %(name)s: %(message)s"
+
+# Test discovery (equivalent to traverse-namespace)
+testpaths = ["pyrpl/test"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["pyrpl"]
+
+[tool.coverage.report]
+# Show lines that weren't covered
+show_missing = true

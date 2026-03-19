@@ -1,5 +1,4 @@
 from __future__ import division
-import scipy
 import numpy as np
 import logging
 from ...attributes import SelectProperty, FloatProperty, FrequencyProperty, \
@@ -268,7 +267,7 @@ class InputSignal(Signal):
         By default, this is the direct input signal. """
         return self._input_signal_dsp_module()
 
-    def sweep_acquire(self):
+    def sweep_acquire(self, timeout_min=1):
         """
         returns an experimental curve in V obtained from a sweep of the
         lockbox.
@@ -291,8 +290,8 @@ class InputSignal(Signal):
                                 run_continuous=False,
                                 rolling_mode=False)
                     scope.save_state("autosweep")
-                curve1, curve2 = scope.single(timeout=1. /
-                                                 self.lockbox.asg.frequency + scope.duration)
+                timeout = max(1. / self.lockbox.asg.frequency + scope.duration, timeout_min)
+                curve1, curve2 = scope.single(timeout=timeout)
                 times = scope.times
                 curve1 -= self.calibration_data._analog_offset
                 return curve1, times
@@ -301,12 +300,12 @@ class InputSignal(Signal):
             self._logger.warning("No free scopes left for sweep_acquire. ")
             return None, None
 
-    def calibrate(self, autosave=False):
+    def calibrate(self, autosave=False, timeout_min=1):
         """
         This function should be reimplemented to measure whatever property of
         the curve is needed by expected_signal.
         """
-        curve, times = self.sweep_acquire()
+        curve, times = self.sweep_acquire(timeout_min=timeout_min)
         if curve is None:
             self._logger.warning('Aborting calibration because no scope is available...')
             return None

@@ -28,7 +28,6 @@
 # otherwise you can custimize here what is to be done to your data
 #
 import numpy as np
-import pandas as pd
 import os
 import logging
 import pickle as file_backend
@@ -42,6 +41,21 @@ try:
     CurveDB = __import__(global_config.general.curvedb).CurveDB
 except:
     from . import user_curve_dir
+
+    class XYSeries:
+        def __init__(self, x, y):
+            self.x = np.asarray(x, dtype=float)
+            self.y = np.asarray(y, dtype=float)
+
+        @property
+        def index(self):
+            return self.x
+
+        @property
+        def values(self):
+            return self.y
+
+
     class CurveDB(object):
         _dirname = user_curve_dir
         file_extension = '.dat'
@@ -82,7 +96,7 @@ except:
             if len(args) == 0:
                 ser = (np.array([], dtype=float), np.array([], dtype=float))
             if len(args) == 1:
-                if isinstance(args[0], pd.Series):
+                if isinstance(args[0], XYSeries):
                     x, y = args[0].index.values, args[0].values
                     ser = (x, y)
                 elif isinstance(args[0], (np.array, list, tuple)):
@@ -107,9 +121,9 @@ except:
                 obj.save()
             return obj
 
-        def plot(self):
-            x, y = self.data
-            pd.Series(y, index=x).plot()
+        # def plot(self):
+        #     x, y = self.data
+        #     Series(y, index=x).plot()
 
         # Implement the following methods if you want to save curves permanently
         @classmethod
@@ -127,7 +141,7 @@ except:
                     curve = CurveDB()
                     curve._pk, curve.params, data = file_backend.load(f)
                     curve.data = tuple([np.asarray(a) for a in data])
-                if isinstance(curve.data, pd.Series):  # for backwards compatibility
+                if isinstance(curve.data, XYSeries):  # for backwards compatibility
                     x, y = curve.data.index.values, curve.data.values
                     curve.data = (x, y)
                 return curve

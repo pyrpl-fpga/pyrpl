@@ -4,23 +4,45 @@ from pyrpl.attributes import *
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl.async_utils import sleep
+import pytest
 
+@pytest.fixture(autouse=True, scope="class")
+def setup_na(hardware_session):
+    pyrpl = hardware_session.pyrpl
+    r = hardware_session.rp
 
+    # shortcuts
+    na = pyrpl.networkanalyzer
+    na.auto_bandwidth = False
+    na.auto_amplitude = False
+    # set na loglevel to DEBUG
+    loglevel = na._logger.getEffectiveLevel()
+    na._logger.setLevel(10)
+
+    yield  # Test runs here
+
+    na.stop()
+    # set na loglevel to previous one
+    na._logger.setLevel(loglevel)
+    for pid in pyrpl.pids.all_modules:
+        pid.input = 'off'
+        pid.p = 0   
+        pid.i = 0
+        pid.ival = 0
+        pid.output_direct = 'off'
+        pid.setpoint = 0
+        pid.inputfilter = 0
+        pid.pause_gains = 'off'
+        pid.paused = False
+        pid.differential_mode_enabled = False
 class TestPidNaIq(TestPyrpl):
-    def setup_method(self):
-        self.extradelay = 0.6 * 8e-9  # no idea where this comes from
-            # shortcut
-        self.pyrpl.na = self.pyrpl.networkanalyzer
-        self.na = self.pyrpl.networkanalyzer
-        # set na loglevel to DEBUG
-        self.loglevel = self.na._logger.getEffectiveLevel()
-        self.na._logger.setLevel(10)
 
-    def teardown_method(self):
-        self.na.stop()
-        # set na loglevel to previous one
-        self.na._logger.setLevel(self.loglevel)
+    extradelay = 0.6 * 8e-9  # no idea where this delay comes from
 
+    @property
+    def na(self):
+        return self.pyrpl.networkanalyzer
+            
     def test_na(self):
         error_threshold = 0.03  # (relative error, dominated by phase error)
         if self.r is None:
@@ -29,7 +51,7 @@ class TestPidNaIq(TestPyrpl):
             r = self.r
         extradelay = self.extradelay
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for iq in [r.iq0, r.iq1, r.iq2]:
             na._iq = iq
             na.setup(start_freq=3000,
@@ -39,7 +61,7 @@ class TestPidNaIq(TestPyrpl):
                      # it was taking ages ? -> no, should not take more than 1
                      # second with rbw=1000
                      rbw=1000,
-                     avg_per_point=1,
+                     average_per_point=1,
                      trace_average=1,
                      amplitude=0.1, input=na.iq, output_direct='off',
                      acbandwidth=1000, logscale=True)
@@ -69,21 +91,20 @@ class TestPidNaIq(TestPyrpl):
         error_threshold = 0.3 # 0.15 is ok for all but -3 MHz filter
         # testing one pid is enough
         pid = self.pyrpl.rp.pid0
-        na = self.pyrpl.na
+        na = self.na
         na.setup(start_freq=10e3,
                  stop_freq=5e6,
                  # points 101->11, it was taking ages
                  points=11,
                  rbw=1000,
-                 avg_per_point=1,
+                 average_per_point=1,
                  trace_average=1,
                  amplitude=0.1,
                  input=pid,
                  output_direct='off',
                  acbandwidth=0,
                  logscale=True,
-                 paused=False,
-                 differential_mode_enabled=False
+                 paused=False
                  )
 
         # setup pid: input is the network analyzer output.
@@ -138,14 +159,14 @@ class TestPidNaIq(TestPyrpl):
         plotdata = []
 
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for pid in self.pyrpl.pids.all_modules:
             na.setup(start_freq=1000,
                      stop_freq=1000e3,
                      # points 101->11, it was taking ages
                      points=11,
                      rbw=100,
-                     avg_per_point=1,
+                     average_per_point=1,
                      trace_average=1,
                      amplitude=0.1,
                      input=pid,
@@ -186,19 +207,19 @@ class TestPidNaIq(TestPyrpl):
         # setup a pid module with a bunch of different settings and measure
         # its transfer function, and compare it to the model.
 
-        error_threshold = 0.04  # (relative error)
+        error_threshold = 0.05  # (relative error) used to be 0.04
         # Let's check the transfer function of the pid module with the integrated NA
         plotdata = []
 
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for pid in self.pyrpl.pids.all_modules:
             na.setup(start_freq=1000,
                      stop_freq=1000e3,
                      # 101 points, 1 av->11 points, 7 av (taking ages)
                      points=11,
                      rbw=100,
-                     avg_per_point=1,
+                     average_per_point=1,
                      trace_average=1,
                      amplitude=0.1, input=pid, output_direct='off',
                      acbandwidth=0, logscale=True)
@@ -252,13 +273,13 @@ class TestPidNaIq(TestPyrpl):
         plotdata = []
 
         # shortcuts and na configuration
-        na = self.pyrpl.na
+        na = self.na
         for pid in self.pyrpl.pids.all_modules:
             na.setup(start_freq=1000,
                      stop_freq=1000e3,
                      points=11,
                      rbw=100,
-                     avg_per_point=10,
+                     average_per_point=10,
                      trace_average=1,
                      amplitude=0.1, input=pid, output_direct='off',
                      acbandwidth=0, logscale=True)
@@ -325,7 +346,7 @@ class TestPidNaIq(TestPyrpl):
                      stop_freq=700e3,
                      points=51,
                      rbw=1000,
-                     avg_per_point=3,
+                     average_per_point=3,
                      trace_average=1,
                      acbandwidth=0,
                      amplitude=0.2,

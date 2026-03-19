@@ -16,9 +16,7 @@ interferometer with PyRPL. The video covers:
 - how to set up and configure the :ref:`lockbox-widget-label`
 - how to measure a transfer function with the :ref:`na-widget-label`
 
-.. raw:: html
-
-   <iframe width="560" height="315" src="http://www.youtube.com/embed/WnFkz1adhgs?rel=0" frameborder="0" allowfullscreen></iframe>
+`Watch the video tutorial on YouTube <https://www.youtube.com/watch?v=WnFkz1adhgs>`_.
 
 
 .. _start_gui-label:
@@ -26,12 +24,12 @@ interferometer with PyRPL. The video covers:
 Starting the GUI
 ================
 
-If you use the `windows or linux binary files  <https://sourceforge.net/projects/pyrpl/files/>`_,
+If you use the `Windows or Linux binaries <https://github.com/pyrpl-fpga/pyrpl/releases/latest>`_,
 just launch the executable and the GUI should start. Passing the command-line
 argument :code:`--help` to the executable shows a list of optional
 command-line arguments.
 
-If instead you have :ref:`a source code installation <_installation_from_source>`,
+If instead you have :ref:`a source code installation <installation_from_source>`,
 then you can either launch PyRPL from a terminal with
 
 .. code-block:: bash
@@ -136,7 +134,7 @@ The spectrum analyzer widget is represented in the image below.
 .. automodule:: pyrpl.widgets.module_widgets.spec_an_widget
 
 .. warning:: Because the spectrum analyzer uses the data sampled by the scope to perform measurements,
-             it is not possible to use both instruments simultaneaously. When the spectrum-analyzer is running,
+             it is not possible to use both instruments simultaneously. When the spectrum-analyzer is running,
              the scope-widget appears greyed-out to show that it is not available.
 
 

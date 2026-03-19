@@ -4,7 +4,7 @@ Contributing to PyRPL
 
 Contributions to the PyRPL are welcome. To submit your changes for inclusion, please follow this procedure:
 
-1. Fork this repository to your own github account using the fork button in the upper right corner on `<www.github.com/lneuhaus/pyrpl>`_.
+1. Fork this repository to your own github account using the fork button in the upper right corner on `<www.github.com/pyrpl-fpga/pyrpl>`_.
 
 2. Clone (download) the fork to a local computer using git clone.
 

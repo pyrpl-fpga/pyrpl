@@ -5,7 +5,7 @@ In the pyrpl root dir:
 
 ::
 
-    conda create -y -n py34 python=3.4 numpy scipy paramiko pandas nose pip pyqt qtpy
+    conda create -y -n py34 python=3.4 numpy paramiko nose pip pyqt qtpy
     activate py34
     python setup.py develop
     pip install pyinstaller

@@ -25,7 +25,6 @@ from .errors import ExpectedPyrplError
 import logging
 import string
 import numpy as np
-from six import with_metaclass
 from collections import OrderedDict
 from qtpy import QtCore
 
@@ -250,14 +249,7 @@ class DoSetup(object):
                                         exc_type, exc_val, exc_tb)
 
 
-class Module(with_metaclass(ModuleMetaClass, object)):
-    # The Syntax for defining a metaclass changed from Python 2 to 3.
-    # with_metaclass is compatible with both versions and roughly does this:
-    # def with_metaclass(meta, *bases):
-    #     """Create a base class with a metaclass."""
-    #     return meta("NewBase", bases, {})
-    # Specifically, ModuleMetaClass ensures that attributes have automatically
-    # their internal name set properly upon module creation.
+class Module(metaclass=ModuleMetaClass):
     """
     A module is a component of pyrpl doing a specific task.
 
@@ -455,7 +447,7 @@ class Module(with_metaclass(ModuleMetaClass, object)):
             # check if this parent has occured before in order to avoid an infinite loop
             if parent in passedparents:
                 raise ExpectedPyrplError("Unable to find a pyrpl instance "
-                                         "that is parent of the module %s.",
+                                         "that is parent of the module %s." %
                                          self.name)
         return parent
 

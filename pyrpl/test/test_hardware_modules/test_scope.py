@@ -194,7 +194,7 @@ class TestScope(TestPyrpl):
                            ch2_active=True)
         curve = self.r.scope.single_async()
         attr = self.r.scope.setup_attributes
-        wait(curve, 1)
+        wait(curve, 10) # 1 to 10. Increase timeout for remote tests
         curve1, curve2 = self.r.scope.save_curve()
 
         for curve in (curve1, curve2):

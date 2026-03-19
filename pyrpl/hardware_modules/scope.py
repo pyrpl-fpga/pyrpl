@@ -41,12 +41,12 @@ the scope:
     s.input2 = 'pid0'
 
     # trig at zero volt crossing
-    s.threshold_ch1 = 0
+    s.threshold = 0
 
     # positive/negative slope is detected by waiting for input to
     # sweep through hysteresis around the trigger threshold in
     # the right direction
-    s.hysteresis_ch1 = 0.01
+    s.hysteresis = 0.01
 
     # trigger on the input signal positive slope
     s.trigger_source = 'ch1_positive_edge'
@@ -60,7 +60,7 @@ the scope:
     # launch a single (asynchronous) curve acquisition, the asynchronous
     # acquisition means that the function returns immediately, eventhough the
     # data-acquisition is still going on.
-    res = s.curve_async()
+    res = s.single_async()
 
     print("Before turning on asg:")
     print("Curve ready:", s.curve_ready()) # trigger should still be armed
@@ -75,7 +75,7 @@ the scope:
     print("Trigger event age [ms]:",8e-9*((
     s.current_timestamp&0xFFFFFFFFFFFFFFFF) - s.trigger_timestamp)*1000)
 
-    # The function curve_async returns a *future* (or promise) of the curve. To
+    # The function single_async returns a *future* (or promise) of the curve. To
     # access the actual curve, use result()
     ch1, ch2 = res.result()
 
@@ -109,11 +109,11 @@ large an integrator gain will quickly saturate the outputs.
     # useful functions for scope diagnostics
     print("Curve ready:", s.curve_ready())
     print("Trigger source:",s.trigger_source)
-    print("Trigger threshold [V]:",s.threshold_ch1)
+    print("Trigger threshold [V]:",s.threshold)
     print("Averaging:",s.average)
     print("Trigger delay [s]:",s.trigger_delay)
     print("Trace duration [s]: ",s.duration)
-    print("Trigger hysteresis [V]", s.hysteresis_ch1)
+    print("Trigger hysteresis [V]", s.hysteresis)
     print("Current scope time [cycles]:",hex(s.current_timestamp))
     print("Trigger time [cycles]:",hex(s.trigger_timestamp))
     print("Current voltage on channel 1 [V]:", r.scope.voltage_in1)

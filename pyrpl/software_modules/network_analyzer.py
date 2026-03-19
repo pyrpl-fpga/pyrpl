@@ -77,23 +77,39 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
 
     Three example ways on how to use the NetworkAnalyzer:
 
-    - Example 1::
+   
 
-          r = RedPitaya("1.1.1.1")
-          na = NetworkAnalyzer(r)
-          curve = na.curve(start=100, stop=1000, rbw=10...)
+    - Example ::
+        p = Pyrpl(...)
+        na = p.networkanalyzer
 
-    - Example 2::
+        na.output_direct = "out2"                      # Driving output of the network analyzer
+        na.input = "out2"
+        na.acbandwidth = 4                             # High pass filtering of the input signal before demodulation
+        na.logscale = True
+        na.trace_average = 1
+        na.average_per_point = average_per_point
+        na.points = points
 
-          na.start = 100
-          na.stop = 1000
-          curve = na.curve(rbw=10)
+        na.start_freq = 2e4
+        na.stop_freq = 5e5
 
-    - Example 3::
+        na.auto_bandwidth = True                      # adapts the resolution bandwidth so that the q=rbw/frequency ratio stays constant 
+        na.q_factor_min = q_factor_min                # min value of the q=rbw/frequency ratio
+        na.rbw = rbw                                  # Starting resolution bandwidth value 
 
-          na.setup(start=100, stop=1000, ...)
-          for freq, response, amplitude in na.values():
-              print response
+        na.amplitude = 0.2 
+        na.auto_amplitude = is_auto_amplitude        # adapts the output amplitude so that the input stays around the target_dbv value (avoids saturation for system with high dynamics) 
+        na.target_dbv = -40
+        na.auto_amp_min = 0.001                      # min value of the amplitude 
+        na.auto_amp_max = 0.2
+        
+        na.start = 100
+        na.stop = 1000
+        freqs = na.frequencies
+        closed_loop_tf = na.single()                 # returns the complex values of the response measurement
+
+    
     """
     AUTO_AMP_AVG = 20
     _widget_class = NaWidget

@@ -50,7 +50,7 @@ clean:
 	rm -rf $(BUILDDIR)/*
 
 common:
-	# Preliminaries to a real build - convert tutorial to readable format
+	@echo "Preliminaries to a real build - convert tutorial to readable format"
 	jupyter nbconvert --to=html source/user_guide/tutorial/tutorial.ipynb
 
 html: common

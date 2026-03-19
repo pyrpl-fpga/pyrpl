@@ -4,10 +4,12 @@ import time
 import numpy as np
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
+import pytest
 
 
 class TestScopeAsgAms(TestPyrpl):
-    def setup_method(self):
+    @pytest.fixture(autouse=True)
+    def setup_delay(self):
         self.extradelay = 0.6 * 8e-9  # no idea where this comes from
 
     def test_asg(self):

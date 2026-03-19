@@ -147,9 +147,9 @@ with the network analyzer:
 
 
 .. note:: To measure the transfer function of an internal module, we cannot
-use the *output_direct* property of the network ananlyzer (only 'out1',
-'out2' or 'off' are allowed). To circumvent the problem, we set the input of
-the module to be measured to the network analyzer's iq.
+   use the *output_direct* property of the network ananlyzer (only 'out1',
+   'out2' or 'off' are allowed). To circumvent the problem, we set the input of
+   the module to be measured to the network analyzer's iq.
 
 
 Frequency comparator module
