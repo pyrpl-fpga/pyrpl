@@ -1,15 +1,17 @@
 import logging
-logger = logging.getLogger(name=__name__)
 from ..attributes import SelectProperty, StringProperty, TextProperty
 from ..memory import MemoryTree
 from ..modules import Module
 from ..widgets.module_widgets.pyrpl_config_widget import PyrplConfigWidget
+
+logger = logging.getLogger(name=__name__)
 
 
 class PyrplConfig(Module):
     """
     This Module allows the Gui to configure the global settins, such as redpitaya and pyrpl
     """
+
     _widget_class = PyrplConfigWidget
     _gui_attributes = ["configfile", "module", "refresh", "save", "text"]
 
@@ -21,20 +23,21 @@ class PyrplConfig(Module):
 
     text = TextProperty()
 
-    module = SelectProperty(default="pyrpl",
-                            options=lambda inst: ["pyrpl", "redpitaya"] +
-                                                 [m.name for m in inst.pyrpl.software_modules] ,
-                            doc="this selector allows to choose which module is configured",
-                            call_setup=True)
+    module = SelectProperty(
+        default="pyrpl",
+        options=lambda inst: ["pyrpl", "redpitaya"] + [m.name for m in inst.pyrpl.software_modules],
+        doc="this selector allows to choose which module is configured",
+        call_setup=True,
+    )
 
     @property
     def current_branch(self):
-        if (self.configfile == self.pyrpl.c._filename) \
-                or (self.configfile == "" and self.pyrpl.c._filename is None):
+        if (self.configfile == self.pyrpl.c._filename) or (
+            self.configfile == "" and self.pyrpl.c._filename is None
+        ):
             self.config = self.pyrpl.c
         else:
-            self._logger.info('Creating new MemoryTree for file %s...',
-                              self.configfile)
+            self._logger.info("Creating new MemoryTree for file %s...", self.configfile)
             self.config = MemoryTree(self.configfile)
         return self.config._get_or_create(self.module)
 

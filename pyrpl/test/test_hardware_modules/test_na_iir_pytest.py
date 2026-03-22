@@ -1,13 +1,15 @@
 import logging
 import pytest
 import numpy as np
-logger = logging.getLogger(name=__name__)
 from pyrpl.attributes import *
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
 
+logger = logging.getLogger(name=__name__)
+
+
 @pytest.fixture(autouse=True, scope="class")
-def setup_iir(hardware_session): 
+def setup_iir(hardware_session):
     # shortcuts
     pyrpl = hardware_session.pyrpl
     rp = hardware_session.rp
@@ -19,34 +21,36 @@ def setup_iir(hardware_session):
     na.auto_amplitude = False
     iir = rp.iir
     yield
-    
+
     # Teardown
     na.stop()
     # set na loglevel to previous one
     na._logger.setLevel(loglevel)
 
+
 class TestIir(TestPyrpl):
-    
-    extradelay = 0.6 * 8e-9 # no idea where this delay comes from
+    extradelay = 0.6 * 8e-9  # no idea where this delay comes from
 
     @property
     def iir(self):
         return self.pyrpl.rp.iir
-    
+
     @property
     def na(self):
         return self.pyrpl.networkanalyzer
 
     def test_pz_interface(self):
-        """ tests that poles and real/comples_poles remain sync'ed"""
+        """tests that poles and real/comples_poles remain sync'ed"""
         iir = self.iir
-        iir.poles = [-1000j-2032, -34343j-3424, -1221, -43254.4]
+        iir.poles = [-1000j - 2032, -34343j - 3424, -1221, -43254.4]
         assert iir.real_poles == [-1221, -43254.4], iir.real_poles
-        assert iir.complex_poles == [1000j-2032, 34343j-3424], \
-            iir.complex_poles  # attention: imaginary part is positivized
+        assert iir.complex_poles == [1000j - 2032, 34343j - 3424], (
+            iir.complex_poles
+        )  # attention: imaginary part is positivized
         iir.real_poles = []
-        assert iir.complex_poles == [1000j-2032, 34343j-3424], \
-            iir.complex_poles  # attention: imaginary part is positivized
+        assert iir.complex_poles == [1000j - 2032, 34343j - 3424], (
+            iir.complex_poles
+        )  # attention: imaginary part is positivized
         assert iir.poles == iir.complex_poles, iir.poles
         iir.complex_poles = []
         assert iir.poles == []
@@ -54,17 +58,19 @@ class TestIir(TestPyrpl):
         assert iir.complex_poles == []
 
         iir.zeros = [-1000j - 2032, -34343j - 3424, -1221, -43254.4]
-        assert iir.real_zeros  == [-1221, -43254.4], iir.real_zeros
-        assert iir.complex_zeros  == [1000j - 2032, 34343j - 3424], \
-            iir.complex_zeros  # attention: imaginary part is positivized
-        iir.real_zeros  = []
-        assert iir.complex_zeros  == [1000j - 2032, 34343j - 3424], \
-            iir.complex_zeros  # attention: imaginary part is positivized
-        assert iir.zeros  == iir.complex_zeros , iir.zeros
+        assert iir.real_zeros == [-1221, -43254.4], iir.real_zeros
+        assert iir.complex_zeros == [1000j - 2032, 34343j - 3424], (
+            iir.complex_zeros
+        )  # attention: imaginary part is positivized
+        iir.real_zeros = []
+        assert iir.complex_zeros == [1000j - 2032, 34343j - 3424], (
+            iir.complex_zeros
+        )  # attention: imaginary part is positivized
+        assert iir.zeros == iir.complex_zeros, iir.zeros
         iir.complex_zeros = []
-        assert iir.zeros  == []
-        assert iir.real_zeros  == []
-        assert iir.complex_zeros  == []
+        assert iir.zeros == []
+        assert iir.real_zeros == []
+        assert iir.complex_zeros == []
 
     @pytest.mark.parametrize("setting", range(14))  # iir._IIRSTAGES = 14
     def test_iirsimple_na_generator(self, setting):
@@ -83,131 +89,190 @@ class TestIir(TestPyrpl):
         # setup na
         na = self.na
         iir = self.iir
-        na.setup(start_freq=3e3,
-                 stop_freq=1e6,
-                 points=301,
-                 rbw=500,
-                 average_per_point=1,
-                 trace_average=1,
-                 amplitude=0.005,
-                 input=iir,
-                 output_direct='off',
-                 logscale=True)
+        na.setup(
+            start_freq=3e3,
+            stop_freq=1e6,
+            points=301,
+            rbw=500,
+            average_per_point=1,
+            trace_average=1,
+            amplitude=0.005,
+            input=iir,
+            output_direct="off",
+            logscale=True,
+        )
 
         # setup a simple iir transfer function
         zeros = [1e5j - 3e3]
         poles = [5e4j - 3e3]
         gain = 1.0
-        iir.setup(zeros=zeros, poles=poles, gain=gain,
-                  loops=35,
-                  input=na.iq,
-                  output_direct='off')
+        iir.setup(
+            zeros=zeros,
+            poles=poles,
+            gain=gain,
+            loops=35,
+            input=na.iq,
+            output_direct="off",
+        )
 
         iir.on = False
         # shift coefficients into the biquad specified by 'setting'
         iir.coefficients = np.roll(iir.coefficients, 6 * setting)
         iir.iirfilter._fcoefficients = iir.coefficients
         iir.on = True
-        
+
         self.na_assertion(setting, iir, error_threshold, extradelay, True)
 
     params = []
     # setting 0
-    z, p, g, loops = (np.array([-1510.0000001 + 10101.36145285j,
-                                -2100.0000001 + 21828.90817759j,
-                                -1000.0000001 + 30156.73583005j,
-                                -1000.0000001 + 32063.2533145j
-                                -6100.0000001 + 44654.63524562j]),
-                        np.array([-151.00000010 + 16271.51686739j,
-                                -51.00000010 + 22342.54324816j,
-                                -10.00000010 + 30884.30406145j,
-                                -41.00000010 + 32732.52445066j,
-                                -51.00000010 + 46953.00496993j]),
-                        0.03,
-                        400)
-    naset = dict(start_freq=3e3,
-                    stop_freq=50e3,
-                    points=501,
-                    rbw=500,
-                    average_per_point=1,
-                    trace_average=1,
-                    amplitude=0.05,
-                    output_direct='off',
-                    logscale=True)
+    z, p, g, loops = (
+        np.array(
+            [
+                -1510.0000001 + 10101.36145285j,
+                -2100.0000001 + 21828.90817759j,
+                -1000.0000001 + 30156.73583005j,
+                -1000.0000001 + 32063.2533145j - 6100.0000001 + 44654.63524562j,
+            ]
+        ),
+        np.array(
+            [
+                -151.00000010 + 16271.51686739j,
+                -51.00000010 + 22342.54324816j,
+                -10.00000010 + 30884.30406145j,
+                -41.00000010 + 32732.52445066j,
+                -51.00000010 + 46953.00496993j,
+            ]
+        ),
+        0.03,
+        400,
+    )
+    naset = dict(
+        start_freq=3e3,
+        stop_freq=50e3,
+        points=501,
+        rbw=500,
+        average_per_point=1,
+        trace_average=1,
+        amplitude=0.05,
+        output_direct="off",
+        logscale=True,
+    )
     error_threshold = 0.08  # [0.01, 0.03] works if average_per_point=10 in naset
-    params.append((z, p, g, loops, naset, "0 - low_sampling", error_threshold,
-                    ['final', 'continuous']))
+    params.append(
+        (
+            z,
+            p,
+            g,
+            loops,
+            naset,
+            "0 - low_sampling",
+            error_threshold,
+            ["final", "continuous"],
+        )
+    )
 
     # setting 1 - minimum number of loops
     z = [1e5j - 3e3]
     p = [5e4j - 3e3]
     g = 0.5
     loops = None
-    naset = dict(start_freq=3e3,
-                    stop_freq=10e6,
-                    points=301,
-                    rbw=500,
-                    average_per_point=1,
-                    trace_average=1,
-                    amplitude=0.05,
-                    output_direct='off',
-                    logscale=True)
+    naset = dict(
+        start_freq=3e3,
+        stop_freq=10e6,
+        points=301,
+        rbw=500,
+        average_per_point=1,
+        trace_average=1,
+        amplitude=0.05,
+        output_direct="off",
+        logscale=True,
+    )
     error_threshold = 0.05  # large because of phase error at high freq
-    params.append((z, p, g, loops, naset, "1 - loops_None", error_threshold,
-                    ['final', 'continuous']))
+    params.append(
+        (
+            z,
+            p,
+            g,
+            loops,
+            naset,
+            "1 - loops_None",
+            error_threshold,
+            ["final", "continuous"],
+        )
+    )
 
     # setting 2 - complicated with well-defined loops (similar to 1)
     z, p, g = (
-        np.array([-151.0000001 + 10101.36145285j,
-                    -210.0000001 + 21828.90817759j,
-                    -100.0000001 + 30156.73583005j,
-                    -100.0000001 + 32063.2533145j,
-                    -610.0000001 + 44654.63524562j]),
-        np.array([-151.00000010 + 16271.51686739j,
-                    -51.00000010 + 22342.54324816j,
-                    -50.00000010 + 30884.30406145j,
-                    -41.00000010 + 32732.52445066j,
-                    -51.00000010 + 46953.00496993j]),
-        0.5)
+        np.array(
+            [
+                -151.0000001 + 10101.36145285j,
+                -210.0000001 + 21828.90817759j,
+                -100.0000001 + 30156.73583005j,
+                -100.0000001 + 32063.2533145j,
+                -610.0000001 + 44654.63524562j,
+            ]
+        ),
+        np.array(
+            [
+                -151.00000010 + 16271.51686739j,
+                -51.00000010 + 22342.54324816j,
+                -50.00000010 + 30884.30406145j,
+                -41.00000010 + 32732.52445066j,
+                -51.00000010 + 46953.00496993j,
+            ]
+        ),
+        0.5,
+    )
     loops = 80
-    naset = dict(start_freq=3e3,
-                    stop_freq=50e3,
-                    points=1000, #2501
-                    rbw=300, # 1000,1000
-                    average_per_point=3, # 5
-                    trace_average=1,
-                    amplitude=0.02,
-                    output_direct='off',
-                    logscale=True)
+    naset = dict(
+        start_freq=3e3,
+        stop_freq=50e3,
+        points=1000,  # 2501
+        rbw=300,  # 1000,1000
+        average_per_point=3,  # 5
+        trace_average=1,
+        amplitude=0.02,
+        output_direct="off",
+        logscale=True,
+    )
     error_threshold = 0.2  # use to be 0.03, increasing for now so the test is passing but
-    # I don't know if it's a satisfactory error. The curve looks okay though. 
-    params.append((z, p, g, loops, naset, "2 - loops=80", error_threshold,
-                    ['final', 'continuous']))
+    # I don't know if it's a satisfactory error. The curve looks okay though.
+    params.append(
+        (
+            z,
+            p,
+            g,
+            loops,
+            naset,
+            "2 - loops=80",
+            error_threshold,
+            ["final", "continuous"],
+        )
+    )
 
     # setting 3, medium complex transfer function
-    z = [+4e4j - 300,
-            +2e5j - 3000]
-    p = [+5e4j - 300,
-            +1e5j - 3000,
-            +1e6j - 30000,
-            -5e5]
+    z = [+4e4j - 300, +2e5j - 3000]
+    p = [+5e4j - 300, +1e5j - 3000, +1e6j - 30000, -5e5]
     g = 1.0
     loops = None
-    naset = dict(start_freq=1e4,
-                    stop_freq=500e3,
-                    points=301,
-                    rbw=1000,
-                    average_per_point=1,
-                    trace_average=1,
-                    amplitude=0.01,
-                    output_direct='off',
-                    logscale=True)
+    naset = dict(
+        start_freq=1e4,
+        stop_freq=500e3,
+        points=301,
+        rbw=1000,
+        average_per_point=1,
+        trace_average=1,
+        amplitude=0.01,
+        output_direct="off",
+        logscale=True,
+    )
     error_threshold = [0.04, 0.04]
-    params.append((z, p, g, loops, naset, "3 - medium", error_threshold,
-                    ['final', 'continuous']))
+    params.append((z, p, g, loops, naset, "3 - medium", error_threshold, ["final", "continuous"]))
 
     # I also find it weird that we are only using params[2] in the end s
-    @pytest.mark.parametrize("param_set", params[2:3], ids=lambda p: p[5])  # Use the name field as test ID
+    @pytest.mark.parametrize(
+        "param_set", params[2:3], ids=lambda p: p[5]
+    )  # Use the name field as test ID
     def test_iircomplicated_na(self, param_set):
         """
         This test defines a number of complicated IIR transfer functions
@@ -225,22 +290,30 @@ class TestIir(TestPyrpl):
         """
         if self.r is None:
             pytest.skip("No Red Pitaya connection")
-            
+
         z, p, g, loops, naset, name, error_threshold, kinds = param_set
-        
+
         na = self.pyrpl.networkanalyzer
         iir = self.pyrpl.rp.iir
-        
+
         # Set input in naset
-        naset['input'] = iir
-        
+        naset["input"] = iir
+
         na.setup(**naset)
-        iir.setup(zeros=z, poles=p, gain=g, loops=loops, input=na.iq, output_direct='off')
-        
+        iir.setup(zeros=z, poles=p, gain=g, loops=loops, input=na.iq, output_direct="off")
+
         self.na_assertion(name, iir, error_threshold, 0, True, True, kinds)
 
-    def na_assertion(self, setting, module, error_threshold=0.1,
-                     extradelay=0, relative=False, mean=False, kinds=None):
+    def na_assertion(
+        self,
+        setting,
+        module,
+        error_threshold=0.1,
+        extradelay=0,
+        relative=False,
+        mean=False,
+        kinds=None,
+    ):
         """
         helper function: tests if module.transfer_function is within
         error_threshold of the measured transfer function of the module
@@ -259,7 +332,7 @@ class TestIir(TestPyrpl):
                 theory = module.transfer_function(f, extradelay=extradelay)
                 eth = error_threshold
             else:
-                extrastring += '_' + kind + '_'
+                extrastring += "_" + kind + "_"
                 theory = module.transfer_function_by_kind(f, kind=kind)
                 try:
                     eth = error_threshold[kinds.index(kind)]
@@ -274,16 +347,20 @@ class TestIir(TestPyrpl):
             else:
                 maxerror = np.max(error)
             if maxerror > eth:
-                c = CurveDB.create(f, data, name='test_' + module.name
-                                                 + '_' + extrastring
-                                                 + '_na-failed-data')
+                c = CurveDB.create(
+                    f,
+                    data,
+                    name="test_" + module.name + "_" + extrastring + "_na-failed-data",
+                )
                 c.params["unittest_relative"] = relative
                 c.params["unittest_maxerror"] = maxerror
                 c.params["unittest_error_threshold"] = eth
                 c.params["unittest_setting"] = setting
                 c.save()
-                c.add_child(CurveDB.create(f, theory,
-                                           name='test_' + module.name + '_na-failed-theory'))
-                c.add_child(CurveDB.create(f, error,
-                                           name='test_' + module.name + '_na-failed-error'))
+                c.add_child(
+                    CurveDB.create(f, theory, name="test_" + module.name + "_na-failed-theory")
+                )
+                c.add_child(
+                    CurveDB.create(f, error, name="test_" + module.name + "_na-failed-error")
+                )
                 assert False, (maxerror, setting)

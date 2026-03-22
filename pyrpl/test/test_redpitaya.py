@@ -3,13 +3,11 @@
 
 import logging
 import pytest
-import os
-from pyrpl import RedPitaya
 
 logger = logging.getLogger(name=__name__)
 
+
 class TestRedpitaya(object):
-    
     @pytest.fixture(autouse=True)
     def setup_rp(self, hardware_session):
         """
@@ -17,13 +15,13 @@ class TestRedpitaya(object):
         Works regardless of whether a full Pyrpl app was created or just the driver.
         """
         self.r = hardware_session.rp
-        
+
         # If you need config vars that are usually in RedPitaya class:
         self.read_time = hardware_session.read_time
         self.write_time = hardware_session.write_time
 
     def test_redpitaya(self):
-        assert (self.r is not None)
+        assert self.r is not None
 
     def test_connect(self):
         self.r.hk.led = 0

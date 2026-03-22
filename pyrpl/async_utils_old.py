@@ -1,26 +1,33 @@
 """
 This file contains a number of methods for asynchronous operations.
 """
+
 import logging
-from qtpy import QtCore, QtWidgets
+from qtpy import QtCore
 from timeit import default_timer
 import sys
+from . import APP  # APP is only created once at the startup of PyRPL
+
 logger = logging.getLogger(name=__name__)
 
-from . import APP  # APP is only created once at the startup of PyRPL
+
 MAIN_THREAD = APP.thread()
 
 try:
-    from asyncio import Future, ensure_future, CancelledError, \
-        set_event_loop, TimeoutError
+    from asyncio import (
+        Future,
+        ensure_future,
+        CancelledError,
+        set_event_loop,
+        TimeoutError,
+    )
 except ImportError:  # this occurs in python 2.7
-    logger.debug("asyncio not found, we will use concurrent.futures "
-                  "instead of python 3.5 Futures.")
+    logger.debug("asyncio not found, we will use concurrent.futures instead of python 3.5 Futures.")
     from concurrent.futures import Future, CancelledError, TimeoutError
 else:
     import quamash
-    set_event_loop(quamash.QEventLoop())
 
+    set_event_loop(quamash.QEventLoop())
 
 
 class MainThreadTimer(QtCore.QTimer):
@@ -118,10 +125,10 @@ class PyrplFuture(Future):
     """
 
     def __init__(self):
-        if sys.version.startswith('3.7'):
+        if sys.version.startswith("3.7"):
             loop = quamash.QEventLoop()
             super(PyrplFuture, self).__init__(loop=loop)
-        else: # python 2.7, 3.5,3.6
+        else:  # python 2.7, 3.5,3.6
             super(PyrplFuture, self).__init__()
         self._timer_timeout = None  # timer that will be instantiated if
         #  result(timeout) is called with a >0 value
@@ -133,9 +140,9 @@ class PyrplFuture(Future):
         Returns:
             The result of the future.
         """
-        try: #  concurrent.futures.Future (python 2)
+        try:  #  concurrent.futures.Future (python 2)
             return super(PyrplFuture, self).result(timeout=0)
-        except TypeError: #  asyncio.Future (python 3)
+        except TypeError:  #  asyncio.Future (python 3)
             return super(PyrplFuture, self).result()
 
     def _exit_loop(self, x=None):
@@ -146,7 +153,7 @@ class PyrplFuture(Future):
         """
         if not self.done():
             self.set_exception(TimeoutError("timeout occured"))
-        if hasattr(self, 'loop'): # Python <=3.6
+        if hasattr(self, "loop"):  # Python <=3.6
             self.loop.quit()
 
     def _wait_for_done(self, timeout):
@@ -163,13 +170,13 @@ class PyrplFuture(Future):
         if not self.done():
             self.timer_timeout = None
             if (timeout is not None) and timeout > 0:
-                self._timer_timeout = MainThreadTimer(timeout*1000)
+                self._timer_timeout = MainThreadTimer(timeout * 1000)
                 self._timer_timeout.timeout.connect(self._exit_loop)
                 self._timer_timeout.start()
             self.add_done_callback(self._exit_loop)
-            if hasattr(self, 'get_loop'): # Python 3.7
+            if hasattr(self, "get_loop"):  # Python 3.7
                 self.get_loop().run_until_complete(self)
-            else: # Python <= 3.6
+            else:  # Python <= 3.6
                 self.loop = QtCore.QEventLoop()
                 self.loop.exec_()
             if self._timer_timeout is not None:

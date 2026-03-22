@@ -189,13 +189,13 @@ for i in range(len(data)):
 data = [from_pyint(v,bitlength=LUTBITS) for v in data]
 plot(data)
 
-print "reg [LUTBITS-1-1:0] lutrom [0:(1<<LUTSZ)-1];"
-print ""
-print "initial begin"
+print("reg [LUTBITS-1-1:0] lutrom [0:(1<<LUTSZ)-1];")
+print("")
+print("initial begin")
 for i in range(len(data)):
     string = "   lutrom["+str(i)+"] = "+str(LUTBITS-1)+"'d"+str(data[i])+";"
-    print string
-print "end"
+    print(string)
+print("end")
 */ 
 
 

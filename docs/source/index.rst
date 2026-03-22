@@ -122,7 +122,7 @@ Low-level API example
     r.pid0.i *= 2  # double the integrator unity-gain-frequency
 
     # take oscilloscope traces of the demodulated and pid signal
-    data = r.scope.curve(input1='iq0', input2='pid0',
+    data = r.scope.single(input1='iq0', input2='pid0',
                          duration=1.0, trigger_source='immediately')
 
 

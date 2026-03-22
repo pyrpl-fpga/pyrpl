@@ -73,9 +73,9 @@ put a 50 Ohm terminator in parallel with input 1.
     amplitude=0.2,input='iq1',output_direct='off', acbandwidth=0)
 
     #take transfer functions. first: iq1 -> iq1, second iq1->out1->(your cable)->adc1
-    iq1 = na.curve()
+    iq1 = na.single()
     na.setup(input='in1', output_direct='out1')
-    in1 = na.curve()
+    in1 = na.single()
 
     # get x-axis for plotting
     f = na.frequencies
@@ -121,7 +121,8 @@ with the network analyzer:
     bpf.setup(frequency = 2.5e6, #center frequency
               bandwidth=1.e3, # the filter quality factor
               acbandwidth = 10e5, # ac filter to remove pot. input offsets
-              phase=0, # nominal phase at center frequency (propagation phase lags not accounted for)
+              phase=0, # nominal phase at center frequency 
+              # (propagation phase lags not accounted for)
               gain=2.0, # peak gain = +6 dB
               output_direct='off',
               output_signal='output_direct',
@@ -132,11 +133,11 @@ with the network analyzer:
                              amplitude=0.2, input='iq2',output_direct='off')
 
     # take transfer function
-    tf1 = na.curve()
+    tf1 = na.single()
 
     # add a phase advance of 82.3 degrees and measure transfer function
     bpf.phase = 82.3
-    tf2 = na.curve()
+    tf2 = na.single()
 
     f = na.frequencies
 
@@ -189,14 +190,23 @@ reasonable frequency lock).
         print("Frequency difference error integral", iq.pfd_integral)
 
 """
+
 import sys
 from time import sleep
-from collections import OrderedDict
 import numpy as np
 
-from ..attributes import BoolRegister, FloatRegister, SelectRegister, \
-    IntRegister, PhaseRegister, FrequencyRegister, FloatProperty, \
-    FilterRegister, FilterProperty, GainRegister
+from ..attributes import (
+    BoolRegister,
+    FloatRegister,
+    SelectRegister,
+    IntRegister,
+    PhaseRegister,
+    FrequencyRegister,
+    FloatProperty,
+    FilterRegister,
+    FilterProperty,
+    GainRegister,
+)
 from ..widgets.module_widgets import IqWidget
 from ..pyrpl_utils import sorted_dict
 
@@ -207,11 +217,11 @@ class IqGain(FloatProperty):
     """descriptor for the gain of the Iq module"""
 
     def get_value(self, obj):
-        return obj._g1 / 2 ** 3
+        return obj._g1 / 2**3
 
     def set_value(self, obj, val):
-        obj._g1 = float(val) * 2 ** 3
-        obj._g4 = float(val) * 2 ** 3
+        obj._g1 = float(val) * 2**3
+        obj._g4 = float(val) * 2**3
         return val
 
 
@@ -219,12 +229,14 @@ class IqAcbandwidth(FilterProperty):
     """descriptor for the acbandwidth of the Iq module"""
 
     def valid_frequencies(self, module):
-        return [freq for freq in module.__class__.inputfilter.valid_frequencies(module) if freq >= 0]
+        return [
+            freq for freq in module.__class__.inputfilter.valid_frequencies(module) if freq >= 0
+        ]
 
     def get_value(self, obj):
         if obj is None:
             return self
-        return - obj.inputfilter
+        return -obj.inputfilter
 
     def set_value(self, instance, val):
         if np.iterable(val):
@@ -239,42 +251,42 @@ class Iq(FilterModule):
     A modulator/demodulator module.
 
     """
-    _widget_class = IqWidget
-    _setup_attributes = ["input",
-                         "acbandwidth",
-                         "frequency",
-                         "bandwidth",
-                         "quadrature_factor",
-                         "output_signal",
-                         "gain",
-                         "amplitude",
-                         "phase",
-                         "output_direct",
-                         "modulation_at_2f",
-                         "demodulation_at_2f"]
 
-    _gui_attributes = _setup_attributes  # + ["synchronize_iqs"]  # function calls auto-gui only works in develop-0.9.3 branch
+    _widget_class = IqWidget
+    _setup_attributes = [
+        "input",
+        "acbandwidth",
+        "frequency",
+        "bandwidth",
+        "quadrature_factor",
+        "output_signal",
+        "gain",
+        "amplitude",
+        "phase",
+        "output_direct",
+        "modulation_at_2f",
+        "demodulation_at_2f",
+    ]
+
+    _gui_attributes = _setup_attributes  # + ["synchronize_iqs"]
+    # function calls auto-gui only works in develop-0.9.3 branch
 
     _delay = 5  # bare delay of IQ module with no filters set (cycles)
 
-    _output_signals = sorted_dict(
-        quadrature=0,
-        output_direct=1,
-        pfd=2,
-        off=3,
-        quadrature_hf=4)
-
+    _output_signals = sorted_dict(quadrature=0, output_direct=1, pfd=2, off=3, quadrature_hf=4)
 
     output_signals = _output_signals.keys()
-    output_signal = SelectRegister(0x10C, options=_output_signals,
-                                   doc="Signal to send back to DSP multiplexer")
+    output_signal = SelectRegister(
+        0x10C, options=_output_signals, doc="Signal to send back to DSP multiplexer"
+    )
 
-    bandwidth = FilterRegister(0x124,
-                               filterstages=0x230,
-                               shiftbits=0x234,
-                               minbw=0x238,
-                               doc="Quadrature filter bandwidths [Hz]." \
-                                   "0 = off, negative bandwidth = highpass")
+    bandwidth = FilterRegister(
+        0x124,
+        filterstages=0x230,
+        shiftbits=0x234,
+        minbw=0x238,
+        doc="Quadrature filter bandwidths [Hz].0 = off, negative bandwidth = highpass",
+    )
 
     _valid_bandwidths = bandwidth.valid_frequencies
 
@@ -282,45 +294,73 @@ class Iq(FilterModule):
     def bandwidths(self):
         return self._valid_bandwidths(self)
 
-    on = BoolRegister(0x100, 0,
-                      doc="If set to False, turns off the module, e.g. to \
-                      re-synchronize the phases")
+    on = BoolRegister(
+        0x100,
+        0,
+        doc="If set to False, turns off the module, e.g. to \
+                      re-synchronize the phases",
+    )
 
-    pfd_on = BoolRegister(0x100, 1,
-                          doc="If True: Turns on the PFD module,\
-                        if False: turns it off and resets integral")
+    pfd_on = BoolRegister(
+        0x100,
+        1,
+        doc="If True: Turns on the PFD module,\
+                        if False: turns it off and resets integral",
+    )
 
     # raw flags, not useful in most cases since sin and cos-flag must be
     # written in the same clock cycle
-    _modulation_sin_at_2f = BoolRegister(0x100, 2, default=False,
-                                         doc="If True, this flag sets the "
-                                             "frequency of the sine used "
-                                             "for modulation to twice the "
-                                             "fundamental frequency.")
-    _modulation_cos_at_2f = BoolRegister(0x100, 3, default=False,
-                                         doc="If True, this flag sets the "
-                                             "frequency of the cosine used "
-                                             "for modulation to twice the "
-                                             "fundamental frequency.")
-    _demodulation_sin_at_2f = BoolRegister(0x100, 4, default=False,
-                                         doc="If True, this flag sets the "
-                                             "frequency of the sine used "
-                                             "for demodulation to twice the "
-                                             "fundamental frequency.")
-    _demodulation_cos_at_2f = BoolRegister(0x100, 5, default=False,
-                                         doc="If True, this flag sets the "
-                                             "frequency of the cosine used "
-                                             "for demodulation to twice the "
-                                             "fundamental frequency.")
+    _modulation_sin_at_2f = BoolRegister(
+        0x100,
+        2,
+        default=False,
+        doc="If True, this flag sets the "
+        "frequency of the sine used "
+        "for modulation to twice the "
+        "fundamental frequency.",
+    )
+    _modulation_cos_at_2f = BoolRegister(
+        0x100,
+        3,
+        default=False,
+        doc="If True, this flag sets the "
+        "frequency of the cosine used "
+        "for modulation to twice the "
+        "fundamental frequency.",
+    )
+    _demodulation_sin_at_2f = BoolRegister(
+        0x100,
+        4,
+        default=False,
+        doc="If True, this flag sets the "
+        "frequency of the sine used "
+        "for demodulation to twice the "
+        "fundamental frequency.",
+    )
+    _demodulation_cos_at_2f = BoolRegister(
+        0x100,
+        5,
+        default=False,
+        doc="If True, this flag sets the "
+        "frequency of the cosine used "
+        "for demodulation to twice the "
+        "fundamental frequency.",
+    )
     # helper registers for switching sin/cos flags at the same time
-    modulation_at_2f = SelectRegister(0x100, bitmask=3<<2, options=dict(off=0, on=3<<2),
-                                      default='off',
-                                      doc="Sets the modulation frequency to "
-                                          "twice the IQ module frequency")
-    demodulation_at_2f = SelectRegister(0x100, bitmask=3<<4, options=dict(off=0, on=3<<4),
-                                        default='off',
-                                        doc="Sets the demodulation frequency to "
-                                            "twice the IQ module frequency")
+    modulation_at_2f = SelectRegister(
+        0x100,
+        bitmask=3 << 2,
+        options=dict(off=0, on=3 << 2),
+        default="off",
+        doc="Sets the modulation frequency to twice the IQ module frequency",
+    )
+    demodulation_at_2f = SelectRegister(
+        0x100,
+        bitmask=3 << 4,
+        options=dict(off=0, on=3 << 4),
+        default="off",
+        doc="Sets the demodulation frequency to twice the IQ module frequency",
+    )
 
     _LUTSZ = IntRegister(0x200)
     _LUTBITS = IntRegister(0x204)
@@ -330,50 +370,59 @@ class Iq(FilterModule):
     _LPFBITS = 24  # Register(0x214)
     _SHIFTBITS = 8  # Register(0x218)
 
-    pfd_integral = FloatRegister(0x150, bits=_SIGNALBITS, norm=_SIGNALBITS,
-                                 doc="value of the pfd integral [volts]")
+    pfd_integral = FloatRegister(
+        0x150,
+        bits=_SIGNALBITS,
+        norm=_SIGNALBITS,
+        doc="value of the pfd integral [volts]",
+    )
 
     # for the phase to have the right sign, it must be inverted
-    phase = PhaseRegister(0x104, bits=_PHASEBITS, invert=True,
-                          doc="Phase shift between modulation \
-                          and demodulation [degrees]")
+    phase = PhaseRegister(
+        0x104,
+        bits=_PHASEBITS,
+        invert=True,
+        doc="Phase shift between modulation \
+                          and demodulation [degrees]",
+    )
 
-    frequency = FrequencyRegister(0x108, bits=_PHASEBITS,
-                                  doc="frequency of iq demodulation [Hz]")
+    frequency = FrequencyRegister(0x108, bits=_PHASEBITS, doc="frequency of iq demodulation [Hz]")
 
-    _g1 = GainRegister(0x110, bits=_GAINBITS, norm=2 ** _SHIFTBITS,
-                        doc="gain1 of iq module [volts]")
+    _g1 = GainRegister(0x110, bits=_GAINBITS, norm=2**_SHIFTBITS, doc="gain1 of iq module [volts]")
 
-    _g2 = GainRegister(0x114, bits=_GAINBITS, norm=2 ** _SHIFTBITS,
-                        doc="gain2 of iq module [volts]")
-    amplitude = GainRegister(0x114, bits=_GAINBITS, norm=2 ** (_GAINBITS - 1),
-                              doc="amplitude of coherent modulation [volts]")
+    _g2 = GainRegister(0x114, bits=_GAINBITS, norm=2**_SHIFTBITS, doc="gain2 of iq module [volts]")
+    amplitude = GainRegister(
+        0x114,
+        bits=_GAINBITS,
+        norm=2 ** (_GAINBITS - 1),
+        doc="amplitude of coherent modulation [volts]",
+    )
 
-    _g3 = GainRegister(0x118, bits=_GAINBITS, norm=2 ** _SHIFTBITS,
-                        doc="gain3 of iq module [volts]")
-    quadrature_factor = GainRegister(0x118,
-                                      bits=_GAINBITS,
-                                      norm=1.0,
-                                      default=1.0,
-                                      #2 ** _SHIFTBITS,
-                                      #  quadrature_factor of 1 corresponds
-                                      # to lowest-possible gain,
-                                      # where iq_signal is simply the input
-                                      # tiemes a 1-V sine (possibly low-pass
-                                      # filtered)
-                                      doc="amplification factor of demodulated signal [a.u.]")
+    _g3 = GainRegister(0x118, bits=_GAINBITS, norm=2**_SHIFTBITS, doc="gain3 of iq module [volts]")
+    quadrature_factor = GainRegister(
+        0x118,
+        bits=_GAINBITS,
+        norm=1.0,
+        default=1.0,
+        # 2 ** _SHIFTBITS,
+        #  quadrature_factor of 1 corresponds
+        # to lowest-possible gain,
+        # where iq_signal is simply the input
+        # tiemes a 1-V sine (possibly low-pass
+        # filtered)
+        doc="amplification factor of demodulated signal [a.u.]",
+    )
 
-    _g4 = GainRegister(0x11C, bits=_GAINBITS, norm=2 ** _SHIFTBITS,
-                        doc="gain4 of iq module [volts]")
-
+    _g4 = GainRegister(0x11C, bits=_GAINBITS, norm=2**_SHIFTBITS, doc="gain4 of iq module [volts]")
 
     # def __init__(self, *args, **kwds): ## ?? I don't see the point ??
     #    super(IQ, self).__init__(*args, **kwds)
 
     # @property
     # def acbandwidths(self):
-    acbandwidths = [0] + [int(2.371593461809983 * 2 ** n) for n in
-                          range(1, 27)]  # only register that needs to be read to
+    acbandwidths = [0] + [
+        int(2.371593461809983 * 2**n) for n in range(1, 27)
+    ]  # only register that needs to be read to
     # guess the options... we need to fix that...
     # return self._valid_inputfilter_frequencies()
     # acbandwidths = FilterModule.inputfilter.valid_frequencies()
@@ -390,70 +439,72 @@ class Iq(FilterModule):
         modules with commensurate frequencies. This function must be called
         after having set the last iq frequency in order to be effective.
         """
-        self._synchronize(modules=['iq0', 'iq1', 'iq2'])
+        self._synchronize(modules=["iq0", "iq1", "iq2"])
         self._logger.debug("All IQ modules synchronized!")
 
-    def _setup(self): # the function is here for its docstring to be used by the metaclass.
+    def _setup(
+        self,
+    ):  # the function is here for its docstring to be used by the metaclass.
         """
-        Sets up an iq demodulator, refer to the drawing in the GUI for an explanation of the IQ layout.
-        (just setting the attributes is OK).
+        Sets up an iq demodulator, refer to the drawing in the GUI for an explanation of the IQ
+        layout. (just setting the attributes is OK).
         """
         self.synchronize_iqs()
 
-    _na_averages = IntRegister(0x130,
-                               doc='number of cycles to perform na-averaging over')
-    _na_sleepcycles = IntRegister(0x134,
-                                  doc='number of cycles to wait before starting to average')
+    _na_averages = IntRegister(0x130, doc="number of cycles to perform na-averaging over")
+    _na_sleepcycles = IntRegister(0x134, doc="number of cycles to wait before starting to average")
 
     @property
-    def _nadata(self): # reading two registers necessary because _na_averages is not cached
+    def _nadata(
+        self,
+    ):  # reading two registers necessary because _na_averages is not cached
         return self._nadata_total / float(self._na_averages)
 
     @property
-    def _nadata_total(self): #only one read operation--> twice faster than _nadata
+    def _nadata_total(self):  # only one read operation--> twice faster than _nadata
         attempt = 0
         a, b, c, d = self._reads(0x140, 4)
-        while not ((a >> 31 == 0) and (b >> 31 == 0)
-                   and (c >> 31 == 0) and (d >> 31 == 0)):
+        while not ((a >> 31 == 0) and (b >> 31 == 0) and (c >> 31 == 0) and (d >> 31 == 0)):
             a, b, c, d = self._reads(0x140, 4)
 
-            self._logger.warning('NA data not ready yet. Try again!')
+            self._logger.warning("NA data not ready yet. Try again!")
             attempt += 1
             if attempt > 10:
-                raise Exception("Trying to recover NA data while averaging is not finished. Some setting is wrong. ")
-        sum = np.complex128(self._to_pyint(int(a) + (int(b) << 31), bitlength=62)) \
-              + np.complex128(self._to_pyint(int(c) + (int(d) << 31), bitlength=62)) * 1j
+                raise Exception(
+                    "Trying to recover NA data while averaging is not finished. "
+                    "Some setting is wrong. "
+                )
+        sum = (
+            np.complex128(self._to_pyint(int(a) + (int(b) << 31), bitlength=62))
+            + np.complex128(self._to_pyint(int(c) + (int(d) << 31), bitlength=62)) * 1j
+        )
         return sum
 
     # the implementation of network_analyzer is not identical to na_trace
     # there are still many bugs in it, which is why we will keep this function
     # in the gui
     def na_trace(
-            self,
-            start=0,  # start frequency
-            stop=100e3,  # stop frequency
-            points=1001,  # number of points
-            rbw=100,  # resolution bandwidth, can be a list of 2 as well for second-order
-            avg=1.0,  # averages
-            amplitude=0.1,  # output amplitude in volts
-            input='adc1',  # input signal
-            output_direct='off',  # output signal
-            acbandwidth=0,  # ac filter bandwidth, 0 disables filter, negative values represent lowpass
-            sleeptimes=0.5,  # wait sleeptimes/rbw for quadratures to stabilize
-            logscale=False,  # make a logarithmic frequency sweep
-            stabilize=None,
-            # if a float, output amplitude is adjusted dynamically so that input amplitude [V]=stabilize
-            maxamplitude=1.0,  # amplitude can be limited
-            ):
+        self,
+        start=0,  # start frequency
+        stop=100e3,  # stop frequency
+        points=1001,  # number of points
+        rbw=100,  # resolution bandwidth, can be a list of 2 as well for second-order
+        avg=1.0,  # averages
+        amplitude=0.1,  # output amplitude in volts
+        input="adc1",  # input signal
+        output_direct="off",  # output signal
+        acbandwidth=0,  # ac filter bandwidth, 0 disables filter, negative values represent lowpass
+        sleeptimes=0.5,  # wait sleeptimes/rbw for quadratures to stabilize
+        logscale=False,  # make a logarithmic frequency sweep
+        stabilize=None,
+        # if a float, output amplitude is adjusted dynamically so that input amplitude [V]=stabilize
+        maxamplitude=1.0,  # amplitude can be limited
+    ):
         # logger.info("This function will become obsolete in the distant "
         #                 "future. Start using the module RedPitaya.na "
         #                 "instead!")
         if logscale:
-            x = np.logspace(
-                np.log10(start),
-                np.log10(stop),
-                points,
-                endpoint=True)
+            x = np.logspace(np.log10(start), np.log10(stop), points, endpoint=True)
         else:
             x = np.linspace(start, stop, points, endpoint=True)
         y = np.zeros(points, dtype=np.complex128)
@@ -463,25 +514,30 @@ class Iq(FilterModule):
         amplitude = abs(amplitude)
         if abs(amplitude) > maxamplitude:
             amplitude = maxamplitude
-        self.setup(frequency=x[0],
-                   bandwidth=rbw,
-                   gain=0,
-                   phase=0,
-                   acbandwidth=-np.array(acbandwidth),
-                   amplitude=0,
-                   input=input,
-                   output_direct=output_direct,
-                   output_signal='output_direct')
+        self.setup(
+            frequency=x[0],
+            bandwidth=rbw,
+            gain=0,
+            phase=0,
+            acbandwidth=-np.array(acbandwidth),
+            amplitude=0,
+            input=input,
+            output_direct=output_direct,
+            output_signal="output_direct",
+        )
         # take the discretized rbw (only using first filter cutoff)
         rbw = self.bandwidth[0]
-        self._logger.info("Estimated acquisition time: %.1f s", float(avg + sleeptimes) * points / rbw)
+        self._logger.info(
+            "Estimated acquisition time: %.1f s", float(avg + sleeptimes) * points / rbw
+        )
         sys.stdout.flush()  # make sure the time is shown
         # setup averaging
         self._na_averages = int(np.round(125e6 / rbw * avg))
         self._na_sleepcycles = int(np.round(125e6 / rbw * sleeptimes))
         # compute rescaling factor
         rescale = 2.0 ** (-self._LPFBITS) * 4.0  # 4 is artefact of fpga code
-        # obtained by measuring transfer function with bnc cable - could replace the inverse of 4 above
+        # obtained by measuring transfer function with bnc cable -
+        # could replace the inverse of 4 above
         # unityfactor = 0.23094044589192711
         try:
             self.amplitude = amplitude  # turn on NA inside try..except block
@@ -512,11 +568,7 @@ class Iq(FilterModule):
         # in zero-span mode, change x-axis to approximate time. Time is very
         # rudely approximated here..
         if start == stop:
-            x = np.linspace(
-                0,
-                1.0 / rbw * (avg + sleeptimes),
-                points,
-                endpoint=False)
+            x = np.linspace(0, 1.0 / rbw * (avg + sleeptimes), points, endpoint=False)
         if stabilize is None:
             return x, y
         else:
@@ -565,15 +617,14 @@ class Iq(FilterModule):
                 quadrature_delay += 1  # one cycle extra delay per highpass
         # compute phase shift due to quadrature propagation delay
         quadrature_delay *= 8e-9 / self._frequency_correction
-        tf *= np.exp(-1j * quadrature_delay * (frequencies - self.frequency) \
-                     * 2 * np.pi)
+        tf *= np.exp(-1j * quadrature_delay * (frequencies - self.frequency) * 2 * np.pi)
         # input filter modelisation
         f = self.inputfilter  # no for loop here because only one filter stage
         if f > 0:  # lowpass
-            tf /= (1.0 + 1j * frequencies / f)
+            tf /= 1.0 + 1j * frequencies / f
             module_delay += 2  # two cycles extra delay per lowpass
         elif f < 0:  # highpass
-            tf /= (1.0 + 1j * f / frequencies)
+            tf /= 1.0 + 1j * f / frequencies
             module_delay += 1  # one cycle extra delay per highpass
         # compute delay
         delay = module_delay * 8e-9 / self._frequency_correction + extradelay

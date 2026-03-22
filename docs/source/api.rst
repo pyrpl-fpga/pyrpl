@@ -72,7 +72,7 @@ Basic communication with your RedPitaya
     r = p.rp
 
     #check the value of input1
-    print r.scope.voltage1
+    print(r.scope.voltage1
 
 With the last command, you have successfully retrieved a value from an
 FPGA register. This operation takes about 300 �s on my computer. So

@@ -1,6 +1,7 @@
 """
 The Iir widget allows to dynamically select zeros and poles of the iir filter
 """
+
 from .base_module_widget import ModuleWidget
 from collections import OrderedDict
 from qtpy import QtCore, QtWidgets
@@ -15,17 +16,21 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         super().__init__(parent=graph_widget, title=title)
         self._graph_widget = graph_widget
         self._module_widget = module_widget
-        self.setToolTip("-----plot legend---------------\n"
-                        "yellow: theoretical IIR transfer function\n"
-                        "green: data curve\n"
-                        "red: inverse IIR transfer function /\n"
-                        "-----shortcuts-----------------\n"
-                        "CTRL + Left click: add one more pole. \n"
-                        "SHIFT + Left click: add one more zero\n"
-                        "Left Click: select pole (other possibility: click on the '+j' labels below the graph)\n"
-                        "Left/Right arrows: change imaginary part (frequency) of the current pole or zero\n"
-                        "Up/Down arrows; change the real part (width) of the current pole or zero. \n"
-                        "Poles are represented by 'X', zeros by 'O', complex one have larger symbols than real ones.")
+        self.setToolTip(
+            "-----plot legend---------------\n"
+            "yellow: theoretical IIR transfer function\n"
+            "green: data curve\n"
+            "red: inverse IIR transfer function /\n"
+            "-----shortcuts-----------------\n"
+            "CTRL + Left click: add one more pole. \n"
+            "SHIFT + Left click: add one more zero\n"
+            "Left Click: select pole"
+            "(other possibility: click on the '+j' labels below the graph)\n"
+            "Left/Right arrows: change imaginary part (frequency) of the current pole or zero\n"
+            "Up/Down arrows; change the real part (width) of the current pole or zero. \n"
+            "Poles are represented by 'X', zeros by 'O',"
+            "complex one have larger symbols than real ones."
+        )
         self.doubleclicked = False
         # APP.setDoubleClickInterval(300)  # default value (550) is fine
         self.mouse_clicked_timer = QtCore.QTimer()
@@ -61,14 +66,14 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
         point = it.vb.mapSceneToView(pos)
         self.x, self.y = point.x(), point.y()
         if self._graph_widget.xlog:
-            self.x = 10 ** self.x  # takes logscale into account
+            self.x = 10**self.x  # takes logscale into account
 
     def mouse_clicked(self):
         # select nearest pole/zero with a simple click, even if something else is to happen after
-        default_damping = self.x/10.0
+        default_damping = self.x / 10.0
         if self.button == QtCore.Qt.LeftButton:
             if self.doubleclicked:
-                new = -default_damping - 1.j * self.x
+                new = -default_damping - 1.0j * self.x
                 if self.modifier == QtCore.Qt.CTRL:
                     self._module_widget.module.complex_poles.append(new)
                 if self.modifier == QtCore.Qt.SHIFT:
@@ -76,7 +81,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
             else:  # single click
                 new = -self.x
                 if self.modifier == 0:
-                    pass # see above in mousePressEvent()
+                    pass  # see above in mousePressEvent()
                 if self.modifier == QtCore.Qt.CTRL:
                     # make a new real pole
                     self._module_widget.module.real_poles.append(new)
@@ -85,18 +90,16 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
                     self._module_widget.module.real_zeros.append(new)
 
     def keyPressEvent(self, event):
-        """ not working properly yet"""
+        """not working properly yet"""
         name = self._module_widget.module._selected_pole_or_zero
         index = self._module_widget.module._selected_index
         return self._module_widget.attribute_widgets[name].widgets[index].keyPressEvent(event)
 
-
     def keyReleaseEvent(self, event):
-        """ not working properly yet"""
+        """not working properly yet"""
         name = self._module_widget.module._selected_pole_or_zero
         index = self._module_widget.module._selected_index
         return self._module_widget.attribute_widgets[name].widgets[index].keyReleaseEvent(event)
-
 
 
 class IirGraphWidget(QtWidgets.QGroupBox):
@@ -129,45 +132,63 @@ class IirGraphWidget(QtWidgets.QGroupBox):
         self.plots = OrderedDict()
 
         # make scatterplot items
-        for name, style in [('filter_measurement', dict(pen=pg.mkPen(None),
-                                                        symbol='o',
-                                                        size=5,
-                                                        brush=pg.mkBrush(255, 100, 0, 180))),
-                            ('zeros', dict(pen=pg.mkPen(None),
-                                           symbol='o',
-                                           size=10,
-                                           brush=pg.mkBrush(255, 0, 255, 120))),
-                            ('poles', dict(pen=pg.mkPen(None),
-                                           symbol='x',
-                                           size=10,
-                                           brush=pg.mkBrush(255, 0, 255, 120))),
-                            # ('actpole', dict(size=30,
-                            #                symbol='x',
-                            #                pen='r',
-                            #                brush=pg.mkBrush(255, 0, 255,
-                            #                                 120))),
-                            # ('actzero', dict(size=30,
-                            #                symbol='o',
-                            #                pen='r',
-                            #                brush=pg.mkBrush(255, 0, 255,
-                            #                                 120)))
-                            ]:
-                item = pg.ScatterPlotItem(**style)
-                self.mag.addItem(item)
-                self.plots[name] = item
-                item = pg.ScatterPlotItem(**style)
-                self.phase.addItem(item)
-                self.plots[name+'_phase'] = item
+        for name, style in [
+            (
+                "filter_measurement",
+                dict(
+                    pen=pg.mkPen(None),
+                    symbol="o",
+                    size=5,
+                    brush=pg.mkBrush(255, 100, 0, 180),
+                ),
+            ),
+            (
+                "zeros",
+                dict(
+                    pen=pg.mkPen(None),
+                    symbol="o",
+                    size=10,
+                    brush=pg.mkBrush(255, 0, 255, 120),
+                ),
+            ),
+            (
+                "poles",
+                dict(
+                    pen=pg.mkPen(None),
+                    symbol="x",
+                    size=10,
+                    brush=pg.mkBrush(255, 0, 255, 120),
+                ),
+            ),
+            # ('actpole', dict(size=30,
+            #                symbol='x',
+            #                pen='r',
+            #                brush=pg.mkBrush(255, 0, 255,
+            #                                 120))),
+            # ('actzero', dict(size=30,
+            #                symbol='o',
+            #                pen='r',
+            #                brush=pg.mkBrush(255, 0, 255,
+            #                                 120)))
+        ]:
+            item = pg.ScatterPlotItem(**style)
+            self.mag.addItem(item)
+            self.plots[name] = item
+            item = pg.ScatterPlotItem(**style)
+            self.phase.addItem(item)
+            self.plots[name + "_phase"] = item
 
         # make lines
-        for name, style in [('data', dict(pen='g')),
-                            ('filter_design', dict(pen='y')),
-                            ('data_x_design', dict(pen='r'))]:
+        for name, style in [
+            ("data", dict(pen="g")),
+            ("filter_design", dict(pen="y")),
+            ("data_x_design", dict(pen="r")),
+        ]:
             self.plots[name] = self.mag.plot(**style)
             self.plots[name + "_phase"] = self.phase.plot(**style)
 
             self.plots[name].setLogMode(self.xlog, None)
-            self.plots[name + '_phase'].setLogMode(self.xlog, None)
+            self.plots[name + "_phase"].setLogMode(self.xlog, None)
 
         # also set logscale for the xaxis
         # make scatter plots
@@ -176,10 +197,10 @@ class IirGraphWidget(QtWidgets.QGroupBox):
         self.layout.addWidget(self.win)
         self.layout.addWidget(self.win_phase)
         # connect signals
-        #self.plots['poles'].sigClicked.connect(self.parent.select_pole)
-        #self.plots['poles_phase'].sigClicked.connect(self.parent.select_pole)
-        #self.plots['zeros'].sigClicked.connect(self.parent.select_zero)
-        #self.plots['zeros_phase'].sigClicked.connect(self.parent.select_zero)
+        # self.plots['poles'].sigClicked.connect(self.parent.select_pole)
+        # self.plots['poles_phase'].sigClicked.connect(self.parent.select_pole)
+        # self.plots['zeros'].sigClicked.connect(self.parent.select_zero)
+        # self.plots['zeros_phase'].sigClicked.connect(self.parent.select_zero)
 
 
 class IirButtonWidget(QtWidgets.QGroupBox):
@@ -192,16 +213,24 @@ class IirButtonWidget(QtWidgets.QGroupBox):
         self.parent = parent
         self.module = self.parent.module
         self.layout = QtWidgets.QVBoxLayout(self)
-        #self.setLayout(self.layout)  # wasnt here before
+        # self.setLayout(self.layout)  # wasnt here before
         aws = self.parent.attribute_widgets
 
-        for attr in ['input', 'inputfilter', 'output_direct', 'loops',
-                     'gain', 'on', 'bypass', 'overflow']:
+        for attr in [
+            "input",
+            "inputfilter",
+            "output_direct",
+            "loops",
+            "gain",
+            "on",
+            "bypass",
+            "overflow",
+        ]:
             widget = aws[attr]
             widget.setFixedWidth(self.BUTTONWIDTH)
             self.layout.addWidget(widget)
 
-        self.setFixedWidth(self.BUTTONWIDTH+30)
+        self.setFixedWidth(self.BUTTONWIDTH + 30)
 
 
 class IirBottomWidget(QtWidgets.QGroupBox):
@@ -214,10 +243,9 @@ class IirBottomWidget(QtWidgets.QGroupBox):
         self.parent = parent
         self.module = self.parent.module
         self.layout = QtWidgets.QHBoxLayout(self)
-        #self.setLayout(self.layout)  # wasnt here before
+        # self.setLayout(self.layout)  # wasnt here before
         aws = self.parent.attribute_widgets
-        for attr in ['complex_poles', 'complex_zeros',
-                     'real_poles', 'real_zeros']:
+        for attr in ["complex_poles", "complex_zeros", "real_poles", "real_zeros"]:
             widget = aws[attr]
             widget.setFixedWidth(self.BUTTONWIDTH)
             self.layout.addWidget(widget)
@@ -226,14 +254,14 @@ class IirBottomWidget(QtWidgets.QGroupBox):
 class IirWidget(ModuleWidget):
     def init_gui(self):
         # setup filter in its present state
-        self.module.setup() # moved at the beginning of the function,
+        self.module.setup()  # moved at the beginning of the function,
         # otherwise, values altered in setup (such as iir.loops) are
         # not updated in the gui (gui already creted but not yet connected
         # to the signal launcher)
 
         self.init_main_layout(orientation="vertical")
-        #self.main_layout = QtWidgets.QVBoxLayout()
-        #self.setLayout(self.main_layout)
+        # self.main_layout = QtWidgets.QVBoxLayout()
+        # self.setLayout(self.main_layout)
 
         # add all attribute widgets and remove them right away
         self.init_attribute_layout()
@@ -257,21 +285,21 @@ class IirWidget(ModuleWidget):
         self.main_layout.addWidget(self.bottom_widget)
 
         # set colors of labels to the one of the corresponding traces
-        self.attribute_widgets['data_curve'].setStyleSheet("color: green")
-        self.attribute_widgets['data_curve_name'].setStyleSheet("color: green")
+        self.attribute_widgets["data_curve"].setStyleSheet("color: green")
+        self.attribute_widgets["data_curve_name"].setStyleSheet("color: green")
 
         # make curve_name read-only
-        self.attribute_widgets['data_curve_name'].widget.setReadOnly(True)
+        self.attribute_widgets["data_curve_name"].widget.setReadOnly(True)
 
         self.update_plot()
 
     def select_pole(self, plot_item, spots):
         index = spots[0].data()
-        self.attribute_widgets['poles'].set_selected(index)
+        self.attribute_widgets["poles"].set_selected(index)
 
     def select_zero(self, plot_item, spots):
         index = spots[0].data()
-        self.attribute_widgets['zeros'].set_selected(index)
+        self.attribute_widgets["zeros"].set_selected(index)
 
     @property
     def frequencies(self):
@@ -282,12 +310,11 @@ class IirWidget(ModuleWidget):
             return np.logspace(1, np.log10(5e6), 2000)
         else:
             # avoid zero frequency (log plot)
-            f[f<=0] = sys.float_info.epsilon
+            f[f <= 0] = sys.float_info.epsilon
             return np.asarray(f, dtype=float)
 
     def _magnitude(self, data):
-        return 20. * np.log10(np.abs(np.asarray(data, dtype=complex))
-                              + sys.float_info.epsilon)
+        return 20.0 * np.log10(np.abs(np.asarray(data, dtype=complex)) + sys.float_info.epsilon)
 
     def _phase(self, data):
         return np.angle(np.asarray(data, dtype=complex), deg=True)
@@ -300,78 +327,80 @@ class IirWidget(ModuleWidget):
         plot = OrderedDict()
         # plot data curve (measurement)
         try:
-            _, plot['data'] = self.module._data_curve_object.data
+            _, plot["data"] = self.module._data_curve_object.data
         except AttributeError:  # no curve for plotting available
-            plot['data'] = []
+            plot["data"] = []
         # plot designed filter
-        plot['filter_design'] = self.module.transfer_function_by_kind(
-                            frequencies=frequencies, kind=self.module.tf_type,
-            **tfargs)
+        plot["filter_design"] = self.module.transfer_function_by_kind(
+            frequencies=frequencies, kind=self.module.tf_type, **tfargs
+        )
         # plot product
-        plot['data_x_design'] = []
+        plot["data_x_design"] = []
         if self.module.plot_data_times_filter:
             try:
-                plot['data_x_design'] = plot['data'] * plot['filter_design']
+                plot["data_x_design"] = plot["data"] * plot["filter_design"]
             except ValueError:
                 pass
         # disable data plot if this is desired
         if not self.module.plot_data:
-            plot['data'] = []
+            plot["data"] = []
         # plot everything (all lines) up to here
         for k, v in plot.items():
-            self.graph_widget.plots[k].setData(frequencies[:len(v)],
-                                               self._magnitude(v))
-            self.graph_widget.plots[k+'_phase'].setData(frequencies[:len(v)],
-                                                    self._phase(v))
+            self.graph_widget.plots[k].setData(frequencies[: len(v)], self._magnitude(v))
+            self.graph_widget.plots[k + "_phase"].setData(frequencies[: len(v)], self._phase(v))
         # plot poles and zeros
         aws = self.attribute_widgets
-        for end in ['poles', 'zeros']:
+        for end in ["poles", "zeros"]:
             mag, phase = [], []
-            for start in ['complex', 'real']:
-                key = start+'_'+end
+            for start in ["complex", "real"]:
+                key = start + "_" + end
                 freq = getattr(self.module, key)
-                if start == 'complex':
+                if start == "complex":
                     freq = np.imag(freq)
                     defsize = 15  # complex (double) PZ's are plotted with larger symbols
                 else:
                     defsize = 10
                 freq = np.abs(freq)
-                tf = self.module.transfer_function_by_kind(frequencies=freq,
-                                                           kind=self.module.tf_type,
-                                                           **tfargs)
+                tf = self.module.transfer_function_by_kind(
+                    frequencies=freq, kind=self.module.tf_type, **tfargs
+                )
                 selected = aws[key].attribute_value.selected
-                brush = [pg.mkBrush(color='m')
-                         if (num == selected)
-                         else pg.mkBrush(color='y')
-                         for num in range(aws[key].number)]
-                size = [defsize*1.0 if (num == selected) else defsize
-                         for num in range(aws[key].number)]
-                mag += [{'pos': (fr, val), 'data': i, 'brush': br, 'size': si}
-                 for (i, (fr, val, br, si))
-                 in enumerate(zip(list(np.log10(freq)),
-                                  list(self._magnitude(tf)),
-                                  brush,
-                                  size))]
-                phase += [{'pos': (fr, val), 'data': i, 'brush': br, 'size': si}
-                 for (i, (fr, val, br, si))
-                 in enumerate(zip(list(np.log10(freq)),
-                                  list(self._phase(tf)),
-                                  brush,
-                                  size))]
+                brush = [
+                    pg.mkBrush(color="m") if (num == selected) else pg.mkBrush(color="y")
+                    for num in range(aws[key].number)
+                ]
+                size = [
+                    defsize * 1.0 if (num == selected) else defsize
+                    for num in range(aws[key].number)
+                ]
+                mag += [
+                    {"pos": (fr, val), "data": i, "brush": br, "size": si}
+                    for (i, (fr, val, br, si)) in enumerate(
+                        zip(list(np.log10(freq)), list(self._magnitude(tf)), brush, size)
+                    )
+                ]
+                phase += [
+                    {"pos": (fr, val), "data": i, "brush": br, "size": si}
+                    for (i, (fr, val, br, si)) in enumerate(
+                        zip(list(np.log10(freq)), list(self._phase(tf)), brush, size)
+                    )
+                ]
             self.graph_widget.plots[end].setData(mag)
-            self.graph_widget.plots[end+'_phase'].setData(phase)
+            self.graph_widget.plots[end + "_phase"].setData(phase)
         # plot the measurement data if desired
-        if self.module.plot_measurement and hasattr(self.module, '_measurement_data'):
+        if self.module.plot_measurement and hasattr(self.module, "_measurement_data"):
             f, v = self.module._measurement_data
-            f[f<=0] = sys.float_info.epsilon
+            f[f <= 0] = sys.float_info.epsilon
             f = np.asarray(np.log10(f), dtype=float)
-            self.graph_widget.plots['filter_measurement'].setData(x=f[:len(v)],
-                                                                  y=self._magnitude(v))
-            self.graph_widget.plots['filter_measurement_phase'].setData(x=f[:len(v)],
-                                                                        y=self._phase(v))
+            self.graph_widget.plots["filter_measurement"].setData(
+                x=f[: len(v)], y=self._magnitude(v)
+            )
+            self.graph_widget.plots["filter_measurement_phase"].setData(
+                x=f[: len(v)], y=self._phase(v)
+            )
 
     def keyPressEvent(self, event):
-        """ not working properly yet"""
+        """not working properly yet"""
         try:
             name = self.module._selected_pole_or_zero
             index = self.module._selected_index

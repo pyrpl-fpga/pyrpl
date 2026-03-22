@@ -1,15 +1,16 @@
 import logging
-logger = logging.getLogger(name=__name__)
 from pyrpl.modules import Module
 from pyrpl.attributes import FloatProperty, SelectProperty, ProxyProperty
 from pyrpl.module_attributes import *
 from pyrpl.memory import MemoryTree
 from pyrpl.async_utils import sleep
 
+logger = logging.getLogger(name=__name__)
+
 
 class MySubModule(Module):
     myfloat = FloatProperty(min=-1e10, max=1e10, default=12.3)
-    myselect = SelectProperty(options=[1,2,3,'a','b','c'], default='a')
+    myselect = SelectProperty(options=[1, 2, 3, "a", "b", "c"], default="a")
 
 
 class MyModule(Module):
@@ -21,10 +22,12 @@ class MyModule(Module):
     def _setup(self):
         self.setup_called = True
 
+
 class SignalReceiver(object):
     """
     slots for signals to ensure that signals are properly emitted
     """
+
     def update_attribute_by_name(self, name, value):
         self.arrived_signal = (name, value)
 
@@ -40,9 +43,9 @@ class TestProxyProperty(object):
         self.pyrpl = None
         self.parent = self.pyrpl
         self.c = MemoryTree()
-        m = MyModule(parent=self, name='m')
+        m = MyModule(parent=self, name="m")
 
-        assert m.__class__.myselectproxy.name == 'myselectproxy'
+        assert m.__class__.myselectproxy.name == "myselectproxy"
 
         # float proxy
         assert m.myfloat == 12.3
@@ -67,7 +70,7 @@ class TestProxyProperty(object):
         assert m.setup_called
 
         # select proxy
-        assert m.myselectproxy == 'a'
+        assert m.myselectproxy == "a"
         assert m.myselectproxy == m.moduleproperty.myselect
         m.myselectproxy = 1
         assert m.myselectproxy == 1
@@ -77,7 +80,7 @@ class TestProxyProperty(object):
         assert m.moduleproperty.myselect == 3
 
         # options
-        defaultoptions = [1,2,3,'a','b','c']
+        defaultoptions = [1, 2, 3, "a", "b", "c"]
         newoptions = [5, 6, 7]
         # argument None:
         # select property
@@ -112,7 +115,7 @@ class TestProxyProperty(object):
         assert options == newoptions, options
 
         # unfortunately, we do not know how to make this work:
-        #assert isinstance(m.__class__.myselectproxy, SelectProperty)
+        # assert isinstance(m.__class__.myselectproxy, SelectProperty)
         # instead, we have however a nice representation string
         repr = m.__class__.myselectproxy.__repr__()
         assert "SelectProperty" in repr, repr
@@ -137,7 +140,7 @@ class TestProxyProperty(object):
 
         # setup and perform some action
         s.arrived_signal = False
-        m.__class__.myselectproxy.change_options(m, ['foo', 'par'])
+        m.__class__.myselectproxy.change_options(m, ["foo", "par"])
         # see whether signal arrives
         for i in range(100):
             sleep(0.01)
@@ -145,7 +148,6 @@ class TestProxyProperty(object):
                 break
         else:
             assert False, "Timeout: proxy signals are not properly connected"
-        assert s.arrived_signal == ("myselectproxy", ['foo', 'par']), \
-            s.arrived_signal
+        assert s.arrived_signal == ("myselectproxy", ["foo", "par"]), s.arrived_signal
 
-        assert m.myselectproxy_options == ['foo', 'par']
+        assert m.myselectproxy_options == ["foo", "par"]

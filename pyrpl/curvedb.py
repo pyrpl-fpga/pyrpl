@@ -31,13 +31,14 @@ import numpy as np
 import os
 import logging
 import pickle as file_backend
-#import json as file_backend  # currently unable to store pandas
+# import json as file_backend  # currently unable to store pandas
 
 
 # optional override of CurveDB class with custom module, as defined in
 # ./pyrpl/config/global_config.yml
 try:
     from . import global_config
+
     CurveDB = __import__(global_config.general.curvedb).CurveDB
 except:
     from . import user_curve_dir
@@ -55,12 +56,13 @@ except:
         def values(self):
             return self.y
 
-
     class CurveDB(object):
         _dirname = user_curve_dir
-        file_extension = '.dat'
+        file_extension = ".dat"
 
-        if not os.path.exists(_dirname): # if _dirname doesn't exist, some unexpected errors will occur.
+        if not os.path.exists(
+            _dirname
+        ):  # if _dirname doesn't exist, some unexpected errors will occur.
             os.mkdir(_dirname)
 
         def __init__(self, name="some_curve"):
@@ -102,7 +104,10 @@ except:
                 elif isinstance(args[0], (np.array, list, tuple)):
                     ser = args[0]
                 else:
-                    raise ValueError("cannot recognize argument %s as numpy.array or pandas.Series.", args[0])
+                    raise ValueError(
+                        "cannot recognize argument %s as numpy.array or pandas.Series.",
+                        args[0],
+                    )
             elif len(args) == 2:
                 x = np.array(args[0])
                 y = np.array(args[1])
@@ -112,8 +117,8 @@ except:
             obj = cls()
             obj.data = ser
             obj.params = kwds
-            if not 'name' in obj.params:
-                obj.params['name'] = 'new_curve'
+            if "name" not in obj.params:
+                obj.params["name"] = "new_curve"
             pk = obj.pk  # make a pk
             if "childs" not in obj.params:
                 obj.params["childs"] = None
@@ -133,9 +138,10 @@ except:
             elif isinstance(curve, list):
                 return [CurveDB.get(c) for c in curve]
             else:
-                with open(os.path.join(CurveDB._dirname, str(curve) + cls.file_extension),
-                          'rb' if file_backend.__name__ == 'pickle' else 'r')\
-                        as f:
+                with open(
+                    os.path.join(CurveDB._dirname, str(curve) + cls.file_extension),
+                    "rb" if file_backend.__name__ == "pickle" else "r",
+                ) as f:
                     # rb is for compatibility with python 3
                     # see http://stackoverflow.com/questions/5512811/builtins-typeerror-must-be-str-not-bytes
                     curve = CurveDB()
@@ -147,21 +153,25 @@ except:
                 return curve
 
         def save(self):
-            with open(os.path.join(self._dirname, str(self.pk) + self.file_extension),
-                      'wb' if file_backend.__name__ == 'pickle' else 'w')\
-                    as f:
+            with open(
+                os.path.join(self._dirname, str(self.pk) + self.file_extension),
+                "wb" if file_backend.__name__ == "pickle" else "w",
+            ) as f:
                 # wb is for compatibility with python 3
                 # see http://stackoverflow.com/questions/5512811/builtins-typeerror-must-be-str-not-bytes
                 data = [a.tolist() for a in self.data]
-                file_backend.dump([self.pk, self.params, data], f, )
+                file_backend.dump(
+                    [self.pk, self.params, data],
+                    f,
+                )
 
         def delete(self):
             # remove the file
             delpk = self.pk
             parent = self.parent
             childs = self.childs
-            if isinstance(childs, list) and len(childs)> 0:
-                self.logger.debug("Deleting all childs of curve %d"%delpk)
+            if isinstance(childs, list) and len(childs) > 0:
+                self.logger.debug("Deleting all childs of curve %d" % delpk)
                 for child in childs:
                     child.delete()
             self.logger.debug("Deleting curve %d" % delpk)
@@ -169,8 +179,7 @@ except:
                 filename = os.path.join(self._dirname, str(self.pk) + self.file_extension)
                 os.remove(filename)
             except OSError:
-                self.logger.warning("Could not find and remove the file %s. ",
-                                    filename)
+                self.logger.warning("Could not find and remove the file %s. ", filename)
             if parent:
                 parentchilds = parent.childs
                 parentchilds.remove(delpk)
@@ -208,7 +217,7 @@ except:
             child.params["parent"] = self.pk
             child.save()
             childs = self.params["childs"] or []
-            self.params["childs"] = list(childs+[child.pk])
+            self.params["childs"] = list(childs + [child.pk])
             self.save()
 
         @classmethod
@@ -217,8 +226,7 @@ except:
             Returns:
                 list of int: A list of the primary keys of all CurveDB objects on the computer.
             """
-            pks = [int(f.split('.dat')[0])
-                   for f in os.listdir(cls._dirname) if f.endswith('.dat')]
+            pks = [int(f.split(".dat")[0]) for f in os.listdir(cls._dirname) if f.endswith(".dat")]
             return sorted(pks, reverse=True)
 
         @classmethod
@@ -243,8 +251,7 @@ except:
                 else:
                     self._pk = max(pks) + 1
                 # create the file to make this pk choice persistent
-                with open(os.path.join(self._dirname,
-                                       str(self._pk) + ".dat"), 'w') as f:
+                with open(os.path.join(self._dirname, str(self._pk) + ".dat"), "w") as f:
                     f.close()
                 return self._pk
             return -1
@@ -259,7 +266,7 @@ except:
             self.data = (xs, ys)
 
         def fit(self):
-            """ prototype for fitting a curve """
+            """prototype for fitting a curve"""
             self.logger.warning("Not implemented")
             pass
 

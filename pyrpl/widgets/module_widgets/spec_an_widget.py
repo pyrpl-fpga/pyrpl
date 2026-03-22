@@ -43,15 +43,12 @@ The following attributes can be manipulated by the SpectrumAnalyzer widget:
 """
 
 import logging
-logger = logging.getLogger(name=__name__)
-from qtpy import QtCore, QtWidgets
-import pyqtgraph as pg
-from time import time
+from qtpy import QtWidgets
 import numpy as np
-from .base_module_widget import ModuleWidget
 from ..attribute_widgets import DataWidget
-from ...errors import NotReadyError
 from .acquisition_module_widget import AcquisitionModuleWidget
+
+logger = logging.getLogger(name=__name__)
 
 
 class BasebandAttributesWidget(QtWidgets.QWidget):
@@ -77,7 +74,7 @@ class BasebandAttributesWidget(QtWidgets.QWidget):
 
         self.v_layout3 = QtWidgets.QVBoxLayout()
         self.h_layout.addLayout(self.v_layout3)
-        for name in ["display_cross_amplitude"]:#, "display_cross_phase"]:
+        for name in ["display_cross_amplitude"]:  # , "display_cross_phase"]:
             widget = aws[name]
             specan_widget.attribute_layout.removeWidget(widget)
             self.v_layout3.addWidget(widget)
@@ -129,15 +126,16 @@ class OtherAttributesWidget(QtWidgets.QWidget):
 
 class SpecAnWidget(AcquisitionModuleWidget):
     _display_max_frequency = 25  # max 25 Hz framerate
+
     def init_gui(self):
         """
         Sets up the gui.
         """
-        self.ch_col = ('magenta', 'blue', 'green')
+        self.ch_col = ("magenta", "blue", "green")
         self.last_data = None
         self.init_main_layout(orientation="vertical")
-        #self.main_layout = QtWidgets.QVBoxLayout()
-        self.module.__dict__['curve_name'] = 'pyrpl spectrum'
+        # self.main_layout = QtWidgets.QVBoxLayout()
+        self.module.__dict__["curve_name"] = "pyrpl spectrum"
         self.init_attribute_layout()
 
         self.other_widget = OtherAttributesWidget(self)
@@ -149,37 +147,31 @@ class SpecAnWidget(AcquisitionModuleWidget):
         self.baseband_widget = BasebandAttributesWidget(self)
         self.attribute_layout.addWidget(self.baseband_widget)
 
-
         self.button_layout = QtWidgets.QHBoxLayout()
-        #self.setLayout(self.main_layout)
+        # self.setLayout(self.main_layout)
         # self.setWindowTitle("Spec. An.")
-        #self.win = pg.GraphicsLayoutWidget(title="PSD")
-        #self.main_layout.addWidget(self.win)
+        # self.win = pg.GraphicsLayoutWidget(title="PSD")
+        # self.main_layout.addWidget(self.win)
 
-        self.win2 = DataWidget(title='Spectrum')
+        self.win2 = DataWidget(title="Spectrum")
         self.main_layout.addWidget(self.win2)
 
-        #self.plot_item = self.win.addPlot(title="PSD")
-        #self.curve = self.plot_item.plot(pen=self.ch_col[0][0])
+        # self.plot_item = self.win.addPlot(title="PSD")
+        # self.curve = self.plot_item.plot(pen=self.ch_col[0][0])
 
-        #self.curve2 = self.plot_item.plot(pen=self.ch_col[1][0]) # input2
+        # self.curve2 = self.plot_item.plot(pen=self.ch_col[1][0]) # input2
         # spectrum in
         # baseband
-        #self.curve_cross = self.plot_item.plot(pen=self.ch_col[2][0]) #
+        # self.curve_cross = self.plot_item.plot(pen=self.ch_col[2][0]) #
         # curve for
-
 
         super(SpecAnWidget, self).init_gui()
 
         aws = self.attribute_widgets
 
-
-        aws['display_input1_baseband'].setStyleSheet("color: %s" %
-                                                   self.ch_col[0])
-        aws['display_input2_baseband'].setStyleSheet("color: %s" %
-                                                   self.ch_col[1])
-        aws['display_cross_amplitude'].setStyleSheet("color: %s" %
-                                                   self.ch_col[2])
+        aws["display_input1_baseband"].setStyleSheet("color: %s" % self.ch_col[0])
+        aws["display_input2_baseband"].setStyleSheet("color: %s" % self.ch_col[1])
+        aws["display_cross_amplitude"].setStyleSheet("color: %s" % self.ch_col[2])
         # Not sure why the stretch factors in button_layout are not good by
         # default...
 
@@ -188,15 +180,14 @@ class SpecAnWidget(AcquisitionModuleWidget):
 
     def update_attribute_by_name(self, name, new_value_list):
         super(SpecAnWidget, self).update_attribute_by_name(name, new_value_list)
-        if name in ['_running_state']:
+        if name in ["_running_state"]:
             self.update_running_buttons()
-        if name in ['baseband']:
+        if name in ["baseband"]:
             self.update_baseband_visibility()
 
     def update_baseband_visibility(self):
         self.baseband_widget.setEnabled(self.module.baseband)
         self.iqmode_widget.setEnabled(not self.module.baseband)
-
 
     #### def update_rbw_visibility(self):
     ####     self.attribute_widgets["rbw"].widget.setEnabled(not
@@ -206,8 +197,7 @@ class SpecAnWidget(AcquisitionModuleWidget):
         """Autoscale pyqtgraph"""
         mini = self.module.frequencies[0]
         maxi = self.module.frequencies[-1]
-        self.win2.setRange(xRange=[mini,
-                                   maxi])
+        self.win2.setRange(xRange=[mini, maxi])
         # self.plot_item.autoRange()
 
     def unit_changed(self):
@@ -240,21 +230,23 @@ class SpecAnWidget(AcquisitionModuleWidget):
 
         self.last_data = datas
         freqs = datas[0]
-        to_units = lambda x:self.module.data_to_display_unit(x,
-                                                  self.module.attributes_last_run["rbw"])
-        if not self.module.baseband: # iq mode, only 1 curve to display
+        to_units = lambda x: self.module.data_to_display_unit(
+            x, self.module.attributes_last_run["rbw"]
+        )
+        if not self.module.baseband:  # iq mode, only 1 curve to display
             self.win2._set_widget_value((freqs, datas[1]), transform_magnitude=to_units)
-        else: # baseband mode: data is (spec1, spec2, real(cross), imag(cross))
+        else:  # baseband mode: data is (spec1, spec2, real(cross), imag(cross))
             spec1, spec2, cross_r, cross_i = datas[1]
             data = []
             if self.module.display_input1_baseband:
-                data.append(spec1) #np.array([np.nan]*len(x))
+                data.append(spec1)  # np.array([np.nan]*len(x))
             if self.module.display_input2_baseband:
-                data.append(spec2) # = np.zeros(len(x))# np.array([np.nan]*len(x))
+                data.append(spec2)  # = np.zeros(len(x))# np.array([np.nan]*len(x))
             if self.module.display_cross_amplitude:
-                data.append(cross_r + 1j*cross_i) # = np.zeros(len(x)) # np.array([np.nan]*len(x))
-            self.win2._set_widget_value((freqs, data),
-                                        transform_magnitude=to_units)
+                data.append(
+                    cross_r + 1j * cross_i
+                )  # = np.zeros(len(x)) # np.array([np.nan]*len(x))
+            self.win2._set_widget_value((freqs, data), transform_magnitude=to_units)
         self.update_current_average()
 
     def display_curve_old(self, datas):
@@ -263,14 +255,15 @@ class SpecAnWidget(AcquisitionModuleWidget):
         """
         self.last_data = datas
         freqs = datas[0]
-        to_units = lambda x:self.module.data_to_display_unit(x,
-                                                  self.module.attributes_last_run["rbw"])
-        if not self.module.baseband: # baseband mode, only 1 curve to display
+        to_units = lambda x: self.module.data_to_display_unit(
+            x, self.module.attributes_last_run["rbw"]
+        )
+        if not self.module.baseband:  # baseband mode, only 1 curve to display
             self.curve.setData(freqs, to_units(datas[1]))
             self.curve.setVisible(True)
             self.curve2.setVisible(False)
             self.curve_cross.setVisible(False)
-        else: # baseband mode: data is (spec1, spec2, real(cross), imag(cross))
+        else:  # baseband mode: data is (spec1, spec2, real(cross), imag(cross))
             spec1, spec2, cross_r, cross_i = datas[1]
             self.curve.setData(freqs, to_units(spec1))
             self.curve.setVisible(self.module.display_input1_baseband)
@@ -278,7 +271,7 @@ class SpecAnWidget(AcquisitionModuleWidget):
             self.curve2.setData(freqs, to_units(spec2))
             self.curve2.setVisible(self.module.display_input2_baseband)
 
-            cross = cross_r + 1j*cross_i
+            cross = cross_r + 1j * cross_i
             cross_mod = abs(cross)
             self.curve_cross.setData(freqs, to_units(cross_mod))
             self.curve_cross.setVisible(self.module.display_cross_amplitude)

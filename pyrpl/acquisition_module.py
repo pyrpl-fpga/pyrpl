@@ -54,6 +54,7 @@ Example:
             return data1, data2
         data1, data2 = my_acquisition_coroutine(10)
 """
+
 from copy import copy
 from .async_utils import ensure_future, sleep_async, wait, Event
 
@@ -65,11 +66,17 @@ class AcquisitionError(ValueError):
 
 
 class RunningStateProperty(SelectProperty):
-    def __init__(self, options=["running_single",
-                                "running_continuous",
-                                "paused_single",
-                                "paused_continuous",
-                                "stopped"], **kwargs):
+    def __init__(
+        self,
+        options=[
+            "running_single",
+            "running_continuous",
+            "paused_single",
+            "paused_continuous",
+            "stopped",
+        ],
+        **kwargs,
+    ):
         """
         A property to indicate whether the curernt status of the instrument.
         The possible running states are
@@ -93,16 +100,16 @@ class RunningStateProperty(SelectProperty):
 
     def set_value(self, obj, value):
         super(RunningStateProperty, self).set_value(obj, value)
-        new_value = (value=='running_continuous')
-        if obj.run_continuous!=new_value:
-            obj._run_continuous = new_value # we don't want to trigger setup()
+        new_value = value == "running_continuous"
+        if obj.run_continuous != new_value:
+            obj._run_continuous = new_value  # we don't want to trigger setup()
             if obj._autosave_active:
-                obj.__class__.run_continuous.save_attribute(obj, new_value) # We need
+                obj.__class__.run_continuous.save_attribute(obj, new_value)  # We need
             #  to save this right away
 
 
 class SignalLauncherAcquisitionModule(SignalLauncher):
-    """ class that takes care of emitting signals to update all possible
+    """class that takes care of emitting signals to update all possible
     displays"""
 
     display_curve = QtCore.Signal(list)  # This signal is emitted when
@@ -114,7 +121,7 @@ class SignalLauncherAcquisitionModule(SignalLauncher):
     update_point = QtCore.Signal(int)  #  used in NA only
     scan_finished = QtCore.Signal()  #  used in NA only
     clear_curve = QtCore.Signal()  #  NA only
-    x_log_toggled = QtCore.Signal() #  logscale changed
+    x_log_toggled = QtCore.Signal()  #  logscale changed
 
     # Following signal only implemented in spec an
     unit_changed = QtCore.Signal()
@@ -162,15 +169,12 @@ class AcquisitionModule(Module):
     # save/restore of the module state. This is done by keeping track of the
     #  boolean setup_attribute 'run_continuous'.
 
+    _gui_attributes = ["trace_average", "curve_name"]
 
-    _gui_attributes = ['trace_average', 'curve_name']
-
-    _setup_on_load = True #  acquisition_modules need to be setup() once
+    _setup_on_load = True  #  acquisition_modules need to be setup() once
     # they are loaded
     _signal_launcher = SignalLauncherAcquisitionModule
-    _setup_attributes = ['trace_average',
-                         'curve_name',
-                         'run_continuous']
+    _setup_attributes = ["trace_average", "curve_name", "run_continuous"]
 
     MIN_DELAY_SINGLE_MS = 0  # async acquisition should be as fast as
     # possible (might block the gui, maybe increase?)
@@ -180,33 +184,39 @@ class AcquisitionModule(Module):
     # the real settable property is _running_state, running_state is read_only
     # for the user
     _running_state = RunningStateProperty(
-        default='stopped',
-        options=["running_single",
-                 "running_continuous",
-                 "paused_single",
-                 "paused_continuous",
-                 "stopped"],
+        default="stopped",
+        options=[
+            "running_single",
+            "running_continuous",
+            "paused_single",
+            "paused_continuous",
+            "stopped",
+        ],
         doc="Indicates whether the instrument is running acquisitions or not. "
-            "See :class:`RunningStateProperty` for available options. ")
+        "See :class:`RunningStateProperty` for available options. ",
+    )
 
     @property
     def running_state(self):
         return self._running_state
 
-    trace_average = IntProperty(doc="number of curves to average in single "
-                                    "mode. In continuous mode, a moving "
-                                    "window average is performed.",
-                           default=1,
-                           min=1)
+    trace_average = IntProperty(
+        doc="number of curves to average in single "
+        "mode. In continuous mode, a moving "
+        "window average is performed.",
+        default=1,
+        min=1,
+    )
     curve_name = StringProperty(doc="name of the curve to save.")
-    run_continuous = BoolProperty(default=False,
-                                  doc="Is the module in the running_state "
-                                      "'running_continuous' or not. Contrary "
-                                      "to 'running_state', this boolean "
-                                      "property can be set, and saved/"
-                                      "restored with the state of the module.",
-                                  call_setup=True)
-
+    run_continuous = BoolProperty(
+        default=False,
+        doc="Is the module in the running_state "
+        "'running_continuous' or not. Contrary "
+        "to 'running_state', this boolean "
+        "property can be set, and saved/"
+        "restored with the state of the module.",
+        call_setup=True,
+    )
 
     def __init__(self, parent, name=None):
         super(AcquisitionModule, self).__init__(parent, name=name)
@@ -256,14 +266,14 @@ class AcquisitionModule(Module):
         'running_continuous'].
         """
         while self.current_avg < self.trace_average:
-            self.current_avg+=1
-            if self.running_state=='paused_single':
+            self.current_avg += 1
+            if self.running_state == "paused_single":
                 await self._resume_event.wait()
-            self.data_avg = (self.data_avg * (self.current_avg-1) + \
-                             await self._trace_async(0)) / self.current_avg
-            self._emit_signal_by_name('display_curve', [self.data_x,
-                                                        self.data_avg])
-        self._running_state = 'stopped'
+            self.data_avg = (
+                self.data_avg * (self.current_avg - 1) + await self._trace_async(0)
+            ) / self.current_avg
+            self._emit_signal_by_name("display_curve", [self.data_x, self.data_avg])
+        self._running_state = "stopped"
         self._free_up_resources()
         return self.data_avg
 
@@ -271,7 +281,7 @@ class AcquisitionModule(Module):
         """
         Coroutine to launch the acquisition of a trace_average traces.
         """
-        self._running_state = 'running_single'
+        self._running_state = "running_single"
         self._prepare_averaging()  # initializes the table self.data_avg,
         return await self._do_average_single_async()
 
@@ -301,22 +311,21 @@ class AcquisitionModule(Module):
         ['paused_single', 'paused_continuous'] into ['running_single',
         'running_continuous'].
         """
-        while (self.running_state != 'stopped'):
-            if self.running_state == 'paused_continuous':
+        while self.running_state != "stopped":
+            if self.running_state == "paused_continuous":
                 await self._resume_event.wait()
             self.current_avg = min(self.current_avg + 1, self.trace_average)
-            self.data_avg = (self.data_avg * (self.current_avg - 1) + \
-                             await self._trace_async(
-                                 self.MIN_DELAY_CONTINUOUS_MS * 0.001)) / \
-                            self.current_avg
-            self._emit_signal_by_name('display_curve', [self.data_x,
-                                                        self.data_avg])
+            self.data_avg = (
+                self.data_avg * (self.current_avg - 1)
+                + await self._trace_async(self.MIN_DELAY_CONTINUOUS_MS * 0.001)
+            ) / self.current_avg
+            self._emit_signal_by_name("display_curve", [self.data_x, self.data_avg])
 
     async def _continuous_async(self):
         """
         Coroutine to launch a continuous acquisition.
         """
-        self._running_state = 'running_continuous'
+        self._running_state = "running_continuous"
         self._prepare_averaging()  # initializes the table self.data_avg,
         await self._do_average_continuous_async()
 
@@ -332,10 +341,10 @@ class AcquisitionModule(Module):
         """
         Stops the current acquisition without restarting the averaging
         """
-        if self.running_state=='running_single':
-            self._running_state = 'paused_single'
-        if self.running_state=='running_continuous':
-            self._running_state = 'paused_continuous'
+        if self.running_state == "running_single":
+            self._running_state = "paused_single"
+        if self.running_state == "running_continuous":
+            self._running_state = "paused_continuous"
         self._resume_event = Event()
         self._free_up_resources()
 
@@ -344,34 +353,34 @@ class AcquisitionModule(Module):
         Resume the current averaging run. The future returned by a previous
         call of single_async will eventually be set at the end.
         """
-        if not self.running_state in ['paused_single', 'paused_continuous']:
+        if self.running_state not in ["paused_single", "paused_continuous"]:
             raise ValueError("resume can only be called in 'paused' state.")
-        if self.running_state=='paused_single':
-            self._running_state = 'running_single'
+        if self.running_state == "paused_single":
+            self._running_state = "running_single"
         else:
-            self._running_state = 'running_continuous'
+            self._running_state = "running_continuous"
         self._resume_event.set()
 
-    def _resume_new_single(self): # mostly for gui usage
+    def _resume_new_single(self):  # mostly for gui usage
         """
         Resume averaging at the current state in single mode
         Beware, a future returned by a previous call of single_async will
         be cancelled.
         """
-        if not self.running_state in ['paused_single', 'paused_continuous']:
+        if self.running_state not in ["paused_single", "paused_continuous"]:
             raise ValueError("resume can only be called in 'paused' state.")
-        self._running_state = 'running_single'
+        self._running_state = "running_single"
         return self._renew_run(self._do_average_single_async())
 
-    def _resume_new_continuous(self): # mostly for gui usage
+    def _resume_new_continuous(self):  # mostly for gui usage
         """
         Resume averaging at the current state in continuous mode.
         Of course, a future returned by a previous call of single_async will
         be cancelled.
         """
-        if not self.running_state in ['paused_single', 'paused_continuous']:
+        if self.running_state not in ["paused_single", "paused_continuous"]:
             raise ValueError("resume can only be called in 'paused' state.")
-        self._running_state = 'running_continuous'
+        self._running_state = "running_continuous"
         return self._renew_run(self._do_average_continuous_async())
 
     def stop(self):
@@ -381,7 +390,7 @@ class AcquisitionModule(Module):
         """
         if self._last_run is not None:
             self._last_run.cancel()
-        self._running_state = 'stopped'
+        self._running_state = "stopped"
         self._free_up_resources()
 
     def save_curve(self):
@@ -391,9 +400,7 @@ class AcquisitionModule(Module):
         """
         params = self.attributes_last_run
         self.attributes_last_run.update(name=self.curve_name)
-        curve = self._save_curve(self.data_x,
-                                 self.data_avg,
-                                 **params)
+        curve = self._save_curve(self.data_x, self.data_avg, **params)
         return curve
 
     def _clear(self):
@@ -426,7 +433,7 @@ class AcquisitionModule(Module):
         """
         :return: True or False
         """
-        raise NotImplementedError('To implement in derived class')  # pragma: no cover
+        raise NotImplementedError("To implement in derived class")  # pragma: no cover
 
     def _get_trace(self):
         """
@@ -464,4 +471,4 @@ class AcquisitionModule(Module):
         self.current_avg = 0
 
     def _free_up_resources(self):
-        pass # pragma: no cover
+        pass  # pragma: no cover

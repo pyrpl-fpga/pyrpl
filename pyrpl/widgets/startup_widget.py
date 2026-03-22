@@ -1,10 +1,9 @@
-from qtpy import QtWidgets, QtGui, QtCore
+from qtpy import QtWidgets, QtCore
 import socket
 import logging
 
 from ..sshshell import SshShell
-from ..async_utils import APP, sleep_async, ensure_future
-
+from ..async_utils import sleep_async, ensure_future
 
 
 class HostnameSelectorWidget(QtWidgets.QDialog):
@@ -13,39 +12,37 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
     _SCAN_TIMEOUT = 0.05
     _CONNECT_TIMEOUT = 1.0
 
-    def __init__(self, parent=None, config={'user': None,
-                                            'password': None,
-                                            'sshport': None}):
+    def __init__(self, parent=None, config={"user": None, "password": None, "sshport": None}):
         self.parent = parent
         self.items = []
         self.ips_and_macs = []
         self._logger = logging.getLogger(__name__)
         super(HostnameSelectorWidget, self).__init__()
-        self.setWindowTitle('Red Pitaya connection - find a valid hostname')
+        self.setWindowTitle("Red Pitaya connection - find a valid hostname")
         self.layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.layout)
 
         self.hlay1 = QtWidgets.QHBoxLayout()
         self.layout.addLayout(self.hlay1)
 
-        self.user_label = QtWidgets.QLabel('user')
+        self.user_label = QtWidgets.QLabel("user")
         self.hlay1.addWidget(self.user_label)
-        self.user_input = QtWidgets.QLineEdit(config['user'] or 'root')
+        self.user_input = QtWidgets.QLineEdit(config["user"] or "root")
         self.hlay1.addWidget(self.user_input)
 
-        self.password_label = QtWidgets.QLabel('password')
-        self.password_input = QtWidgets.QLineEdit(config['password'] or 'root')
+        self.password_label = QtWidgets.QLabel("password")
+        self.password_input = QtWidgets.QLineEdit(config["password"] or "root")
         if self._HIDE_PASSWORDS:
             self.password_input.setEchoMode(self.password_input.PasswordEchoOnEdit)
         self.hlay1.addWidget(self.password_label)
         self.hlay1.addWidget(self.password_input)
 
-        self.sshport_label = QtWidgets.QLabel('ssh port')
-        self.sshport_input = QtWidgets.QLineEdit(text=str(config['sshport'] or 22))
+        self.sshport_label = QtWidgets.QLabel("ssh port")
+        self.sshport_input = QtWidgets.QLineEdit(text=str(config["sshport"] or 22))
         self.hlay1.addWidget(self.sshport_label)
         self.hlay1.addWidget(self.sshport_input)
 
-        self.refresh = QtWidgets.QPushButton('Refresh list')
+        self.refresh = QtWidgets.QPushButton("Refresh list")
         self.refresh.clicked.connect(self.scan)
         self.hlay1.addWidget(self.refresh)
 
@@ -55,7 +52,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         self.progressbar.hide()
 
         self.tree = QtWidgets.QTreeWidget()
-        self.tree.setHeaderLabels(['IP address', 'MAC address'])
+        self.tree.setHeaderLabels(["IP address", "MAC address"])
         self.layout.addWidget(self.tree)
 
         self.hlay2 = QtWidgets.QHBoxLayout()
@@ -63,7 +60,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
 
         self.hostname_label = QtWidgets.QLabel("Hostname")
         self.hostname_input = QtWidgets.QLineEdit()
-        self.hostname_input.setPlaceholderText('e.g.: 192.168.1.100')
+        self.hostname_input.setPlaceholderText("e.g.: 192.168.1.100")
         self.hlay2.addWidget(self.hostname_label)
         self.hlay2.addWidget(self.hostname_input)
 
@@ -71,9 +68,9 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         self.layout.addLayout(self.hlay3)
 
         # cancel is not needed
-        #self.cancel = QtWidgets.QPushButton("Cancel")
-        #self.cancel.clicked.connect(self.hide)
-        #self.hlay2.addWidget(self.cancel)
+        # self.cancel = QtWidgets.QPushButton("Cancel")
+        # self.cancel.clicked.connect(self.hide)
+        # self.hlay2.addWidget(self.cancel)
 
         self.ok_button = QtWidgets.QPushButton("OK")
         self.ok_button.clicked.connect(self.ok)
@@ -82,23 +79,27 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         self.tree.itemSelectionChanged.connect(self.item_selected)
         self.tree.itemDoubleClicked.connect(self.item_double_clicked)
         self.scanning = False
-        for signalname in ['cursorPositionChanged',
-                           'editingFinished',
-                           'returnPressed',
-                           'selectionChanged',
-                           'textChanged',
-                           'textEdited']:
-            for textbox in [self.user_input,
-                            self.password_input,
-                            self.sshport_input,
-                            self.hostname_input]:
+        for signalname in [
+            "cursorPositionChanged",
+            "editingFinished",
+            "returnPressed",
+            "selectionChanged",
+            "textChanged",
+            "textEdited",
+        ]:
+            for textbox in [
+                self.user_input,
+                self.password_input,
+                self.sshport_input,
+                self.hostname_input,
+            ]:
                 getattr(textbox, signalname).connect(self.countdown_cancel)
 
     def showEvent(self, QShowEvent):
         ret = super(HostnameSelectorWidget, self).showEvent(QShowEvent)
         if not self.ips_and_macs:
             # launch autoscan at first startup with 10 ms delay
-            #self._aux_timer = QtCore.QTimer.singleShot(10, self.scan)
+            # self._aux_timer = QtCore.QTimer.singleShot(10, self.scan)
             self.scan()
         return ret
 
@@ -136,12 +137,11 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
 
     def item_selected(self):
         self.countdown_cancel()
-        try:
-            item = self.tree.selectedItems()[0]
-        except: # pragma: no cover
-            pass
-        else:
-            self.hostname = item.text(0)
+        items = self.tree.selectedItems()
+        if not items:
+            return
+        item = items[0]
+        self.hostname = item.text(0)
 
     def item_double_clicked(self, item, row):
         self.countdown_cancel()
@@ -175,7 +175,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         else:
             self.progressbar.hide()
 
-    def _get_all_own_ip_addresses(self, exclude=['127.0.0.1']):
+    def _get_all_own_ip_addresses(self, exclude=["127.0.0.1"]):
         """
         Returns a list of all ip addresses of the running computer
 
@@ -188,14 +188,14 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         addr_list = []
         try:
             import netifaces
-        except:
+        except ImportError:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             try:
                 # doesn't even have to be reachable, just need an open socket
-                s.connect(('10.255.255.255', 1))
+                s.connect(("10.255.255.255", 1))
                 ip = s.getsockname()[0]
-            except:  # pragma: no cover
-                ip = '127.0.0.1'  # fall back to default if no network available
+            except OSError:  # pragma: no cover
+                ip = "127.0.0.1"  # fall back to default if no network available
             finally:
                 s.close()
             addr_list.append(ip)
@@ -208,7 +208,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
                 else:
                     for entry in entries:  # iterate through all
                         try:
-                            addr = entry['addr']  # collect ip address
+                            addr = entry["addr"]  # collect ip address
                         except KeyError:
                             pass
                         else:
@@ -230,9 +230,10 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         asynchronous version of scan.
         """
         self.countdown_cancel()
-        if self.scanning: # pragma: no cover
-            self._logger.debug("Scan is already running. Please wait for it "
-                               "to finish before starting a new one! ")
+        if self.scanning:  # pragma: no cover
+            self._logger.debug(
+                "Scan is already running. Please wait for it to finish before starting a new one! "
+            )
             return
         else:
             self.progressbar.setValue(0)
@@ -247,13 +248,13 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         user = self.user
         password = self.password
         # make a list of ips to scan for redpitayas
-        ips = ['192.168.1.100']  # direct connection ip, not found automatically
+        ips = ["192.168.1.100"]  # direct connection ip, not found automatically
         # first, find our own IP address to infer the LAN from it
         for ip in self._get_all_own_ip_addresses():
             # the LAN around an ip address 'a.b.c.d' is here defined here as all
             # ip addresses from a.b.c.0 to a.b.c.255
-            end = ip.split('.')[-1]
-            start = ip[:-len(end)]
+            end = ip.split(".")[-1]
+            start = ip[: -len(end)]
             ips += [start + str(i) for i in range(256)]  # all local ips
         # start scanning all ips
         self.progressbar.setRange(0, len(ips))
@@ -270,45 +271,51 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
                 self._logger.debug("%s:%d is open", ip, port)
                 try:
                     # attempt to connect with username and password
-                    ssh = SshShell(hostname=ip,
-                                   user=user,
-                                   password=password,
-                                   timeout=self._CONNECT_TIMEOUT)  # longer timeout, RP is slow..
-                except BaseException as e:
-                    self._logger.debug('Cannot log in with user=%s, pw=%s '
-                                       'at %s: %s', user, password, ip, e)
+                    ssh = SshShell(
+                        hostname=ip,
+                        user=user,
+                        password=password,
+                        timeout=self._CONNECT_TIMEOUT,
+                    )  # longer timeout, RP is slow..
+                except Exception as e:
+                    self._logger.debug(
+                        "Cannot log in with user=%s, pw=%s at %s: %s",
+                        user,
+                        password,
+                        ip,
+                        e,
+                    )
                 else:
                     # login has worked, see if it is a Red Pitaya
                     macs = ssh.get_mac_addresses()
                     del ssh
                     for mac in macs:
                         # test for redpitaya signature in mac
-                        if mac.startswith('00:26:32:') or self._SKIP_REDPITAYA_SIGNATURE:
-                            self._logger.debug('RP device found: IP %s, '
-                                               'MAC %s', ip, mac)
+                        if mac.startswith("00:26:32:") or self._SKIP_REDPITAYA_SIGNATURE:
+                            self._logger.debug("RP device found: IP %s, MAC %s", ip, mac)
                             self.add_device(ip, mac)
             else:
                 self._logger.debug("%s:%d is closed", ip, port)
             await sleep_async(0.01)
-            #APP.processEvents()
+            # APP.processEvents()
         self.scanning = False
         if len(self.ips_and_macs) == 2:
             # exactly one device was found, therefore we can auto-proceed to
             # connection
-            self.countdown_start() # pragma: no cover
+            self.countdown_start()  # pragma: no cover
 
     def countdown_start(self, countdown_s=10.0):
         self.countdown_cancel()
         self.countdown_cancelled = False
         self.countdown_remaining = countdown_s
-        if not hasattr(self, 'countdown_timer'):
+        if not hasattr(self, "countdown_timer"):
             self.countown_timer = QtCore.QTimer.singleShot(1, self.countdown_iteration)
 
     def countdown_iteration(self):
         if self.countdown_cancelled:
             return
         self.countdown_remaining -= 1
-        self.ok_button.setText("OK (auto-clicked in %d s)"%self.countdown_remaining)
+        self.ok_button.setText("OK (auto-clicked in %d s)" % self.countdown_remaining)
         if self.countdown_remaining >= 0:
             self.countown_timer = QtCore.QTimer.singleShot(1000, self.countdown_iteration)
         else:
@@ -328,8 +335,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         self.tree.resizeColumnToContents(0)
         self.tree.resizeColumnToContents(1)
         # if only one non-fake device is available
-        if len(self.ips_and_macs) == 2 and self.hostname == '' or \
-                self.hostname == hostname:
+        if len(self.ips_and_macs) == 2 and self.hostname == "" or self.hostname == hostname:
             self.hostname = hostname
             self.tree.clearSelection()
             item.setSelected(True)
@@ -341,7 +347,9 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
 
     def get_kwds(self):
         self.exec_()
-        return dict(hostname=self.hostname,
-                    password=self.password,
-                    user=self.user,
-                    sshport=self.sshport)
+        return dict(
+            hostname=self.hostname,
+            password=self.password,
+            user=self.user,
+            sshport=self.sshport,
+        )

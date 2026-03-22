@@ -1,4 +1,4 @@
-from qtpy import QtCore, QtWidgets
+from qtpy import QtWidgets
 from .base_module_widget import ReducedModuleWidget
 
 

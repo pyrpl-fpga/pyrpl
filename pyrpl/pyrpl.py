@@ -16,7 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-""" # DEPRECATED DOCSTRING - KEEP UNTIL DOCUMENTATION IS READY
+"""# DEPRECATED DOCSTRING - KEEP UNTIL DOCUMENTATION IS READY
 pyrpl.py - high-level lockbox functionality
 
 A lockbox is a device that converts a number of input signals into a number of
@@ -145,9 +145,7 @@ from __future__ import print_function
 
 import logging
 import os
-import os.path as osp
-from shutil import copyfile
-from qtpy import QtCore, QtWidgets, API_NAME
+from qtpy import QtWidgets, API_NAME
 
 if API_NAME is None:
     raise RuntimeError(
@@ -157,11 +155,9 @@ if API_NAME is None:
         "  pip install pyrpl[qt-pyqt6]\n"
         "  pip install pyrpl[qt-pyside6]\n"
         "  pip install pyrpl[qt-pyside2]\n"
-        
     )
 
 from .widgets.pyrpl_widget import PyrplWidget
-from . import software_modules
 from .memory import MemoryTree
 from .redpitaya import RedPitaya
 from . import pyrpl_utils
@@ -169,10 +165,8 @@ from .software_modules import get_module
 from .async_utils import sleep
 
 # it is important that Lockbox is loaded before the models
-#from .software_modules.lockbox import *
-from .software_modules import lockbox
-from .software_modules.lockbox import models
-#from .software_modules.lockbox.models import *  # make sure all models are
+# from .software_modules.lockbox import *
+# from .software_modules.lockbox.models import *  # make sure all models are
 # loaded when we get started
 from . import user_config_dir
 from ._version import __version__
@@ -183,19 +177,22 @@ raw_input = input
 basestring = (str, bytes)
 
 
-default_pyrpl_config = {'name': 'default_pyrpl_instance',
-                        'loglevel': 'info',
-                        'background_color': '',
-                        # reasonable options:
-                        # 'CCCCEE',  # blueish
-                        # 'EECCCC', # reddish
-                        # 'CCEECC', # greenish
-                        'modules': ['NetworkAnalyzer',
-                                    'SpectrumAnalyzer',
-                                    'CurveViewer',
-                                    'PyrplConfig',
-                                    'Lockbox'
-                                    ]}
+default_pyrpl_config = {
+    "name": "default_pyrpl_instance",
+    "loglevel": "info",
+    "background_color": "",
+    # reasonable options:
+    # 'CCCCEE',  # blueish
+    # 'EECCCC', # reddish
+    # 'CCEECC', # greenish
+    "modules": [
+        "NetworkAnalyzer",
+        "SpectrumAnalyzer",
+        "CurveViewer",
+        "PyrplConfig",
+        "Lockbox",
+    ],
+}
 
 help_message = """
 PyRPL version %s command-line help
@@ -229,7 +226,7 @@ port     port for redpitaya_client, default is 2222
 
 gui      one of [True, False], to en- or disable GUI
 loglevel logging level, one of [debug, info, warning, error]
-"""%(__version__)
+""" % (__version__)
 
 
 class Pyrpl(object):
@@ -251,79 +248,80 @@ class Pyrpl(object):
         redpitaya branch of the config file. See class definition of
         RedPitaya for possible keywords.
     """
-    def __init__(self,
-                 config=None,
-                 source=None,
-                 **kwargs):
+
+    def __init__(self, config=None, source=None, **kwargs):
         # logger initialisation
-        self.logger = logging.getLogger(name='pyrpl') # default: __name__
+        self.logger = logging.getLogger(name="pyrpl")  # default: __name__
         # use gui or commandline for questions?
-        gui = 'gui' not in kwargs or kwargs['gui']
+        gui = "gui" not in kwargs or kwargs["gui"]
         # get config file if None is specified
         if config is None:
             if gui:
-                self.logger.info("Please select or create a configuration "
-                                 "file in the file selector window!")
+                self.logger.info(
+                    "Please select or create a configuration file in the file selector window!"
+                )
                 config = QtWidgets.QFileDialog.getSaveFileName(
-                                directory=user_config_dir,
-                                caption="Pick or create a configuration "
-                                        "file, or hit 'cancel' for no "
-                                        "file (all configuration will be "
-                                        "discarded after restarting)!",
-                                options=QtWidgets.QFileDialog.DontConfirmOverwrite,
-                                filter='*.yml')
+                    directory=user_config_dir,
+                    caption="Pick or create a configuration "
+                    "file, or hit 'cancel' for no "
+                    "file (all configuration will be "
+                    "discarded after restarting)!",
+                    options=QtWidgets.QFileDialog.DontConfirmOverwrite,
+                    filter="*.yml",
+                )
                 if not isinstance(config, basestring):
                     config = config[0]
             else:  # command line
-                configfiles = [name for name in os.listdir(user_config_dir)
-                               if name.endswith('.yml')]
-                configfiles = [name[:-4] if name.endswith('.yml') else name
-                               for name in configfiles]
+                configfiles = [
+                    name for name in os.listdir(user_config_dir) if name.endswith(".yml")
+                ]
+                configfiles = [name[:-4] if name.endswith(".yml") else name for name in configfiles]
                 print("Existing config files are:")
                 for name in configfiles:
-                    print("    %s"%name)
-                config = raw_input('\nEnter an existing or new config file name: ')
-        if config is None or config == "" or config.endswith('/.yml'):
+                    print("    %s" % name)
+                config = raw_input("\nEnter an existing or new config file name: ")
+        if config is None or config == "" or config.endswith("/.yml"):
             config = None
         # configuration is retrieved from config file
         self.c = MemoryTree(filename=config, source=source)
         if self.c._filename is not None:
-            self.logger.info("All your PyRPL settings will be saved to the "
-                             "config file\n"
-                             "    %s\n"
-                             "If you would like to restart "
-                             "PyRPL with these settings, type \"pyrpl.exe "
-                             "%s\" in a windows terminal or \n"
-                             "    from pyrpl import Pyrpl\n"
-                             "    p = Pyrpl('%s')\n"
-                             "in a python terminal.",
-                             self.c._filename,
-                             self.c._filename_stripped,
-                             self.c._filename_stripped)
+            self.logger.info(
+                "All your PyRPL settings will be saved to the "
+                "config file\n"
+                "    %s\n"
+                "If you would like to restart "
+                'PyRPL with these settings, type "pyrpl.exe '
+                '%s" in a windows terminal or \n'
+                "    from pyrpl import Pyrpl\n"
+                "    p = Pyrpl('%s')\n"
+                "in a python terminal.",
+                self.c._filename,
+                self.c._filename_stripped,
+                self.c._filename_stripped,
+            )
         # make sure config file has the required sections and complete with
         # missing entries from default
-        pyrplbranch = self.c._get_or_create('pyrpl')
+        pyrplbranch = self.c._get_or_create("pyrpl")
         for k in default_pyrpl_config:
             if k not in pyrplbranch._keys():
-                if k =='name':
+                if k == "name":
                     # assign the same name as in config file by default
                     pyrplbranch[k] = self.c._filename_stripped
                 else:
                     # all other (static) defaults
                     pyrplbranch[k] = default_pyrpl_config[k]
         # set global logging level if specified in kwargs or config file
-        if 'loglevel' in kwargs:
-            self.c.pyrpl.loglevel = kwargs.pop('loglevel')
-        pyrpl_utils.setloglevel(level=self.c.pyrpl.loglevel,
-                                loggername='pyrpl')
+        if "loglevel" in kwargs:
+            self.c.pyrpl.loglevel = kwargs.pop("loglevel")
+        pyrpl_utils.setloglevel(level=self.c.pyrpl.loglevel, loggername="pyrpl")
         # initialize RedPitaya object with the configured or default parameters
-        self.c._get_or_create('redpitaya')
+        self.c._get_or_create("redpitaya")
         self.c.redpitaya._update(kwargs)
         self.name = pyrplbranch.name
         self.rp = RedPitaya(config=self.c)
         self.redpitaya = self.rp  # alias
-        self.rp.parent=self
-        self.widgets = [] # placeholder for widgets
+        self.rp.parent = self
+        self.widgets = []  # placeholder for widgets
         # create software modules...
         self.load_software_modules()
         # load all setup_attributes for modules that do not have an owner
@@ -363,24 +361,33 @@ class Pyrpl(object):
         """
         self.software_modules = []
         # software modules are Managers for various modules plus those defined in the config file
-        soft_mod_names = ['Asgs', 'Iqs', 'Pids', 'Scopes', 'Iirs', 'Trigs','Pwms',
-                          'Hks'] + self.c.pyrpl.modules
-        module_classes = [get_module(cls_name)
-                          for cls_name in soft_mod_names]
-        module_names = pyrpl_utils.\
-            get_unique_name_list_from_class_list(module_classes)
+        soft_mod_names = [
+            "Asgs",
+            "Iqs",
+            "Pids",
+            "Scopes",
+            "Iirs",
+            "Trigs",
+            "Pwms",
+            "Hks",
+        ] + self.c.pyrpl.modules
+        module_classes = [get_module(cls_name) for cls_name in soft_mod_names]
+        module_names = pyrpl_utils.get_unique_name_list_from_class_list(module_classes)
         for cls, name in zip(module_classes, module_names):
             # some modules have generator function, e.g. Lockbox
             # @classmethod
             # def make_Lockbox(cls, parent, name): ...
             try:
-                if hasattr(cls, "_make_"+cls.__name__):
-                    module = getattr(cls, "_make_"+cls.__name__)(self, name)
+                if hasattr(cls, "_make_" + cls.__name__):
+                    module = getattr(cls, "_make_" + cls.__name__)(self, name)
                 else:
                     module = cls(self, name)
             except BaseException as e:
-                self.logger.error('Something went wrong when loading the software module "%s": %s',
-                                  name, e)
+                self.logger.error(
+                    'Something went wrong when loading the software module "%s": %s',
+                    name,
+                    e,
+                )
                 raise e
             else:
                 setattr(self, module.name, module)
@@ -417,7 +424,7 @@ class Pyrpl(object):
             module._clear()
         for widget in self.widgets:
             widget._clear()
-        while len(self.widgets)>0:  # Close all widgets
+        while len(self.widgets) > 0:  # Close all widgets
             w = self.widgets.pop()
             del w
         # do the job of actually destroying the widgets

@@ -1,24 +1,25 @@
 import logging
-logger = logging.getLogger(name=__name__)
 from pyrpl.attributes import *
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl.software_modules import *
 from pyrpl.software_modules.module_managers import *
 from pyrpl.hardware_modules import *
 from pyrpl.modules import *
-from pyrpl import APP
 from pyrpl.async_utils import sleep
-from qtpy import QtCore
-import pytest
 from pyrpl.test.test_attribute import DummyModule
 
-def scramble_values(mod,
-                    str_val='foo',
-                    num_val=12.0,
-                    bool_val=True,
-                    list_val=[1912],
-                    option_index=0,
-                    list_length=4):
+logger = logging.getLogger(name=__name__)
+
+
+def scramble_values(
+    mod,
+    str_val="foo",
+    num_val=12.0,
+    bool_val=True,
+    list_val=[1912],
+    option_index=0,
+    list_length=4,
+):
     """
     This function tries to modify all _setup_attributes of the module :code:`mod`.
 
@@ -36,12 +37,12 @@ def scramble_values(mod,
     Returns:
         attr_names, attr_vals: lists of all modified attribute names and the set values.
     """
-    attr_names =[]
+    attr_names = []
     attr_vals = []
     for attr in mod._setup_attributes:
-        if attr=='default_sweep_output':
-            val = None# anyways, this will be redesigned soon with a proper link to the output...
-        elif attr=='sequence':
+        if attr == "default_sweep_output":
+            val = None  # anyways, this will be redesigned soon with a proper link to the output...
+        elif attr == "sequence":
             val = [{}] * list_length
         else:
             val = getattr(mod, attr)
@@ -56,14 +57,14 @@ def scramble_values(mod,
             val += num_val
         if isinstance(mod, list):
             val = list_val
-        if attr == 'center':  # iq mode not supported yet for specan
+        if attr == "center":  # iq mode not supported yet for specan
             val = 0
-        if attr=='baseband':  # iq mode not supported yet for specan
+        if attr == "baseband":  # iq mode not supported yet for specan
             val = True
         try:
             setattr(mod, attr, val)
         except ValueError as e:
-            if not str(e)=="Nonzero center frequency not allowed in baseband mode.":
+            if not str(e) == "Nonzero center frequency not allowed in baseband mode.":
                 raise
         val = getattr(mod, attr)
         attr_names.append(attr)
@@ -94,10 +95,10 @@ class TestLoadSave(TestPyrpl):
     #                 pass
 
     def test_load_save_pytest(self, subtests):
-        # same test as above but without the yield not supported by pytest, 
+        # same test as above but without the yield not supported by pytest,
         # I don't think it changes anything here keeping both for nosetests
         for mod in self.pyrpl.modules:
-            #for exclude in [Lockbox, Scope]: # scope has an unknown bug
+            # for exclude in [Lockbox, Scope]: # scope has an unknown bug
             # here (nosetests freezes at a  later time)
             for exclude in [Lockbox, DummyModule]:  # lockbox is tested elsewhere
                 if isinstance(mod, exclude):
@@ -116,21 +117,25 @@ class TestLoadSave(TestPyrpl):
         if not isinstance(mod, ModuleManager):
             mod._logger.info("Testing LoadSave of module %s", mod.name)
             if isinstance(mod, SpectrumAnalyzer):
-                mod.setup(baseband=True) # iq mod not supported yet
-            attr_names, attr_vals = scramble_values(
-                                 mod, 'foo', 12.1, True, [1923], 0, 5)
-            mod.save_state('test_save')
-            scramble_values(mod, 'bar', 13.2, False,  [15], 1, 7)
-            mod.load_state('test_save')
+                mod.setup(baseband=True)  # iq mod not supported yet
+            attr_names, attr_vals = scramble_values(mod, "foo", 12.1, True, [1923], 0, 5)
+            mod.save_state("test_save")
+            scramble_values(mod, "bar", 13.2, False, [15], 1, 7)
+            mod.load_state("test_save")
             for attr, attr_val in zip(mod._setup_attributes, attr_vals):
-                if attr == 'default_sweep_output' or attr == 'baseband':
-                    continue  # anyways, this will be redesigned soon with a proper link to the output...
-                if attr == 'd':  # derivators are deactivated
+                if attr == "default_sweep_output" or attr == "baseband":
+                    continue  # anyways, this will be redesigned soon
+                    # with a proper link to the output...
+                if attr == "d":  # derivators are deactivated
                     pass
-                elif attr == 'sequence':
+                elif attr == "sequence":
                     assert len(getattr(mod, attr)) == len(attr_val), "sequence"
                 else:
-                    assert getattr(mod, attr)==attr_val, (mod, attr, attr_val, getattr(mod, attr))
+                    assert getattr(mod, attr) == attr_val, (
+                        mod,
+                        attr,
+                        attr_val,
+                        getattr(mod, attr),
+                    )
                 sleep(0.01)  # randomly inserted in fear of bugs
         sleep(0.1)  # randomly inserted in fear of bugs
-

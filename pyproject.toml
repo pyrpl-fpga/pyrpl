@@ -126,3 +126,10 @@ source = ["pyrpl"]
 [tool.coverage.report]
 # Show lines that weren't covered
 show_missing = true
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E"]  # start minimal: errors + pyflakes
+ignore = ["E731"]

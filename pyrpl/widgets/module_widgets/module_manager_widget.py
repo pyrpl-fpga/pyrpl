@@ -1,5 +1,6 @@
 """
-ModuleManagerWidgets are just a frame containing several identical module widgets such as iqs, pids or asgs
+ModuleManagerWidgets are just a frame containing several identical module widgets such as iqs, pids
+or asgs
 """
 
 from .base_module_widget import ModuleWidget
@@ -16,7 +17,8 @@ class ModuleManagerWidget(ModuleWidget):
         ModuleManagerWidgets don't have a title bar
         """
         self.setStyleSheet(
-            "ModuleManagerWidget{border:0;color:transparent;}")  # frames and title hidden for software_modules
+            "ModuleManagerWidget{border:0;color:transparent;}"
+        )  # frames and title hidden for software_modules
 
     def init_gui(self):
         self.main_layout = QtWidgets.QVBoxLayout()
@@ -29,7 +31,7 @@ class ModuleManagerWidget(ModuleWidget):
             self.module_widgets.append(module_widget)
             self.main_layout.addWidget(module_widget)
         if self.add_stretch:
-            self.main_layout.addStretch(5) # streth space between Managers preferentially.
+            self.main_layout.addStretch(5)  # streth space between Managers preferentially.
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.main_layout)
 
@@ -37,7 +39,7 @@ class ModuleManagerWidget(ModuleWidget):
         for widget in self.module_widgets:
             if widget.geometry().contains(event.pos()):
                 if widget.module.owner is not None:
-                    act = QtWidgets.QAction('Free %s'%widget.module.name, self)
+                    act = QtWidgets.QAction("Free %s" % widget.module.name, self)
                     act.triggered.connect(widget.module.free)
                     menu = QtWidgets.QMenu()
                     menu.addAction(act)
@@ -53,7 +55,7 @@ class AsgManagerWidget(ModuleManagerWidget):
 
 
 class ScopeManagerWidget(ModuleManagerWidget):
-    add_stretch = False # Scope should expand maximally
+    add_stretch = False  # Scope should expand maximally
 
 
 class IirManagerWidget(ModuleManagerWidget):
@@ -62,18 +64,20 @@ class IirManagerWidget(ModuleManagerWidget):
 
 class IirManagerWidget(ModuleManagerWidget):
     pass
+
 
 class PwmManagerWidget(ModuleManagerWidget):
     pass
 
+
 class IqManagerWidget(ModuleManagerWidget):
     def init_gui(self):
         """
-        In addition to the normal ModuleManagerWidget stacking of module attributes, the IqManagerWidget
-        displays a schematic of the iq  module internal logic.
+        In addition to the normal ModuleManagerWidget stacking of module attributes, the
+        IqManagerWidget displays a schematic of the iq  module internal logic.
         """
         super(IqManagerWidget, self).init_gui()
-        self.button_hide = QtWidgets.QPushButton('^', parent=self)
+        self.button_hide = QtWidgets.QPushButton("^", parent=self)
         self.button_hide.setMaximumHeight(15)
         self.button_hide.clicked.connect(self.button_hide_clicked)
         nr = 0
@@ -89,8 +93,8 @@ class IqManagerWidget(ModuleManagerWidget):
         # self.adjust_drawing()
 
     def button_hide_clicked(self):
-        if str(self.button_hide.text())=='v':
-            self.button_hide.setText('^')
+        if str(self.button_hide.text()) == "v":
+            self.button_hide.setText("^")
             for widget in self.module_widgets:
                 self.main_layout.setStretchFactor(widget, 0)
             self.view.show()
@@ -99,9 +103,9 @@ class IqManagerWidget(ModuleManagerWidget):
             for frame in self.frames_drawing:
                 frame.show()
             last_module_widget = self.module_widgets[-1]
-            #self.setMaximumHeight(600)
+            # self.setMaximumHeight(600)
         else:
-            self.button_hide.setText('v')
+            self.button_hide.setText("v")
             for widget in self.module_widgets:
                 self.main_layout.setStretchFactor(widget, 1)
             self.view.hide()
@@ -116,8 +120,8 @@ class IqManagerWidget(ModuleManagerWidget):
 
     def adjust_drawing(self):
         """
-        When the user resizes the window, the drawing elements follow the x-positions of the corresponding
-        attribute_widgets.
+        When the user resizes the window, the drawing elements follow the x-positions of the
+        corresponding attribute_widgets.
         """
 
         for item in self.graphic_items:
@@ -126,20 +130,37 @@ class IqManagerWidget(ModuleManagerWidget):
             conn.adjust()
         iq = self.module_widgets[0]
 
-        for index, prop in enumerate(["input", "acbandwidth", "frequency",
-                                      "bandwidth", "quadrature_factor", "gain",
-                                      "amplitude", "output_direct"][::2]):
+        for index, prop in enumerate(
+            [
+                "input",
+                "acbandwidth",
+                "frequency",
+                "bandwidth",
+                "quadrature_factor",
+                "gain",
+                "amplitude",
+                "output_direct",
+            ][::2]
+        ):
             widget = iq.attribute_widgets[prop]
-            self.frames[index].setFixedSize(widget.width() + iq.main_layout.spacing(), self.height())
-            self.frames[index].move(int(widget.x() + iq.pos().x() - iq.main_layout.spacing() / 2), 0)
+            self.frames[index].setFixedSize(
+                widget.width() + iq.main_layout.spacing(), self.height()
+            )
+            self.frames[index].move(
+                int(widget.x() + iq.pos().x() - iq.main_layout.spacing() / 2), 0
+            )
 
-            self.frames_drawing[index].setFixedSize(widget.width() + iq.main_layout.spacing(), self.height())
-            self.frames_drawing[index].move(int(widget.x() + iq.pos().x() - self.view.pos().x() - iq.main_layout.spacing() / 2),
-                                            0)
+            self.frames_drawing[index].setFixedSize(
+                widget.width() + iq.main_layout.spacing(), self.height()
+            )
+            self.frames_drawing[index].move(
+                int(widget.x() + iq.pos().x() - self.view.pos().x() - iq.main_layout.spacing() / 2),
+                0,
+            )
         self.scene.setSceneRect(QtCore.QRectF(self.view.rect()))
-        #x, y = self.view.pos().x(), self.view.pos().y()
+        # x, y = self.view.pos().x(), self.view.pos().y()
         button_width = 150
-        self.button_hide.move(int(self.width()/2 - button_width/2), int(self.height() - 17))
+        self.button_hide.move(int(self.width() / 2 - button_width / 2), int(self.height() - 17))
         self.button_hide.setFixedWidth(button_width)
         self.button_hide.raise_()
 
@@ -159,54 +180,56 @@ class IqManagerWidget(ModuleManagerWidget):
         self.graphic_items = []
         self.input = MyLabel("input", row_center, "input", parent=self)
 
-        self.high_pass = MyImage('acbandwidth', row_center,
-                                 "high_pass.bmp", 'acbandwidth',
-                                 parent=self, x_offset=-30)
-        self.low_pass1 = MyImage('bandwidth', row_up, "low_pass.bmp",
-                                 'bandwidth', parent=self, x_offset=-50)
-        self.low_pass2 = MyImage('bandwidth', row_down, "low_pass.bmp",
-                                 'bandwidth', parent=self, x_offset=-50)
+        self.high_pass = MyImage(
+            "acbandwidth",
+            row_center,
+            "high_pass.bmp",
+            "acbandwidth",
+            parent=self,
+            x_offset=-30,
+        )
+        self.low_pass1 = MyImage(
+            "bandwidth", row_up, "low_pass.bmp", "bandwidth", parent=self, x_offset=-50
+        )
+        self.low_pass2 = MyImage(
+            "bandwidth",
+            row_down,
+            "low_pass.bmp",
+            "bandwidth",
+            parent=self,
+            x_offset=-50,
+        )
 
-        self.x_sin1 = MyLabel("frequency", row_center_up, "sin(wt + phi)",
-                              parent=self, x_offset=-20)
-        self.x_cos1 = MyLabel("frequency", row_center_down, "cos(wt + phi)",
-                              parent=self, x_offset=-20)
+        self.x_sin1 = MyLabel(
+            "frequency", row_center_up, "sin(wt + phi)", parent=self, x_offset=-20
+        )
+        self.x_cos1 = MyLabel(
+            "frequency", row_center_down, "cos(wt + phi)", parent=self, x_offset=-20
+        )
 
+        self.x_demod_sin = MyLabel("frequency", row_up, "X", parent=self, x_offset=-20)
+        self.x_demod_cos = MyLabel("frequency", row_down, "X", parent=self, x_offset=-20)
 
+        self.x_sin2 = MyLabel("amplitude", row_center_up, "X", parent=self, x_offset=-40)
+        self.x_cos2 = MyLabel("amplitude", row_center_down, "X", parent=self, x_offset=-40)
 
-        self.x_demod_sin = MyLabel("frequency", row_up, 'X', parent=self, x_offset=-20)
-        self.x_demod_cos = MyLabel("frequency", row_down, 'X', parent=self, x_offset=-20)
+        self.na_real = MyLabel("bandwidth", row_top, "na real", parent=self, x_offset=20)
+        self.na_imag = MyLabel("bandwidth", row_bottom, "na imag", parent=self, x_offset=20)
 
-        self.x_sin2 = MyLabel("amplitude", row_center_up, "X", parent=self,
-                              x_offset=-40)
-        self.x_cos2 = MyLabel("amplitude", row_center_down, "X", parent=self,
-                              x_offset=-40)
+        self.quad_fact = MyLabel(
+            "quadrature_factor", row_top, "quadrature_factor", parent=self, x_offset=-40
+        )
+        self.x_1 = MyLabel("quadrature_factor", row_top, "X", parent=self, x_offset=40)
 
-        self.na_real = MyLabel("bandwidth", row_top, "na real", parent=self,
-                               x_offset=20)
-        self.na_imag = MyLabel("bandwidth", row_bottom, "na imag", parent=self,
-                               x_offset=20)
-
-
-        self.quad_fact = MyLabel("quadrature_factor", row_top,
-                                 "quadrature_factor",
-                                 parent=self, x_offset=-40)
-        self.x_1 = MyLabel("quadrature_factor", row_top, "X", parent=self,
-                           x_offset=40)
-
-        self.gain = MyLabel("gain", row_center, "gain", parent=self,
-                            x_offset=-20)
+        self.gain = MyLabel("gain", row_center, "gain", parent=self, x_offset=-20)
         self.x_2 = MyLabel("gain", row_up, "X", parent=self, x_offset=-20)
-        self.x_3 = MyLabel('gain', row_down, "X", parent=self, x_offset=-20)
+        self.x_3 = MyLabel("gain", row_down, "X", parent=self, x_offset=-20)
 
-        self.plus = MyLabel("amplitude", row_up, "+", parent=self,
-                            x_offset=-40)
+        self.plus = MyLabel("amplitude", row_up, "+", parent=self, x_offset=-40)
 
-        self.cte = MyLabel("amplitude", row_up, "amplitude", parent=self,
-                           x_offset=20)
+        self.cte = MyLabel("amplitude", row_up, "amplitude", parent=self, x_offset=20)
 
-        self.plus_2 = MyLabel("amplitude", row_center, "+", parent=self,
-                              x_offset=-40)
+        self.plus_2 = MyLabel("amplitude", row_center, "+", parent=self, x_offset=-40)
 
         self.output_direct = MyLabel("output_signal", row_center, "output\ndirect", parent=self)
         self.output_signal = MyLabel("output_signal", row_top, "output\nsignal", parent=self)
@@ -222,7 +245,6 @@ class IqManagerWidget(ModuleManagerWidget):
         self.connect(self.low_pass1, self.na_real, h_first=False)
         self.connect(self.low_pass2, self.na_imag, h_first=False)
         self.connect(self.low_pass1, self.x_1, h_first=False)
-
 
         self.connect(self.gain, self.x_2, h_first=False)
         self.connect(self.gain, self.x_3, h_first=False)
@@ -250,7 +272,8 @@ class IqManagerWidget(ModuleManagerWidget):
 
     def connect(self, widget1, widget2, h_first=True):
         """
-        Connects 2 blocks with an arrow h_first means the first line originating from widget1 is horizontal.
+        Connects 2 blocks with an arrow h_first means the first line
+        originating from widget1 is horizontal.
         """
 
         self.connections.append(Connection(widget1, widget2, h_first, self))

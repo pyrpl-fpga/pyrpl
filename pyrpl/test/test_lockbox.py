@@ -1,10 +1,10 @@
 import logging
 import pytest
-logger = logging.getLogger(name=__name__)
-import time
-import numpy as np
 from ..async_utils import sleep, sleep_async, ensure_future
 from .test_base import TestPyrpl
+
+logger = logging.getLogger(name=__name__)
+
 
 @pytest.fixture(scope="class")
 def setup_fake_system_once(hardware_session):
@@ -20,12 +20,12 @@ def setup_fake_system_once(hardware_session):
     pyrpl = hardware_session.pyrpl
 
     if pyrpl.lockbox.inputs is not None:
-        pyrpl.lockbox._clear # make sure no old lockbox config exists
+        pyrpl.lockbox._clear  # make sure no old lockbox config exists
     pid = r.pid1
-    pid.free() # make sure pid is not used by another module
+    pid.free()  # make sure pid is not used by another module
 
     print("Setting up fake system for TestLockbox...")
-    pyrpl.lockbox.classname = 'Interferometer'
+    pyrpl.lockbox.classname = "Interferometer"
     lockbox = pyrpl.lockbox
     pid.i = -1
     pid.p = -1
@@ -37,27 +37,27 @@ def setup_fake_system_once(hardware_session):
     print(output.name)
     output.sweep_frequency = 50
     output.sweep_amplitude = 0.3
-    output.sweep_offset = 0 # used to be 0.1 but if you sweep for too long, ival saturates
-    output.sweep_waveform = 'sin'
+    output.sweep_offset = 0  # used to be 0.1 but if you sweep for too long, ival saturates
+    output.sweep_waveform = "sin"
 
-    lockbox.calibrate_all(timeout_min=20) # extra timeout because of remote connection delays
+    lockbox.calibrate_all(timeout_min=20)  # extra timeout because of remote connection delays
 
-    lockbox.sequence.append({'gain_factor':1.0e6})
-    lockbox.sequence[-1].input = 'port1'
+    lockbox.sequence.append({"gain_factor": 1.0e6})
+    lockbox.sequence[-1].input = "port1"
     output.desired_unity_gain_frequency = 1e7
     lockbox.sequence[-1].outputs.piezo.lock_on = True
     lockbox.sequence[-1].outputs.piezo.reset_offset = True
-    lockbox.sequence[-1].duration = 1 # It takes 1 s to acquire lock
-    
+    lockbox.sequence[-1].duration = 1  # It takes 1 s to acquire lock
+
     yield
-    
+
     # Cleanup after all tests (if needed)
     print("Tearing down fake system for TestLockbox...")
     lockbox.auto_lock = False
     lockbox.unlock()
     for key in lockbox.outputs.keys():
         lockbox.outputs[key].pid.free()
-        lockbox.outputs[key].pid.output_direct = 'off'
+        lockbox.outputs[key].pid.output_direct = "off"
     lockbox.asg.free()
 
     lockbox._clear()
@@ -65,6 +65,7 @@ def setup_fake_system_once(hardware_session):
     pid.p = 0
     pid.i = 0
     pid.ival = 0
+
 
 class TestLockbox(TestPyrpl):
     # source_config_file = "nosetests_source_lockbox.yml"
@@ -76,14 +77,14 @@ class TestLockbox(TestPyrpl):
     def test_create_stage(self):
         old_len = len(self.lockbox.sequence)
         widget = self.lockbox._create_widget()
-        self.lockbox.sequence.append({'gain_factor': 2.0})
+        self.lockbox.sequence.append({"gain_factor": 2.0})
         assert len(self.lockbox.sequence) == old_len + 1
 
         # wait for stage creation signal to impact the GUI (async sleep to
         # let the EventLoop handle the notifiction from sequence...)
         sleep(0.1)
         assert len(widget.sequence_widget.stage_widgets) == old_len + 1
-        self.lockbox.sequence.append({'gain_factor':3.0})
+        self.lockbox.sequence.append({"gain_factor": 3.0})
 
         assert self.lockbox.sequence[-1].gain_factor == 3.0
         assert self.lockbox.sequence[-2].name == old_len
@@ -92,12 +93,12 @@ class TestLockbox(TestPyrpl):
         self.lockbox.sequence.pop()
 
         assert len(self.lockbox.sequence) == old_len + 1
-        assert self.lockbox.sequence.pop()['gain_factor']==2.0
+        assert self.lockbox.sequence.pop()["gain_factor"] == 2.0
 
     def test_change_classname(self):
         for classname in ["Linear", "FabryPerot", "Interferometer"]:
             self.pyrpl.lockbox.classname = classname
-            assert(self.pyrpl.lockbox.classname == classname)
+            assert self.pyrpl.lockbox.classname == classname
 
     def test_real_lock(self, setup_fake_system_once):
         self.lockbox.calibrate_all(timeout_min=20)
@@ -112,7 +113,7 @@ class TestLockbox(TestPyrpl):
 
         output = lockbox.outputs.values()[0]
 
-        output.sweep_offset = 0.1 
+        output.sweep_offset = 0.1
 
         lockbox.calibrate_all(timeout_min=20)
         cal = lockbox.inputs.port1.calibration_data
@@ -127,11 +128,13 @@ class TestLockbox(TestPyrpl):
         self.lockbox.calibrate_all(timeout_min=20)
         self.lockbox.lock()
         pid = self.pyrpl.rp.pid1
+
         async def unlock_later(time_s):
             await sleep_async(time_s)
             pid.ival = 1
             pid.p = 0
             pid.i = 0
+
         res = self.lockbox.sleep_while_locked(1)
         assert res
         ensure_future(unlock_later(0.5))
@@ -147,14 +150,14 @@ class TestLockbox(TestPyrpl):
         # monkey patch a function to make sure lockbox went to first stage
         # again
         def increment(obj):
-            obj.first_stage_counter+=1
+            obj.first_stage_counter += 1
 
         self.lockbox.__class__.increment = increment
         self.lockbox.first_stage_counter = 0
 
         self.lockbox.calibrate_all(timeout_min=20)
         self.lockbox.lock_async()
-        assert self.lockbox.classname == 'Interferometer'
+        assert self.lockbox.classname == "Interferometer"
 
         self.lockbox.sequence[0].function_call = "increment"
         pid = self.pyrpl.rp.pid1
@@ -167,6 +170,7 @@ class TestLockbox(TestPyrpl):
             await sleep_async(time_s)
             pid.p = -1
             pid.i = -1
+
         sleep(0.5)
         assert self.lockbox.is_locked()
         ensure_future(unlock_later(1))

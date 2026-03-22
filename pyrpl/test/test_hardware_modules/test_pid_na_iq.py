@@ -1,10 +1,12 @@
 import logging
-logger = logging.getLogger(name=__name__)
 from pyrpl.attributes import *
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl.async_utils import sleep
 import pytest
+
+logger = logging.getLogger(name=__name__)
+
 
 @pytest.fixture(autouse=True, scope="class")
 def setup_na(hardware_session):
@@ -25,24 +27,25 @@ def setup_na(hardware_session):
     # set na loglevel to previous one
     na._logger.setLevel(loglevel)
     for pid in pyrpl.pids.all_modules:
-        pid.input = 'off'
-        pid.p = 0   
+        pid.input = "off"
+        pid.p = 0
         pid.i = 0
         pid.ival = 0
-        pid.output_direct = 'off'
+        pid.output_direct = "off"
         pid.setpoint = 0
         pid.inputfilter = 0
-        pid.pause_gains = 'off'
+        pid.pause_gains = "off"
         pid.paused = False
         pid.differential_mode_enabled = False
-class TestPidNaIq(TestPyrpl):
 
+
+class TestPidNaIq(TestPyrpl):
     extradelay = 0.6 * 8e-9  # no idea where this delay comes from
 
     @property
     def na(self):
         return self.pyrpl.networkanalyzer
-            
+
     def test_na(self):
         error_threshold = 0.03  # (relative error, dominated by phase error)
         if self.r is None:
@@ -54,58 +57,60 @@ class TestPidNaIq(TestPyrpl):
         na = self.na
         for iq in [r.iq0, r.iq1, r.iq2]:
             na._iq = iq
-            na.setup(start_freq=3000,
-                     stop_freq=10e6,
-                     points=101,
-                     # I reduced points from 1001 to 101, is it normal that
-                     # it was taking ages ? -> no, should not take more than 1
-                     # second with rbw=1000
-                     rbw=1000,
-                     average_per_point=1,
-                     trace_average=1,
-                     amplitude=0.1, input=na.iq, output_direct='off',
-                     acbandwidth=1000, logscale=True)
+            na.setup(
+                start_freq=3000,
+                stop_freq=10e6,
+                points=101,
+                # I reduced points from 1001 to 101, is it normal that
+                # it was taking ages ? -> no, should not take more than 1
+                # second with rbw=1000
+                rbw=1000,
+                average_per_point=1,
+                trace_average=1,
+                amplitude=0.1,
+                input=na.iq,
+                output_direct="off",
+                acbandwidth=1000,
+                logscale=True,
+            )
             data = na.single()
             f = na.data_x
-            theory = np.array(f * 0 + 1.0,
-                              dtype=complex)
+            theory = np.array(f * 0 + 1.0, dtype=complex)
             # obsolete since na data now comes autocorrected:
             # theory = na.transfer_function(f, extradelay=extradelay)
             relerror = np.abs((data - theory) / theory)
             maxerror = np.max(relerror)
             if maxerror > error_threshold:
                 print(maxerror)
-                c = CurveDB.create(f, data, name='test_na-failed-data')
-                c.add_child(CurveDB.create(f, theory,
-                                           name='test_na-failed-theory'))
-                c.add_child(CurveDB.create(f, relerror,
-                                           name='test_na-failed-relerror'))
+                c = CurveDB.create(f, data, name="test_na-failed-data")
+                c.add_child(CurveDB.create(f, theory, name="test_na-failed-theory"))
+                c.add_child(CurveDB.create(f, relerror, name="test_na-failed-relerror"))
                 assert False, maxerror
-
 
     def test_inputfilter(self):
         """
         tests whether the modeled transfer function of pid module with
         any possible inputfilter (firstorder) corresponds to measured tf
         """
-        error_threshold = 0.3 # 0.15 is ok for all but -3 MHz filter
+        error_threshold = 0.3  # 0.15 is ok for all but -3 MHz filter
         # testing one pid is enough
         pid = self.pyrpl.rp.pid0
         na = self.na
-        na.setup(start_freq=10e3,
-                 stop_freq=5e6,
-                 # points 101->11, it was taking ages
-                 points=11,
-                 rbw=1000,
-                 average_per_point=1,
-                 trace_average=1,
-                 amplitude=0.1,
-                 input=pid,
-                 output_direct='off',
-                 acbandwidth=0,
-                 logscale=True,
-                 paused=False
-                 )
+        na.setup(
+            start_freq=10e3,
+            stop_freq=5e6,
+            # points 101->11, it was taking ages
+            points=11,
+            rbw=1000,
+            average_per_point=1,
+            trace_average=1,
+            amplitude=0.1,
+            input=pid,
+            output_direct="off",
+            acbandwidth=0,
+            logscale=True,
+            paused=False,
+        )
 
         # setup pid: input is the network analyzer output.
         pid.input = na.iq
@@ -132,18 +137,15 @@ class TestPidNaIq(TestPyrpl):
             relerror = np.abs((data - theory) / theory)
             # get max error for values > -50 dB (otherwise its just NA noise)
             mask = np.asarray(np.abs(theory) > 3e-3, dtype=float)
-            maxerror = np.max(relerror*mask)
+            maxerror = np.max(relerror * mask)
             if maxerror > error_threshold:
                 print(maxerror)
-                c = CurveDB.create(f, data, name='test_inputfilter-failed-data')
+                c = CurveDB.create(f, data, name="test_inputfilter-failed-data")
                 c.params["bandwidth"] = pid.inputfilter[0]
                 c.save()
-                c.add_child(CurveDB.create(f, theory,
-                                           name='test_inputfilter-failed-theory'))
-                c.add_child(CurveDB.create(f, relerror,
-                                           name='test_inputfilter-failed-relerror'))
+                c.add_child(CurveDB.create(f, theory, name="test_inputfilter-failed-theory"))
+                c.add_child(CurveDB.create(f, relerror, name="test_inputfilter-failed-relerror"))
                 assert False, (maxerror, bw)
-
 
     def test_pid_na1(self):
         # setup a pid module with a bunch of different settings and measure
@@ -161,18 +163,20 @@ class TestPidNaIq(TestPyrpl):
         # shortcuts and na configuration
         na = self.na
         for pid in self.pyrpl.pids.all_modules:
-            na.setup(start_freq=1000,
-                     stop_freq=1000e3,
-                     # points 101->11, it was taking ages
-                     points=11,
-                     rbw=100,
-                     average_per_point=1,
-                     trace_average=1,
-                     amplitude=0.1,
-                     input=pid,
-                     output_direct='off',
-                     acbandwidth=0,
-                     logscale=True)
+            na.setup(
+                start_freq=1000,
+                stop_freq=1000e3,
+                # points 101->11, it was taking ages
+                points=11,
+                rbw=100,
+                average_per_point=1,
+                trace_average=1,
+                amplitude=0.1,
+                input=pid,
+                output_direct="off",
+                acbandwidth=0,
+                logscale=True,
+            )
 
             # setup pid: input is the network analyzer output.
             pid.input = na.iq
@@ -188,19 +192,17 @@ class TestPidNaIq(TestPyrpl):
             pid.d = 0
             pid.ival = 0
             pid.inputfilter = 0
-            data= na.single()
+            data = na.single()
             f = na.data_x
-            plotdata.append((f, data, 'p=1'))
+            plotdata.append((f, data, "p=1"))
             theory = pid.transfer_function(f, extradelay=extradelay)
             relerror = np.abs((data - theory) / theory)
             maxerror = np.max(relerror)
             if maxerror > error_threshold:
                 print(maxerror)
-                c = CurveDB.create(f, data, name='test_na_pid-failed-data')
-                c.add_child(CurveDB.create(f, theory,
-                                           name='test_na_pid-failed-theory'))
-                c.add_child(CurveDB.create(f, relerror,
-                                           name='test_na_pid-failed-relerror'))
+                c = CurveDB.create(f, data, name="test_na_pid-failed-data")
+                c.add_child(CurveDB.create(f, theory, name="test_na_pid-failed-theory"))
+                c.add_child(CurveDB.create(f, relerror, name="test_na_pid-failed-relerror"))
                 assert False, maxerror
 
     def test_pid_na2(self):
@@ -214,15 +216,20 @@ class TestPidNaIq(TestPyrpl):
         # shortcuts and na configuration
         na = self.na
         for pid in self.pyrpl.pids.all_modules:
-            na.setup(start_freq=1000,
-                     stop_freq=1000e3,
-                     # 101 points, 1 av->11 points, 7 av (taking ages)
-                     points=11,
-                     rbw=100,
-                     average_per_point=1,
-                     trace_average=1,
-                     amplitude=0.1, input=pid, output_direct='off',
-                     acbandwidth=0, logscale=True)
+            na.setup(
+                start_freq=1000,
+                stop_freq=1000e3,
+                # 101 points, 1 av->11 points, 7 av (taking ages)
+                points=11,
+                rbw=100,
+                average_per_point=1,
+                trace_average=1,
+                amplitude=0.1,
+                input=pid,
+                output_direct="off",
+                acbandwidth=0,
+                logscale=True,
+            )
 
             # setup pid: input is the network analyzer output.
             pid.input = na.iq
@@ -241,20 +248,18 @@ class TestPidNaIq(TestPyrpl):
             pid.inputfilter = 0
             data = na.single()
             f = na.data_x
-            plotdata.append((f, data, 'p=%.1e, i=%.1e' % (pid.p, pid.i)))
+            plotdata.append((f, data, "p=%.1e, i=%.1e" % (pid.p, pid.i)))
             theory = pid.transfer_function(f, extradelay=extradelay)
             relerror = np.abs((data - theory) / theory)
             maxerror = np.max(relerror)
             if maxerror > error_threshold:
                 print(maxerror)
-                c = CurveDB.create(f, data, name='test_na_pid-failed-data')
-                c.add_child(CurveDB.create(f, theory,
-                                           name='test_na_pid-failed-theory'))
-                c.add_child(CurveDB.create(f, relerror,
-                                           name='test_na_pid-failed-relerror'))
+                c = CurveDB.create(f, data, name="test_na_pid-failed-data")
+                c.add_child(CurveDB.create(f, theory, name="test_na_pid-failed-theory"))
+                c.add_child(CurveDB.create(f, relerror, name="test_na_pid-failed-relerror"))
                 assert False, maxerror
             # check that no saturation has occured
-            print ("Integral value after measurement: ", pid.ival)
+            print("Integral value after measurement: ", pid.ival)
             if abs(pid.ival) >= 1.0:
                 print("Saturation has occured. Data not reliable.")
             assert abs(pid.ival) <= 1.0, pid.ival
@@ -275,14 +280,19 @@ class TestPidNaIq(TestPyrpl):
         # shortcuts and na configuration
         na = self.na
         for pid in self.pyrpl.pids.all_modules:
-            na.setup(start_freq=1000,
-                     stop_freq=1000e3,
-                     points=11,
-                     rbw=100,
-                     average_per_point=10,
-                     trace_average=1,
-                     amplitude=0.1, input=pid, output_direct='off',
-                     acbandwidth=0, logscale=True)
+            na.setup(
+                start_freq=1000,
+                stop_freq=1000e3,
+                points=11,
+                rbw=100,
+                average_per_point=10,
+                trace_average=1,
+                amplitude=0.1,
+                input=pid,
+                output_direct="off",
+                acbandwidth=0,
+                logscale=True,
+            )
 
             # setup pid: input is the network analyzer output.
             pid.input = na.iq
@@ -303,17 +313,15 @@ class TestPidNaIq(TestPyrpl):
             print("Actual inputfilter after rounding: ", pid.inputfilter)
             data = na.single()
             f = na.data_x
-            plotdata.append((f, data, 'p=10 + filter'))
+            plotdata.append((f, data, "p=10 + filter"))
             theory = pid.transfer_function(f, extradelay=extradelay)
             relerror = np.abs((data - theory) / theory)
             maxerror = np.max(relerror)
             if maxerror > error_threshold:
                 print(maxerror)
-                c = CurveDB.create(f, data, name='test_na_pid-failed-data')
-                c.add_child(CurveDB.create(f, theory,
-                                           name='test_na_pid-failed-theory'))
-                c.add_child(CurveDB.create(f, relerror,
-                                           name='test_na_pid-failed-relerror'))
+                c = CurveDB.create(f, data, name="test_na_pid-failed-data")
+                c.add_child(CurveDB.create(f, theory, name="test_na_pid-failed-theory"))
+                c.add_child(CurveDB.create(f, relerror, name="test_na_pid-failed-relerror"))
                 assert False, maxerror
             # reset
             pid.setpoint = 0
@@ -342,27 +350,31 @@ class TestPidNaIq(TestPyrpl):
         for bpf in [r.iq0, r.iq1]:
             plotdata = []
             # setup na for measurement
-            na.setup(start_freq=300e3,
-                     stop_freq=700e3,
-                     points=51,
-                     rbw=1000,
-                     average_per_point=3,
-                     trace_average=1,
-                     acbandwidth=0,
-                     amplitude=0.2,
-                     input=bpf,
-                     output_direct='off',
-                     logscale=False)
+            na.setup(
+                start_freq=300e3,
+                stop_freq=700e3,
+                points=51,
+                rbw=1000,
+                average_per_point=3,
+                trace_average=1,
+                acbandwidth=0,
+                amplitude=0.2,
+                input=bpf,
+                output_direct="off",
+                logscale=False,
+            )
             # setup bandpass
-            bpf.setup(frequency=500e3,  # center frequency
-                      bandwidth=5000,  # Q=100.0,  # the filter quality factor # sorry, I am dropping this...
-                      acbandwidth=500,  # ac filter to remove pot. input offsets
-                      phase=0,  # nominal phase at center frequency (
-                      # propagation phase lags not accounted for)
-                      gain=1.0,  # peak gain = +0 dB
-                      output_direct='off',
-                      output_signal='output_direct',
-                      input=na.iq)  # plug filter input to na output...
+            bpf.setup(
+                frequency=500e3,  # center frequency
+                bandwidth=5000,  # Q=100.0,  # the filter quality factor # sorry, I am dropping this
+                acbandwidth=500,  # ac filter to remove pot. input offsets
+                phase=0,  # nominal phase at center frequency (
+                # propagation phase lags not accounted for)
+                gain=1.0,  # peak gain = +0 dB
+                output_direct="off",
+                output_signal="output_direct",
+                input=na.iq,
+            )  # plug filter input to na output...
 
             for phase in [-45, 0, 45, 90]:
                 bpf.phase = phase
@@ -376,11 +388,9 @@ class TestPidNaIq(TestPyrpl):
                 # maxerror = np.max(relerror)
                 if maxerror > error_threshold:
                     print(maxerror)
-                    c = CurveDB.create(f, data, name='test_iq_na-failed-data')
-                    c.add_child(CurveDB.create(f, theory,
-                                               name='test_iq_na-failed-theory'))
-                    c.add_child(CurveDB.create(f, abserror,
-                                               name='test_iq_na-failed-relerror'))
+                    c = CurveDB.create(f, data, name="test_iq_na-failed-data")
+                    c.add_child(CurveDB.create(f, theory, name="test_iq_na-failed-theory"))
+                    c.add_child(CurveDB.create(f, abserror, name="test_iq_na-failed-relerror"))
                     # c.add_child(CurveDB.create(f,relerror,name='test_iq_na-failed-abserror'))
                     assert False, (maxerror, phase, bpf.name)
 
@@ -393,28 +403,33 @@ class TestPidNaIq(TestPyrpl):
         for pid in [pid0, pid1, pid2]:
             # we start with all gains off and ival reset, so the output should be 0
             pid.setup(
-                input='pid2',
-                output_direct='off',
+                input="pid2",
+                output_direct="off",
                 setpoint=-0.25,
                 p=0,
                 i=0,
                 inputfilter=0,
                 max_voltage=1,
                 min_voltage=-1,
-                pause_gains='off',
+                pause_gains="off",
                 paused=False,
                 differential_mode_enabled=False,
-                )
+            )
             pid.ival = 0
             assert pid.current_output_signal == 0.0, pid.current_output_signal
         diff_module = dict(pid0=pid1, pid1=pid0)
         for pid in [pid0, pid1]:
             diffpid = diff_module[pid.name]
             # test normal working mode
-            pid.p=30  # large p-gain should cause saturation
-            assert pid.current_output_signal >= pid.max_voltage, (pid.current_output_signal, pid.max_voltage, pid.current_output_signal-pid.max_voltage)
-            # enable differential mode, input to both pid0 and pid1 is the same, so output should be zero
-            pid.differential_mode_enabled=True
+            pid.p = 30  # large p-gain should cause saturation
+            assert pid.current_output_signal >= pid.max_voltage, (
+                pid.current_output_signal,
+                pid.max_voltage,
+                pid.current_output_signal - pid.max_voltage,
+            )
+            # enable differential mode, input to both pid0 and pid1 is the same,
+            # so output should be zero
+            pid.differential_mode_enabled = True
             assert pid.current_output_signal == 0.0, pid.current_output_signal
             # this should not change even if input signal is changed
             pid2.ival = 1
@@ -424,23 +439,29 @@ class TestPidNaIq(TestPyrpl):
             assert pid.current_output_signal == 0.0, pid.current_output_signal
             # but if the input to diffpid is disabled, we should recover normal pid
             pid.p = 3  # smaller p-gain to avoid saturation
-            diffpid.input='off'
-            assert abs(pid.current_output_signal-(-0.3))<1e-4, (pid.name, pid.current_output_signal)
+            diffpid.input = "off"
+            assert abs(pid.current_output_signal - (-0.3)) < 1e-4, (
+                pid.name,
+                pid.current_output_signal,
+            )
             pid.differential_mode_enabled = False
-            assert abs(pid.current_output_signal-(0.45))<5e-2, (pid.name, pid.current_output_signal)
+            assert abs(pid.current_output_signal - (0.45)) < 5e-2, (
+                pid.name,
+                pid.current_output_signal,
+            )
             # reset initial values
             for apid in [pid0, pid1, pid2]:
                 # we start with all gains off and ival reset, so the output should be 0
                 apid.setup(
-                    input='pid2',
-                    output_direct='off',
+                    input="pid2",
+                    output_direct="off",
                     setpoint=-0.25,
                     p=0,
                     i=0,
                     inputfilter=0,
                     max_voltage=1,
                     min_voltage=-1,
-                    pause_gains='off',
+                    pause_gains="off",
                     paused=False,
                     differential_mode_enabled=False,
                 )
@@ -456,40 +477,47 @@ class TestPidNaIq(TestPyrpl):
         for pid in pids:
             # we start with all gains off and ival reset, so the output should be 0
             pid.setup(
-                input='off',
-                output_direct='off',
+                input="off",
+                output_direct="off",
                 setpoint=-1,
                 p=0,
                 i=0,
                 inputfilter=0,
                 max_voltage=1,
                 min_voltage=-1,
-                pause_gains='off'
-                )
+                pause_gains="off",
+            )
             pid.ival = 0
             assert pid.current_output_signal == 0.0, pid.current_output_signal
             # test p settings
-            pid.p=10000000  # large p-gain should cause saturation
+            pid.p = 10000000  # large p-gain should cause saturation
             # now pause the p-gain and assert that output is zero
-            pid.pause_gains ='p'
+            pid.pause_gains = "p"
             pid.paused = True
             assert pid.current_output_signal == 0.0, pid.current_output_signal
             # un-pause it and verify
             pid.paused = False
-            assert pid.current_output_signal >= pid.max_voltage, (pid.current_output_signal, pid.max_voltage, pid.current_output_signal-pid.max_voltage)
+            assert pid.current_output_signal >= pid.max_voltage, (
+                pid.current_output_signal,
+                pid.max_voltage,
+                pid.current_output_signal - pid.max_voltage,
+            )
             # test integrator part - first let integrator saturate
             pid.i = 10000000
             pid.p = 0
             assert pid.current_output_signal >= pid.max_voltage, pid.current_output_signal
             # now pause the i-gain and assert that output is unchanged
-            pid.pause_gains = 'i'
+            pid.pause_gains = "i"
             assert pid.current_output_signal >= pid.max_voltage, pid.current_output_signal
             # assert that ival can be set in presence of large gains
             pid.paused = True
             pid.ival = 0.1
-            assert (pid.ival - pid.current_output_signal) <= 0.0001, (pid.current_output_signal, pid.ival)
+            assert (pid.ival - pid.current_output_signal) <= 0.0001, (
+                pid.current_output_signal,
+                pid.ival,
+            )
             assert (pid.ival - 0.1) <= 0.0001, (pid.current_output_signal, pid.ival)
-            pid.pause_gains = 'off'
+            pid.pause_gains = "off"
             assert pid.current_output_signal >= pid.max_voltage, pid.current_output_signal
             # un-pause for later
             pid.paused = False
@@ -501,31 +529,39 @@ class TestPidNaIq(TestPyrpl):
         rp = self.pyrpl.rp
         iqs = [rp.iq0, rp.iq1, rp.iq2]
         for iq in iqs:
-            iq.setup(input='iq0',
-                 frequency=47e6,
-                 acbandwidth=1e5,
-                 output_signal='output_direct',
-                 gain=0,
-                 amplitude=0.5,
-                 phase=0,
-                 output_direct='off')
-            iq._na_averages=1e6
+            iq.setup(
+                input="iq0",
+                frequency=47e6,
+                acbandwidth=1e5,
+                output_signal="output_direct",
+                gain=0,
+                amplitude=0.5,
+                phase=0,
+                output_direct="off",
+            )
+            iq._na_averages = 1e6
         # first measure in desync mode
         for iq in iqs:
             f = iq.frequency
-            iq.frequency = 0 # this step is enough to de-sync iqs
+            iq.frequency = 0  # this step is enough to de-sync iqs
             iq.frequency = f
-        sleep(1e6/iq.frequency)
+        sleep(1e6 / iq.frequency)
         angles = [np.angle(iq._nadata, deg=True) for iq in iqs]
-        desyncdiff = (max(angles)-min(angles))
-        assert desyncdiff > 0.01, "iq modules not desynchronized, desyncdiff = %f < 0.01! Angles: %s" % (desyncdiff, angles)
+        desyncdiff = max(angles) - min(angles)
+        assert desyncdiff > 0.01, (
+            "iq modules not desynchronized, desyncdiff = %f < 0.01! Angles: %s"
+            % (desyncdiff, angles)
+        )
         # synchronize
         rp.iq0.synchronize_iqs()
         # now measure in synced mode
         for iq in iqs:
             iq.frequency = iq.frequency
-        sleep(1e6/iq.frequency)
+        sleep(1e6 / iq.frequency)
         angles = [np.angle(iq._nadata, deg=True) for iq in iqs]
-        syncdiff = (max(angles)-min(angles))
+        syncdiff = max(angles) - min(angles)
         print(desyncdiff, syncdiff)
-        assert syncdiff < 0.01, "synchronization of iq modules not working, syncdiff = %f > 0.01! Angles: %s"%(syncdiff, angles)
+        assert syncdiff < 0.01, (
+            "synchronization of iq modules not working, syncdiff = %f > 0.01! Angles: %s"
+            % (syncdiff, angles)
+        )

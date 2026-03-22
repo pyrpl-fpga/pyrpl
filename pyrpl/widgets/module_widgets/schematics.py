@@ -19,7 +19,7 @@ class MyItem(QtWidgets.QWidget):
         self.lay = QtWidgets.QVBoxLayout()
         self.setLayout(self.lay)
         self.item = QtWidgets.QLabel(label)
-        self.setStyleSheet('background-color:transparent')
+        self.setStyleSheet("background-color:transparent")
         self.lay.addWidget(self.item)
 
         self.widget_name = widget_name
@@ -29,7 +29,8 @@ class MyItem(QtWidgets.QWidget):
         parent.graphic_items.append(self)
         self.item.setStyleSheet(
             "QLabel{border: 1px solid black; border-radius: 5px; "
-            "font-size: 15px; background-color:white}")
+            "font-size: 15px; background-color:white}"
+        )
         self.proxy = parent.scene.addWidget(self)
         self.proxy.setZValue(2)
 
@@ -40,12 +41,15 @@ class MyItem(QtWidgets.QWidget):
         return self.pos().y() + self.item.pos().y()
 
     def move_to_right_position(self):
-        widget = self.parent.module_widgets[0].attribute_widgets[
-            self.widget_name]
-        x = widget.pos().x() + widget.width()/2 + self.x_offset - \
-            self.item.width()/2 + self.item.x()
-        y = self.y*self.parent.view.height() - self.item.height()/2 + \
-            self.item.y()
+        widget = self.parent.module_widgets[0].attribute_widgets[self.widget_name]
+        x = (
+            widget.pos().x()
+            + widget.width() / 2
+            + self.x_offset
+            - self.item.width() / 2
+            + self.item.x()
+        )
+        y = self.y * self.parent.view.height() - self.item.height() / 2 + self.item.y()
         self.move(int(x), int(y))
 
 
@@ -63,9 +67,7 @@ class MyImage(MyItem):
         self.label = QtWidgets.QLabel(label)
         self.lay.addWidget(self.label)
 
-
-        #self.setText(self.widget_name)
-
+        # self.setText(self.widget_name)
 
 
 class Connection(object):
@@ -83,11 +85,13 @@ class Connection(object):
         self.brush = QtGui.QBrush(QtCore.Qt.black)
         self.arrow = QtWidgets.QGraphicsPolygonItem()
         self.arrow.setBrush(self.brush)
-        self.pen = QtGui.QPen(QtCore.Qt.black,
-                              3,
-                              QtCore.Qt.SolidLine,
-                              QtCore.Qt.RoundCap,
-                              QtCore.Qt.RoundJoin)
+        self.pen = QtGui.QPen(
+            QtCore.Qt.black,
+            3,
+            QtCore.Qt.SolidLine,
+            QtCore.Qt.RoundCap,
+            QtCore.Qt.RoundJoin,
+        )
 
         self.line1 = QtWidgets.QGraphicsLineItem()
         self.line1.setPen(self.pen)
@@ -117,23 +121,29 @@ class Connection(object):
                 x = x2 - self.widget_stop.width() / 2
                 y = y2
                 arrow = QtGui.QPolygonF(
-                    [QtCore.QPointF(x - self.margin, y - self.arrow_height / 2),
-                     QtCore.QPointF(x - self.margin, y + self.arrow_height / 2),
-                     QtCore.QPointF(x - self.margin + self.arrow_width, int(y))])
+                    [
+                        QtCore.QPointF(x - self.margin, y - self.arrow_height / 2),
+                        QtCore.QPointF(x - self.margin, y + self.arrow_height / 2),
+                        QtCore.QPointF(x - self.margin + self.arrow_width, int(y)),
+                    ]
+                )
             else:
                 x = x2
                 y = y2 - self.widget_stop.height() / 2
                 if y2 < y1:
-                    margin = - self.margin
-                    arrow_width = - self.arrow_width
+                    margin = -self.margin
+                    arrow_width = -self.arrow_width
                     y = y2 + self.widget_stop.height() / 2
                 else:
                     margin = self.margin
                     arrow_width = self.arrow_width
                 arrow = QtGui.QPolygonF(
-                    [QtCore.QPointF(x - self.arrow_height / 2, y - margin),
-                     QtCore.QPointF(x + self.arrow_height / 2, y - margin),
-                     QtCore.QPointF(x, y - margin + arrow_width)])
+                    [
+                        QtCore.QPointF(x - self.arrow_height / 2, y - margin),
+                        QtCore.QPointF(x + self.arrow_height / 2, y - margin),
+                        QtCore.QPointF(x, y - margin + arrow_width),
+                    ]
+                )
 
             if self.show_arrow:
                 self.arrow.setPolygon(arrow)

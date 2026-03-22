@@ -15,22 +15,27 @@ class ModuleProperty(ModuleAttribute):
        - module.sub = dict(...) : module.sub.set_setup_attributes(dict(...))
        - module.sub: returns the submodule.
     """
+
     default = {}
 
-    def __init__(self,
-                 module_cls,
-                 default=None,
-                 doc="",
-                 ignore_errors=False,
-                 call_setup=False,
-                 **kwargs):
+    def __init__(
+        self,
+        module_cls,
+        default=None,
+        doc="",
+        ignore_errors=False,
+        call_setup=False,
+        **kwargs,
+    ):
         self.module_cls = module_cls
         self.kwargs = kwargs
-        ModuleAttribute.__init__(self,
-                               default=default,
-                               doc=doc,
-                               ignore_errors=ignore_errors,
-                               call_setup=call_setup)
+        ModuleAttribute.__init__(
+            self,
+            default=default,
+            doc=doc,
+            ignore_errors=ignore_errors,
+            call_setup=call_setup,
+        )
 
     def set_value(self, obj, val):
         """
@@ -43,45 +48,51 @@ class ModuleProperty(ModuleAttribute):
         return val
 
     def get_value(self, obj):
-        if not hasattr(obj, '_' + self.name):
+        if not hasattr(obj, "_" + self.name):
             # getter must manage the instantiation of default value
-            setattr(obj, '_' + self.name,
-                self._create_module(obj))
-        return getattr(obj, '_' + self.name)
+            setattr(obj, "_" + self.name, self._create_module(obj))
+        return getattr(obj, "_" + self.name)
 
     def _create_module(self, obj):
         return self.module_cls(obj, name=self.name, **self.kwargs)
 
 
 class ModuleList(Module, list):
-    """ a list of modules"""
+    """a list of modules"""
+
     def __init__(self, parent, name=None, element_cls=Module, default=[]):
         def element_name(element_self):
-            """ function that is used to dynamically assign each
+            """function that is used to dynamically assign each
             ModuleListElement's name to the index in the list.
             This is needed for proper storage in the config file"""
             try:
                 return element_self.parent.index(element_self)
             except ValueError:
-                return element_self._initial_name #'not in list' #return len(element_self.parent)
+                return element_self._initial_name  #'not in list' #return len(element_self.parent)
+
         def element_next(element_self):
             try:
-                return element_self.parent[element_self.parent.index(element_self)+1]
+                return element_self.parent[element_self.parent.index(element_self) + 1]
             except:
                 return None
+
         def element_init(element_self, parent, initial_name=None, *args, **kwargs):
             # creates a wrapper around the init function to pass the initial element
             # number in the list at object creation
             element_self._initial_name = initial_name
             return element_cls.__init__(element_self, parent, *args, **kwargs)
+
         # element.name equals element.number in order to get the right config
         # file section
-        self.element_cls = type(element_cls.__name__ + "ListElement",
-                                (element_cls, ),
-                                {'name': property(fget=element_name),
-                                 'next': property(fget=element_next),
-                                 '__init__': element_init
-                                })
+        self.element_cls = type(
+            element_cls.__name__ + "ListElement",
+            (element_cls,),
+            {
+                "name": property(fget=element_name),
+                "next": property(fget=element_next),
+                "__init__": element_init,
+            },
+        )
         self._signal_launcher = self.element_cls._signal_launcher
         super(ModuleList, self).__init__(parent, name=name)
         # set to default setting
@@ -98,10 +109,9 @@ class ModuleList(Module, list):
         # in order to assign right indices to surrounding elements
         super(ModuleList, self).insert(index, None)
         # make new module (initial_name must be given).
-        super(ModuleList, self).__setitem__(index,
-                            self.element_cls(self, initial_name=index))
+        super(ModuleList, self).__setitem__(index, self.element_cls(self, initial_name=index))
         # set initial name to none, since name is now inferred from index in the list
-        self[index]._initial_name=None
+        self[index]._initial_name = None
         # initialize setup_attributes
         self[index].setup_attributes = new
         # save state
@@ -123,7 +133,7 @@ class ModuleList(Module, list):
         to_delete._clear()
         # remove saved state from config file
         self.c._pop(index)
-        #self.save_state()
+        # self.save_state()
 
     def pop(self, index=-1):
         # get attributes
@@ -135,7 +145,7 @@ class ModuleList(Module, list):
         self.__delitem__(self.index(value))
 
     def __repr__(self):
-        return str(ModuleList.__name__)+"("+list.__repr__(self)+")"
+        return str(ModuleList.__name__) + "(" + list.__repr__(self) + ")"
 
     @property
     def setup_attributes(self):
@@ -153,7 +163,7 @@ class ModuleList(Module, list):
 
     def _load_setup_attributes(self):
         """
-         Load and sets all setup attributes from config file
+        Load and sets all setup attributes from config file
         """
         if self.c is not None:
             # self.c._data is a list that can be passed to setup_attributes
@@ -164,23 +174,21 @@ class ModuleListProperty(ModuleProperty):
     """
     A property for a list of submodules.
     """
+
     default = []
     module_cls = ModuleList
 
     def __init__(self, element_cls, default=None, doc="", ignore_errors=False):
         # only difference to base class: need to assign element_cls (i.e. class of element modules)
         self.element_cls = element_cls
-        ModuleProperty.__init__(self,
-                                self.module_cls,
-                                default=default,
-                                doc=doc,
-                                ignore_errors=ignore_errors)
+        ModuleProperty.__init__(
+            self, self.module_cls, default=default, doc=doc, ignore_errors=ignore_errors
+        )
 
     def _create_module(self, obj):
-        newmodule = self.module_cls(obj,
-                                    name=self.name,
-                                    element_cls=self.element_cls,
-                                    default=self.default)
+        newmodule = self.module_cls(
+            obj, name=self.name, element_cls=self.element_cls, default=self.default
+        )
         try:
             newmodule._widget_class = self._widget_class
         except AttributeError:
@@ -188,14 +196,17 @@ class ModuleListProperty(ModuleProperty):
         return newmodule
 
     def validate_and_normalize(self, obj, value):
-        """ ensures that only list-like values are passed to the ModuleProperty """
+        """ensures that only list-like values are passed to the ModuleProperty"""
         if not isinstance(value, list):
             try:
                 value = value.values()
             except AttributeError:
-                raise ValueError("ModuleProperty must be assigned a list. "
-                                 "You have wrongly assigned an object of type "
-                                 "%s. ", type(value))
+                raise ValueError(
+                    "ModuleProperty must be assigned a list. "
+                    "You have wrongly assigned an object of type "
+                    "%s. ",
+                    type(value),
+                )
         return value
 
 
@@ -203,6 +214,7 @@ class ModuleDict(Module):
     """
     container class that loosely resembles a dictionary which contains submodules
     """
+
     def __getitem__(self, key):
         return getattr(self, key)
 
@@ -216,7 +228,8 @@ class ModuleDict(Module):
         return [(k, self[k]) for k in self.keys()]
 
     def __iter__(self):
-        # this method allows to write code like this: 'for submodule in modulecontainer: submodule.do_sth()'
+        # this method allows to write code like this:
+        # 'for submodule in modulecontainer: submodule.do_sth()'
         return iter(self.values())
 
     @property
@@ -225,8 +238,9 @@ class ModuleDict(Module):
 
     @setup_attributes.setter
     def setup_attributes(self, kwds):
-        Module.setup_attributes.fset(self,
-            {k: v for k, v in kwds.items() if k in self._setup_attributes})
+        Module.setup_attributes.fset(
+            self, {k: v for k, v in kwds.items() if k in self._setup_attributes}
+        )
 
     def __setitem__(self, key, value):
         # make the new ModuleProperty of module type "value" in the class
@@ -248,7 +262,7 @@ class ModuleDict(Module):
         delattr(self, key)
 
     def pop(self, key):
-        """ same as __delattr__ (does not return a value) """
+        """same as __delattr__ (does not return a value)"""
         module = self._setup_attributes.pop(key)
         delattr(self, key)
         return module
@@ -257,28 +271,31 @@ class ModuleDict(Module):
 class ModuleDictProperty(ModuleProperty):
     default_module_cls = Module
 
-    def __init__(self, module_cls=None, default=None, doc="",
-                 ignore_errors=False, **kwargs):
+    def __init__(self, module_cls=None, default=None, doc="", ignore_errors=False, **kwargs):
         """
-        returns a descriptor for a module container, i.e. a class that contains submodules whose name and class are
-        specified in kwargs. module_cls is the base class for the module container (typically SoftwareModule)
+        returns a descriptor for a module container, i.e. a class that contains submodules whose
+        name and class are specified in kwargs. module_cls is the base class for the module
+        container (typically SoftwareModule)
         """
         # get default base class to inherit from
         if module_cls is None:
             module_cls = self.default_module_cls
-        # make a copy of ModuleDict class that can be modified without modifying all ModuleDict class instances
-        # inherit from module_cls
-        ModuleDictClassInstance = type(module_cls.__name__+"DictPropertyInstance",
-                                       (ModuleDict, module_cls),
-                    {key: ModuleProperty(value) for key, value in kwargs.items()})
+        # make a copy of ModuleDict class that can be modified without modifying all ModuleDict
+        # class instances inherit from module_cls
+        ModuleDictClassInstance = type(
+            module_cls.__name__ + "DictPropertyInstance",
+            (ModuleDict, module_cls),
+            {key: ModuleProperty(value) for key, value in kwargs.items()},
+        )
         # metaclass of Module already takes care of _setup/module_attributes
         # and names of submodules, so no need for these two:
         # ModuleDictClassInstance._setup_attributes = kwargs.keys()
         # ModuleDictClassInstance._module_attributes = kwargs.keys()
 
         # init this attribute with the contained module
-        super(ModuleDictProperty, self).__init__(ModuleDictClassInstance,
-                                                 default=default,
-                                                 doc=doc,
-                                                 ignore_errors=ignore_errors)
-
+        super(ModuleDictProperty, self).__init__(
+            ModuleDictClassInstance,
+            default=default,
+            doc=doc,
+            ignore_errors=ignore_errors,
+        )

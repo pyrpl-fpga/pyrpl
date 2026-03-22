@@ -24,93 +24,87 @@ import time
 from qtpy import QtCore
 from . import default_config_dir, user_config_dir
 from .pyrpl_utils import time
+import yaml
 
 import logging
+
 logger = logging.getLogger(name=__name__)
 
 
 class UnexpectedSaveError(RuntimeError):
     pass
+
+
 # the config file is read through a yaml interface. The preferred one is
 # ruamel.yaml, since it allows to preserve comments and whitespace in the
 # config file through roundtrips (the config file is rewritten every time a
 # parameter is changed). If ruamel.yaml is not installed, the program will
 # issue a warning and use pyyaml (=yaml= instead). Comments are lost in this
 #  case.
-try:
-    raise  # disables ruamel support
 
-    import ruamel.yaml
-    #ruamel.yaml.add_implicit_resolver()
-    ruamel.yaml.RoundTripDumper.add_representer(np.float64,
-                lambda dumper, data: dumper.represent_float(float(data)))
-    ruamel.yaml.RoundTripDumper.add_representer(complex,
-                lambda dumper, data: dumper.represent_str(str(data)))
-    ruamel.yaml.RoundTripDumper.add_representer(np.complex128,
-                lambda dumper, data: dumper.represent_str(str(data)))
-    ruamel.yaml.RoundTripDumper.add_representer(np.ndarray,
-                lambda dumper, data: dumper.represent_list(list(data)))
 
-    #http://stackoverflow.com/questions/13518819/avoid-references-in-pyyaml
-    #ruamel.yaml.RoundTripDumper.ignore_aliases = lambda *args: True
-    def load(f):
-        return ruamel.yaml.load(f, ruamel.yaml.RoundTripLoader)
-    def save(data, stream=None):
-        return ruamel.yaml.dump(data, stream=stream,
-                                Dumper=ruamel.yaml.RoundTripDumper,
-                                default_flow_style=False)
-except:
-    logger.debug("ruamel.yaml could not be imported. Using yaml instead. "
-                 "Comments in config files will be lost.")
-    import yaml
+# see http://stackoverflow.com/questions/13518819/avoid-references-in-pyyaml
+# yaml.Dumper.ignore_aliases = lambda *args: True # NEVER TESTED
 
-    # see http://stackoverflow.com/questions/13518819/avoid-references-in-pyyaml
-    #yaml.Dumper.ignore_aliases = lambda *args: True # NEVER TESTED
 
-    # ordered load and dump for yaml files. From
-    # http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
-    def load(stream, Loader=yaml.SafeLoader, object_pairs_hook=OrderedDict):
-        class OrderedLoader(Loader):
-            pass
-        def construct_mapping(loader, node):
-            loader.flatten_mapping(node)
-            return object_pairs_hook(loader.construct_pairs(node))
-        OrderedLoader.add_constructor(
-            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-            construct_mapping)
-        return yaml.load(stream, OrderedLoader)
-    def save(data, stream=None, Dumper=yaml.SafeDumper,
-             default_flow_style=False,
-             encoding='utf-8',
-             **kwds):
-        class OrderedDumper(Dumper):
-            pass
-        def _dict_representer(dumper, data):
-            return dumper.represent_mapping(
-                yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-                data.items())
-        OrderedDumper.add_representer(OrderedDict, _dict_representer)
-        OrderedDumper.add_representer(np.float64,
-                    lambda dumper, data: dumper.represent_float(float(data)))
-        OrderedDumper.add_representer(complex,
-                    lambda dumper, data: dumper.represent_str(str(data)))
-        OrderedDumper.add_representer(np.complex128,
-                    lambda dumper, data: dumper.represent_str(str(data)))
-        OrderedDumper.add_representer(np.ndarray,
-                    lambda dumper, data: dumper.represent_list(list(data)))
-        # I added the following two lines to make pyrpl compatible with pyinstruments. In principle they can be erased
-        if isinstance(data, dict) and not isinstance(data, OrderedDict):
-            data = OrderedDict(data)
-        return yaml.dump(data,
-                         stream=stream,
-                         Dumper=OrderedDumper,
-                         default_flow_style=default_flow_style,
-                         encoding=encoding,
-                         **kwds)
+# ordered load and dump for yaml files. From
+# http://stackoverflow.com/questions/5121931/in-python-how-can-you-load-yaml-mappings-as-ordereddicts
+def load(stream, Loader=yaml.SafeLoader, object_pairs_hook=OrderedDict):
+    class OrderedLoader(Loader):
+        pass
 
-    # usage example:
-    # load(stream, yaml.SafeLoader)
-    # save(data, stream=f, Dumper=yaml.SafeDumper)
+    def construct_mapping(loader, node):
+        loader.flatten_mapping(node)
+        return object_pairs_hook(loader.construct_pairs(node))
+
+    OrderedLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, construct_mapping)
+    return yaml.load(stream, OrderedLoader)
+
+
+def save(
+    data,
+    stream=None,
+    Dumper=yaml.SafeDumper,
+    default_flow_style=False,
+    encoding="utf-8",
+    **kwds,
+):
+    class OrderedDumper(Dumper):
+        pass
+
+    def _dict_representer(dumper, data):
+        return dumper.represent_mapping(
+            yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, data.items()
+        )
+
+    OrderedDumper.add_representer(OrderedDict, _dict_representer)
+    OrderedDumper.add_representer(
+        np.float64, lambda dumper, data: dumper.represent_float(float(data))
+    )
+    OrderedDumper.add_representer(complex, lambda dumper, data: dumper.represent_str(str(data)))
+    OrderedDumper.add_representer(
+        np.complex128, lambda dumper, data: dumper.represent_str(str(data))
+    )
+    OrderedDumper.add_representer(
+        np.ndarray, lambda dumper, data: dumper.represent_list(list(data))
+    )
+    # I added the following two lines to make pyrpl compatible with pyinstruments. In principle
+    # they can be erased
+    if isinstance(data, dict) and not isinstance(data, OrderedDict):
+        data = OrderedDict(data)
+    return yaml.dump(
+        data,
+        stream=stream,
+        Dumper=OrderedDumper,
+        default_flow_style=default_flow_style,
+        encoding=encoding,
+        **kwds,
+    )
+
+
+# usage example:
+# load(stream, yaml.SafeLoader)
+# save(data, stream=f, Dumper=yaml.SafeDumper)
 
 
 def isbranch(obj):
@@ -119,7 +113,7 @@ def isbranch(obj):
 
 # two functions to locate config files
 def _get_filename(filename=None):
-    """ finds the correct path and name of a config file """
+    """finds the correct path and name of a config file"""
     # accidentally, we may pass a MemoryTree object instead of file
     if isinstance(filename, MemoryTree):
         return filename._filename
@@ -137,7 +131,7 @@ def _get_filename(filename=None):
 
 
 def get_config_file(filename=None, source=None):
-    """ returns the path to a valid, existing config file with possible source specification """
+    """returns the path to a valid, existing config file with possible source specification"""
     # if None is specified, that means we do not want a persistent config file
     if filename is None:
         return filename
@@ -157,8 +151,10 @@ def get_config_file(filename=None, source=None):
     if source is not None:
         source = _get_filename(source)
         if os.path.isfile(source):  # success - copy the source
-            logger.debug("File " + filename + " not found. New file created from source '%s'. "%source)
-            copyfile(source,filename)
+            logger.debug(
+                "File " + filename + " not found. New file created from source '%s'. " % source
+            )
+            copyfile(source, filename)
             return filename
     # still not returned -> create empty file
     with open(filename, mode="w"):
@@ -206,15 +202,16 @@ class MemoryBranch(object):
     _root:      the MemoryTree object (root) of the tree
     _parent:    the parent of the branch
     _branch:    the name of the branch
-    _get_or_create: creates a new branch and returns it. Same as branch[newname]=dict(), but also supports nesting,
-                e.g. newname="lev1.lev2.level3"
+    _get_or_create: creates a new branch and returns it. Same as branch[newname]=dict(),
+                    but also supports nesting, e.g. newname="lev1.lev2.level3"
     _fullbranchname: returns the full path from root to the branch
     _getbranch: returns a branch by specifying its path, e.g. 'b1.c2.d3'
     _rename:    renames the branch
     _reload:    attempts to reload the data from disc
     _save:      attempts to save the data to disc
 
-    If a subbranch or a value is requested but does not exist in the current MemoryTree, a KeyError is raised.
+    If a subbranch or a value is requested but does not exist in the current MemoryTree, a KeyError
+    is raised.
     """
 
     def __init__(self, parent, branch):
@@ -226,7 +223,7 @@ class MemoryBranch(object):
         data = self._data
         if isinstance(data, dict):
             for k in self.__dict__.keys():
-                if k not in data and not k.startswith('_'):
+                if k not in data and not k.startswith("_"):
                     self.__dict__.pop(k)
             for k in data.keys():
                 # write None since this is only a
@@ -235,13 +232,16 @@ class MemoryBranch(object):
 
     @property
     def _data(self):
-        """ The raw data (OrderedDict) or Mapping of the branch """
+        """The raw data (OrderedDict) or Mapping of the branch"""
         return self._parent._data[self._branch]
 
     @_data.setter
     def _data(self, value):
-        logger.warning("You are directly modifying the data of MemoryBranch"
-                       " %s to %s.", self._fullbranchname, str(value))
+        logger.warning(
+            "You are directly modifying the data of MemoryBranch %s to %s.",
+            self._fullbranchname,
+            str(value),
+        )
         self._parent._data[self._branch] = value
 
     def _keys(self):
@@ -260,9 +260,9 @@ class MemoryBranch(object):
             self.__dict__[k] = None
 
     def __getattribute__(self, name):
-        """ implements the dot notation.
-        Example: self.subbranch.leaf returns the item 'leaf' of 'subbranch' """
-        if name.startswith('_'):
+        """implements the dot notation.
+        Example: self.subbranch.leaf returns the item 'leaf' of 'subbranch'"""
+        if name.startswith("_"):
             return super(MemoryBranch, self).__getattribute__(name)
         else:
             # convert dot notation into dict notation
@@ -277,8 +277,8 @@ class MemoryBranch(object):
         """
         self._reload()
         # if a subbranch is requested, iterate through the hierarchy
-        if isinstance(item, str) and '.' in item:
-            item, subitem = item.split('.', 1)
+        if isinstance(item, str) and "." in item:
+            item, subitem = item.split(".", 1)
             return self[item][subitem]
         else:  # otherwise just return what we can find
             attribute = self._data[item]  # read from the data dict
@@ -288,7 +288,7 @@ class MemoryBranch(object):
                 return attribute
 
     def __setattr__(self, name, value):
-        if name.startswith('_'):
+        if name.startswith("_"):
             super(MemoryBranch, self).__setattr__(name, value)
         else:  # implemment dot notation
             self[name] = value
@@ -317,12 +317,16 @@ class MemoryBranch(object):
                 # use standard setter to set the values 1 by 1 and possibly as subbranch objects
                 for k, v in value.items():
                     subbranch[k] = v
-        #otherwise just write to the data dictionary
+        # otherwise just write to the data dictionary
         else:
             self._set_data(item, value)
         if self._root._WARNING_ON_SAVE or self._root._ERROR_ON_SAVE:
-            logger.warning("Issuing call to MemoryTree._save after %s.%s=%s",
-                           self._branch, item, value)
+            logger.warning(
+                "Issuing call to MemoryTree._save after %s.%s=%s",
+                self._branch,
+                item,
+                value,
+            )
         self._save()
         # update the __dict__ for autocompletion
         self.__dict__[item] = None
@@ -401,23 +405,23 @@ class MemoryBranch(object):
         parent = self._parent
         branchname = self._branch
         while parent != parent._parent:
-            branchname = parent._branch + '.' + branchname
+            branchname = parent._branch + "." + branchname
             parent = parent._parent
         return branchname
 
     def _reload(self):
-        """ reload data from file"""
+        """reload data from file"""
         self._parent._reload()
 
     def _save(self):
-        """ write data to file"""
+        """write data to file"""
         self._parent._save()
 
     def _get_yml(self, data=None):
         """
         :return: returns the yml code for this branch
         """
-        return save(self._data if data is None else data).decode('utf-8')
+        return save(self._data if data is None else data).decode("utf-8")
 
     def _set_yml(self, yml_content):
         """
@@ -465,6 +469,7 @@ class MemoryTree(MemoryBranch):
     filename: str
         The filename of the .yml file defining the MemoryTree structure.
     """
+
     ##### internal load logic:
     # 1. initially, call _load() to get the data from the file
     # 2. upon each inquiry of the config data, _reload() is called to
@@ -487,8 +492,8 @@ class MemoryTree(MemoryBranch):
 
     _WARNING_ON_SAVE = False  # flag that is used to debug excessive calls to
     # save
-    _ERROR_ON_SAVE = False # Set this flag to true to raise
-        # Exceptions upon save
+    _ERROR_ON_SAVE = False  # Set this flag to true to raise
+    # Exceptions upon save
 
     def __init__(self, filename=None, source=None, _loadsavedeadtime=3):
         # never reload or save more frequently than _loadsavedeadtime because
@@ -504,12 +509,12 @@ class MemoryTree(MemoryBranch):
         self._lastsave = time()
         # create a timer to postpone to frequent savings
         self._savetimer = QtCore.QTimer()
-        self._savetimer.setInterval(int(self._loadsavedeadtime*1000))
+        self._savetimer.setInterval(int(self._loadsavedeadtime * 1000))
         self._savetimer.setSingleShot(True)
         self._savetimer.timeout.connect(self._write_to_file)
         self._load()
 
-        self._save_counter = 0 # cntr for unittest and debug purposes
+        self._save_counter = 0  # cntr for unittest and debug purposes
         self._write_to_file_counter = 0  # cntr for unittest and debug purposes
 
         # root of the tree is also a MemoryBranch with parent self and
@@ -518,11 +523,12 @@ class MemoryTree(MemoryBranch):
 
     @property
     def _buffer_filename(self):
-        """ makes a temporary file to ensure modification of config file is atomic (double-buffering like operation...)"""
-        return self._filename + '.tmp'
+        """makes a temporary file to ensure modification of config file is atomic
+        (double-buffering like operation...)"""
+        return self._filename + ".tmp"
 
     def _load(self):
-        """ loads data from file """
+        """loads data from file"""
         if self._filename is None:
             # if no file is used, just ignore this call
             return
@@ -541,7 +547,7 @@ class MemoryTree(MemoryBranch):
         to_remove = []
         # remove all obsolete entries
         for name in self.__dict__:
-            if not name.startswith('_') and name not in self._data:
+            if not name.startswith("_") and name not in self._data:
                 to_remove.append(name)
         for name in to_remove:
             self.__dict__.pop(name)
@@ -561,8 +567,7 @@ class MemoryTree(MemoryBranch):
             self._lastreload = time()
             logger.debug("Checking change time of config file...")
             if self._mtime != os.path.getmtime(self._filename):
-                logger.debug("Loading because mtime %s != filetime %s",
-                             self._mtime)
+                logger.debug("Loading because mtime %s != filetime %s", self._mtime)
                 self._load()
             else:
                 logger.debug("... no reloading required")
@@ -572,7 +577,7 @@ class MemoryTree(MemoryBranch):
         Immmediately writes the content of the memory tree to file
         """
         # stop save timer
-        if hasattr(self, '_savetimer') and self._savetimer.isActive():
+        if hasattr(self, "_savetimer") and self._savetimer.isActive():
             self._savetimer.stop()
         self._lastsave = time()
         self._write_to_file_counter += 1
@@ -582,17 +587,20 @@ class MemoryTree(MemoryBranch):
             return
         else:
             if self._mtime != os.path.getmtime(self._filename):
-                logger.warning("Config file has recently been changed on your " +
-                               "harddisk. These changes might have been " +
-                               "overwritten now.")
+                logger.warning(
+                    "Config file has recently been changed on your "
+                    + "harddisk. These changes might have been "
+                    + "overwritten now."
+                )
             # we must be sure that overwriting config file never destroys existing data.
             # security 1: backup with copyfile above
-            copyfile(self._filename,
-                     self._filename + ".bak")  # maybe this line is obsolete (see below)
+            copyfile(
+                self._filename, self._filename + ".bak"
+            )  # maybe this line is obsolete (see below)
             # security 2: atomic writing such as shown in
             # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python:
             try:
-                f = open(self._buffer_filename, mode='w')
+                f = open(self._buffer_filename, mode="w")
                 save(self._data, stream=f)
                 f.flush()
                 os.fsync(f.fileno())
@@ -614,11 +622,9 @@ class MemoryTree(MemoryBranch):
         self._loadsavedeadtime if None)
         """
         if self._ERROR_ON_SAVE:
-            raise UnexpectedSaveError("Save to config file should not "
-                                      "happen now")
+            raise UnexpectedSaveError("Save to config file should not happen now")
         if self._WARNING_ON_SAVE:
-            logger.warning("Save counter has just been increased to %d.",
-                           self._save_counter)
+            logger.warning("Save counter has just been increased to %d.", self._save_counter)
         self._save_counter += 1  # for unittest and debug purposes
         if deadtime is None:
             deadtime = self._loadsavedeadtime
@@ -633,6 +639,6 @@ class MemoryTree(MemoryBranch):
     @property
     def _filename_stripped(self):
         try:
-            return os.path.split(self._filename)[1].split('.')[0]
+            return os.path.split(self._filename)[1].split(".")[0]
         except:
-            return 'default'
+            return "default"

@@ -1,5 +1,6 @@
 from qtpy import QtCore, QtWidgets
 
+
 class YmlEditor(QtWidgets.QWidget):
     def __init__(self, module, state):
         self.module = module
@@ -8,8 +9,14 @@ class YmlEditor(QtWidgets.QWidget):
         super(YmlEditor, self).__init__()
         if state is None:
             state = "current"
-        self.setWindowTitle(".:Yml editor:. " + "Module: '" + \
-                    str(self.module.name) + "' State: '" + str(state) + "'")
+        self.setWindowTitle(
+            ".:Yml editor:. "
+            + "Module: '"
+            + str(self.module.name)
+            + "' State: '"
+            + str(state)
+            + "'"
+        )
 
         self.editor = QtWidgets.QTextEdit()
         self.button_cancel = QtWidgets.QPushButton("Cancel without saving")
@@ -18,7 +25,9 @@ class YmlEditor(QtWidgets.QWidget):
         self.button_refresh.clicked.connect(self.refresh)
         self.button_load_all = QtWidgets.QPushButton("Load all current attributes from memory")
         self.button_load_all.clicked.connect(self.load_all)
-        self.button_save = QtWidgets.QPushButton("Save to file + set to memory" if self.state is None else "Save to file")
+        self.button_save = QtWidgets.QPushButton(
+            "Save to file + set to memory" if self.state is None else "Save to file"
+        )
         self.button_save.clicked.connect(self.save)
 
         self.lay = QtWidgets.QVBoxLayout()
@@ -35,7 +44,7 @@ class YmlEditor(QtWidgets.QWidget):
         self.refresh()
 
     def sizeHint(self):
-        return QtCore.QSize(500,500)
+        return QtCore.QSize(500, 500)
 
     def cancel(self):
         self.close()
@@ -48,4 +57,3 @@ class YmlEditor(QtWidgets.QWidget):
 
     def save(self):
         self.module.set_yml(str(self.editor.toPlainText()), state=self.state)
-

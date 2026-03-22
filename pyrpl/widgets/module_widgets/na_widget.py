@@ -37,8 +37,7 @@ output selected in :code:`output_direct`.
   (not implemented at the moment).
 """
 
-from .base_module_widget import ModuleWidget
-from.acquisition_module_widget import AcquisitionModuleWidget
+from .acquisition_module_widget import AcquisitionModuleWidget
 
 from qtpy import QtCore, QtWidgets
 import pyqtgraph as pg
@@ -51,40 +50,40 @@ class NaWidget(AcquisitionModuleWidget):
     """
     Network Analyzer Tab.
     """
-    starting_update_rate =  0.2 # this would be a good idea to change this number dynamically when the curve becomes
+
+    starting_update_rate = 0.2  # this would be a good idea to change this number dynamically when
+    # the curve becomes more and more expensive to display.
     CHUNK_SIZE = 500
-    # more and more expensive to display.
 
     def init_gui(self):
         """
         Sets up the gui
         """
-        #self.main_layout = QtWidgets.QVBoxLayout()
+        # self.main_layout = QtWidgets.QVBoxLayout()
         self.init_main_layout(orientation="vertical")
         self.init_attribute_layout()
         self.button_layout = QtWidgets.QHBoxLayout()
-        #self.setLayout(self.main_layout)
+        # self.setLayout(self.main_layout)
         self.setWindowTitle("NA")
         self.win = pg.GraphicsLayoutWidget(title="Magnitude")
 
-        self.label_benchmark = pg.LabelItem(justify='right')
-        self.win.addItem(self.label_benchmark, row=0,col=0)
+        self.label_benchmark = pg.LabelItem(justify="right")
+        self.win.addItem(self.label_benchmark, row=0, col=0)
         self._last_benchmark_value = np.nan
 
         self.win_phase = pg.GraphicsLayoutWidget(title="Phase")
         self.plot_item = self.win.addPlot(row=1, col=0, title="Magnitude (dB)")
-        self.plot_item_phase = self.win_phase.addPlot(row=1, col=0,
-                                                      title="Phase (deg)")
+        self.plot_item_phase = self.win_phase.addPlot(row=1, col=0, title="Phase (deg)")
         self.plot_item_phase.setXLink(self.plot_item)
         self.button_single = QtWidgets.QPushButton("Run single")
         self.button_single.my_label = "Single"
         self.button_continuous = QtWidgets.QPushButton("Run continuous")
         self.button_continuous.my_label = "Continuous"
-        self.button_stop = QtWidgets.QPushButton('Stop')
+        self.button_stop = QtWidgets.QPushButton("Stop")
 
         self.button_save = QtWidgets.QPushButton("Save curve")
 
-        self.chunks = [] #self.plot_item.plot(pen='y')
+        self.chunks = []  # self.plot_item.plot(pen='y')
         self.chunks_phase = []
         self.main_layout.addWidget(self.win)
         self.main_layout.addWidget(self.win_phase)
@@ -96,41 +95,42 @@ class NaWidget(AcquisitionModuleWidget):
         ######################
         self.groups = {}
         self.layout_groups = {}
-        for label, wids in [('Channels', ['input', 'output_direct']),
-                            ('Frequency', ['start_freq', 'stop_freq',
-                                           'points', 'logscale']),
-                            ('Setup', ['amplitude', 'acbandwidth']),
-                            ('Averaging', ['average_per_point', 'rbw']),
-                            ('Auto-bandwidth', ['auto_bandwidth', 'q_factor_min']),
-                            ('Auto-amplitude', ['auto_amplitude', 'target_dbv',
-                                                'auto_amp_min', 'auto_amp_max'])]:
+        for label, wids in [
+            ("Channels", ["input", "output_direct"]),
+            ("Frequency", ["start_freq", "stop_freq", "points", "logscale"]),
+            ("Setup", ["amplitude", "acbandwidth"]),
+            ("Averaging", ["average_per_point", "rbw"]),
+            ("Auto-bandwidth", ["auto_bandwidth", "q_factor_min"]),
+            (
+                "Auto-amplitude",
+                ["auto_amplitude", "target_dbv", "auto_amp_min", "auto_amp_max"],
+            ),
+        ]:
             self.groups[label] = QtWidgets.QGroupBox(label)
             self.layout_groups[label] = QtWidgets.QGridLayout()
             self.groups[label].setLayout(self.layout_groups[label])
             self.attribute_layout.addWidget(self.groups[label])
             for index, wid in enumerate(wids):
                 self.attribute_layout.removeWidget(aws[wid])
-                self.layout_groups[label].addWidget(aws[wid], int(index%2 + 1), int(index/2 + 1))
+                self.layout_groups[label].addWidget(
+                    aws[wid], int(index % 2 + 1), int(index / 2 + 1)
+                )
         #########################
 
-
-        #self.button_layout.addWidget(aws["trace_average"])
-        #self.button_layout.addWidget(aws["curve_name"])
+        # self.button_layout.addWidget(aws["trace_average"])
+        # self.button_layout.addWidget(aws["curve_name"])
 
         super(NaWidget, self).init_gui()
-        #self.button_layout.addWidget(self.button_single)
-        #self.button_layout.addWidget(self.button_continuous)
-        #self.button_layout.addWidget(self.button_stop)
-        #self.button_layout.addWidget(self.button_save)
-        #self.main_layout.addLayout(self.button_layout)
+        # self.button_layout.addWidget(self.button_single)
+        # self.button_layout.addWidget(self.button_continuous)
+        # self.button_layout.addWidget(self.button_stop)
+        # self.button_layout.addWidget(self.button_save)
+        # self.main_layout.addLayout(self.button_layout)
 
-        #self.button_single.clicked.connect(self.run_single_clicked)
-        #self.button_continuous.clicked.connect(self.run_continuous_clicked)
-        #self.button_stop.clicked.connect(self.button_stop_clicked)
-        #self.button_save.clicked.connect(self.save_clicked)
-
-
-
+        # self.button_single.clicked.connect(self.run_single_clicked)
+        # self.button_continuous.clicked.connect(self.run_continuous_clicked)
+        # self.button_stop.clicked.connect(self.button_stop_clicked)
+        # self.button_save.clicked.connect(self.save_clicked)
 
         self.arrow = pg.ArrowItem()
         self.arrow.setVisible(False)
@@ -140,17 +140,17 @@ class NaWidget(AcquisitionModuleWidget):
         self.plot_item_phase.addItem(self.arrow_phase)
         self.last_updated_point = 0
         self.last_updated_time = 0
-        #self.display_state(self.module.running_state)
+        # self.display_state(self.module.running_state)
         self.update_running_buttons()
-        self.update_period = self.starting_update_rate # also modified in clear_curve.
+        self.update_period = self.starting_update_rate  # also modified in clear_curve.
 
         # Not sure why the stretch factors in button_layout are not good by
         # default...
-        #self.button_layout.setStretchFactor(self.button_single, 1)
-        #self.button_layout.setStretchFactor(self.button_continuous, 1)
-        #self.button_layout.setStretchFactor(self.button_stop, 1)
-        #self.button_layout.setStretchFactor(self.button_save, 1)
-        self.x_log_toggled() # Set the axis in logscale if it has to be
+        # self.button_layout.setStretchFactor(self.button_single, 1)
+        # self.button_layout.setStretchFactor(self.button_continuous, 1)
+        # self.button_layout.setStretchFactor(self.button_stop, 1)
+        # self.button_layout.setStretchFactor(self.button_save, 1)
+        self.x_log_toggled()  # Set the axis in logscale if it has to be
 
     def autoscale(self):
         """
@@ -166,7 +166,7 @@ class NaWidget(AcquisitionModuleWidget):
         Clear all chunks
         """
         self.update_period = self.starting_update_rate  # let's assume update of curve takes 50 ms
-        while(True):
+        while True:
             try:
                 chunk = self.chunks.pop()
                 chunk_phase = self.chunks_phase.pop()
@@ -181,7 +181,7 @@ class NaWidget(AcquisitionModuleWidget):
         change x_log of axis
         """
         log_mod = self.module.logscale
-        self.plot_item.setLogMode(x=log_mod, y=None) # this seems also needed
+        self.plot_item.setLogMode(x=log_mod, y=None)  # this seems also needed
         self.plot_item_phase.setLogMode(x=log_mod, y=None)
         for chunk, chunk_phase in zip(self.chunks, self.chunks_phase):
             chunk.setLogMode(log_mod, None)
@@ -192,7 +192,9 @@ class NaWidget(AcquisitionModuleWidget):
         if in run continuous, needs to redisplay the number of averages
         """
         self.update_current_average()
-        self.update_point(self.module.points-1, force=True) # make sure all points in the scan are updated
+        self.update_point(
+            self.module.points - 1, force=True
+        )  # make sure all points in the scan are updated
 
     def set_benchmark_text(self, text):
         self.label_benchmark.setText(text)
@@ -204,21 +206,20 @@ class NaWidget(AcquisitionModuleWidget):
         index will be redrawn.
         """
         # APP.processEvents()  # Give hand back to the gui since timer intervals might be very short
-        last_chunk_index = self.last_updated_point//self.CHUNK_SIZE
-        current_chunk_index = index//self.CHUNK_SIZE
+        last_chunk_index = self.last_updated_point // self.CHUNK_SIZE
+        current_chunk_index = index // self.CHUNK_SIZE
 
         rate = self.module.measured_time_per_point
         if not np.isnan(rate) and self._last_benchmark_value != rate:
             theory = self.module.time_per_point
-            self.set_benchmark_text("ms/pt: %.1f (theory: %.1f)"%(
-                                                             rate*1000,
-                                                             theory*1000))
+            self.set_benchmark_text("ms/pt: %.1f (theory: %.1f)" % (rate * 1000, theory * 1000))
 
         if force or (time() - self.last_updated_time > self.update_period):
-            #  if last update time was a long time ago,
-            #  update plot, otherwise we would spend more time plotting things than acquiring data...
-            for chunk_index in range(last_chunk_index, current_chunk_index+1):
-                self.update_chunk(chunk_index) # eventually several chunks to redraw
+            # if last update time was a long time ago,
+            # update plot, otherwise we would spend more time plotting things
+            # than acquiring data...
+            for chunk_index in range(last_chunk_index, current_chunk_index + 1):
+                self.update_chunk(chunk_index)  # eventually several chunks to redraw
             self.last_updated_point = index
             self.last_updated_time = time()
 
@@ -229,17 +230,13 @@ class NaWidget(AcquisitionModuleWidget):
             freq = self.module.data_x[cur]
             xpos = np.log10(freq) if logscale else freq
             if cur > 0:
-                self.arrow.setPos(xpos,
-                                  self._magnitude(self.module.data_avg[
-                                                      cur]))
+                self.arrow.setPos(xpos, self._magnitude(self.module.data_avg[cur]))
                 self.arrow.setVisible(visible)
-                self.arrow_phase.setPos(xpos,
-                                        self._phase(
-                                            self.module.data_avg[cur]))
+                self.arrow_phase.setPos(xpos, self._phase(self.module.data_avg[cur]))
                 self.arrow_phase.setVisible(visible)
 
     def _magnitude(self, data):
-        return 20. * np.log10(np.abs(data)+sys.float_info.epsilon)
+        return 20.0 * np.log10(np.abs(data) + sys.float_info.epsilon)
 
     def _phase(self, data):
         return np.angle(data, deg=True)
@@ -247,33 +244,36 @@ class NaWidget(AcquisitionModuleWidget):
     def update_attribute_by_name(self, name, new_value_list):
         super(NaWidget, self).update_attribute_by_name(name, new_value_list)
         if name == "_running_state":
-            #self.display_state(self.module.running_state)
+            # self.display_state(self.module.running_state)
             self.update_running_buttons()
 
     def update_chunk(self, chunk_index):
         """
         updates curve # chunk_index with the data from the module
         """
-        while len(self.chunks) <= chunk_index: # create as many chunks as needed to reach chunk_index (in principle only
+        while (
+            len(self.chunks) <= chunk_index
+        ):  # create as many chunks as needed to reach chunk_index (in principle only
             # one curve should be missing at most)
-            chunk = self.plot_item.plot(pen='y')
-            chunk_phase = self.plot_item_phase.plot(pen=None, symbol='o')
+            chunk = self.plot_item.plot(pen="y")
+            chunk_phase = self.plot_item_phase.plot(pen=None, symbol="o")
             self.chunks.append(chunk)
             self.chunks_phase.append(chunk_phase)
             log_mod = self.module.logscale
             chunk.setLogMode(log_mod, None)
             chunk_phase.setLogMode(log_mod, None)
 
-        sl = slice(max(0, self.CHUNK_SIZE * chunk_index - 1),
-                   min(self.CHUNK_SIZE * (chunk_index + 1),
-                       self.module.last_valid_point),
-                       1) # make sure there is an overlap between slices
+        sl = slice(
+            max(0, self.CHUNK_SIZE * chunk_index - 1),
+            min(self.CHUNK_SIZE * (chunk_index + 1), self.module.last_valid_point),
+            1,
+        )  # make sure there is an overlap between slices
         data = self.module.data_avg[sl]
         x = np.real(self.module.data_x[sl])
         self.chunks[chunk_index].setData(x, self._magnitude(data))
         self.chunks_phase[chunk_index].setData(x, self._phase(data))
 
-    #def run_continuous_clicked(self):
+    # def run_continuous_clicked(self):
     #    """
     #    launches a continuous run
     #    """
@@ -282,7 +282,7 @@ class NaWidget(AcquisitionModuleWidget):
     #    else:
     #        self.module.continuous()
 
-    #def run_single_clicked(self):
+    # def run_single_clicked(self):
     #    """
     #    launches a single acquisition
     #    """
@@ -291,7 +291,7 @@ class NaWidget(AcquisitionModuleWidget):
     #    else:
     #        self.module.single_async()
 
-    #def save_clicked(self):
+    # def save_clicked(self):
     #    """
     #    Save the current curve.
     #    """
@@ -302,22 +302,26 @@ class NaWidget(AcquisitionModuleWidget):
         Displays one of the possible states
         "running_continuous", "running_single", "paused_continuous", "paused_single", "stopped"
         """
-        if not running_state in ["running_continuous",
-                                 "running_single",
-                                 "paused",
-                                 "stopped"]:
-            raise ValueError("Na running_state should be either "
-                             "running_continuous, "
-                             "running_single, "
-                             "paused or "
-                             "stopped")
-        if running_state=="running_continuous":
+        if running_state not in [
+            "running_continuous",
+            "running_single",
+            "paused",
+            "stopped",
+        ]:
+            raise ValueError(
+                "Na running_state should be either "
+                "running_continuous, "
+                "running_single, "
+                "paused or "
+                "stopped"
+            )
+        if running_state == "running_continuous":
             self.button_single.setEnabled(False)
             self.button_single.setText("Run single")
             self.button_continuous.setEnabled(True)
             self.button_continuous.setText("Pause")
             return
-        if running_state== "running_single":
+        if running_state == "running_single":
             self.button_single.setEnabled(True)
             self.button_single.setText("Pause")
             self.button_continuous.setEnabled(False)
@@ -336,7 +340,7 @@ class NaWidget(AcquisitionModuleWidget):
             self.button_single.setEnabled(True)
             return
 
-    #def button_stop_clicked(self):
+    # def button_stop_clicked(self):
     #    """
     #    Going to stop will impose a setup_average before next run.
     #    """
@@ -345,35 +349,37 @@ class NaWidget(AcquisitionModuleWidget):
 
 class MyGraphicsWindow(pg.GraphicsLayoutWidget):
     def __init__(self, title, parent_widget):
-        super().__init__(title = title)
+        super().__init__(title=title)
         self.parent_widget = parent_widget
-        self.setToolTip("IIR transfer function: \n"
-                        "----------------------\n"
-                        "CTRL + Left click: add one more pole. \n"
-                        "SHIFT + Left click: add one more zero\n"
-                        "Left Click: select pole (other possibility: click on the '+j' labels below the graph)\n"
-                        "Left/Right arrows: change imaginary part (frequency) of the current pole or zero\n"
-                        "Up/Down arrows; change the real part (width) of the current pole or zero. \n"
-                        "Poles are represented by 'X', zeros by 'O'")
+        self.setToolTip(
+            "IIR transfer function: \n"
+            "----------------------\n"
+            "CTRL + Left click: add one more pole. \n"
+            "SHIFT + Left click: add one more zero\n"
+            "Left Click: select pole"
+            "(other possibility: click on the '+j' labels below the graph)\n"
+            "Left/Right arrows: change imaginary part (frequency) of the current pole or zero\n"
+            "Up/Down arrows; change the real part (width) of the current pole or zero. \n"
+            "Poles are represented by 'X', zeros by 'O'"
+        )
 
     def mousePressEvent(self, *args, **kwds):
         event = args[0]
         try:
             modifier = int(event.modifiers())
             it = self.getItem(0, 0)
-            pos = it.mapToScene(event.pos()) #  + it.vb.pos()
+            pos = it.mapToScene(event.pos())  #  + it.vb.pos()
             point = it.vb.mapSceneToView(pos)
             x, y = point.x(), point.y()
-            x = 10 ** x
-            new_z = -100 - 1.j * x
+            x = 10**x
+            new_z = -100 - 1.0j * x
             if modifier == QtCore.Qt.CTRL:
                 self.parent_widget.module.poles += [new_z]
-                self.parent_widget.attribute_widgets['poles'].set_selected(-1)
+                self.parent_widget.attribute_widgets["poles"].set_selected(-1)
             if modifier == QtCore.Qt.SHIFT:
                 self.parent_widget.module.zeros += [new_z]
-                self.parent_widget.attribute_widgets['zeros'].set_selected(-1)
+                self.parent_widget.attribute_widgets["zeros"].set_selected(-1)
         except BaseException as e:
             self.parent_widget.module._logger.error(e)
         finally:
             return super(pg.GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)
-

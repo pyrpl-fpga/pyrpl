@@ -49,10 +49,18 @@ starting from the end of the list) is returned by the module manager:
 """
 
 import logging
-logger = logging.getLogger(name=__name__)
-from ..widgets.module_widgets import ModuleManagerWidget, AsgManagerWidget, PidManagerWidget, IqManagerWidget, \
-    ScopeManagerWidget, IirManagerWidget, PwmManagerWidget
+from ..widgets.module_widgets import (
+    ModuleManagerWidget,
+    AsgManagerWidget,
+    PidManagerWidget,
+    IqManagerWidget,
+    ScopeManagerWidget,
+    IirManagerWidget,
+    PwmManagerWidget,
+)
 from ..modules import Module
+
+logger = logging.getLogger(name=__name__)
 
 
 class InsufficientResourceError(ValueError):
@@ -60,7 +68,9 @@ class InsufficientResourceError(ValueError):
     This exception is raised when trying to pop a module while there is none
     left.
     """
+
     pass
+
 
 class ModuleManager(Module):
     """
@@ -75,8 +85,9 @@ class ModuleManager(Module):
       - free(module): frees the module by reseting its user to None.
       (and enabling back its gui if any).
     """
+
     _widget_class = ModuleManagerWidget
-    _reserved_modules = [] # list-of
+    _reserved_modules = []  # list-of
     # _int with instrument index that should
     # NOT be available via pop()
 
@@ -90,13 +101,15 @@ class ModuleManager(Module):
           - or some_module1, some_module2, some_module3 ...
         """
 
-        return [key for key in self.pyrpl.rp.modules.keys() if key[
-                                :-1]==self.name[:-1] or key==self.name[:-1]]
+        return [
+            key
+            for key in self.pyrpl.rp.modules.keys()
+            if key[:-1] == self.name[:-1] or key == self.name[:-1]
+        ]
 
     def __init__(self, parent, name=None):
         super(ModuleManager, self).__init__(parent, name=name)
-        self.all_modules = [getattr(self.pyrpl.rp, name) for name in
-                             self.hardware_module_names]
+        self.all_modules = [getattr(self.pyrpl.rp, name) for name in self.hardware_module_names]
 
     def pop(self, owner=None):
         """
@@ -113,13 +126,13 @@ class ModuleManager(Module):
         """
         n = len(self.all_modules)
         for index in range(n):
-            index = n - index - 1 # count backwards to reserve last module 1st
-            if not index in self._reserved_modules:
+            index = n - index - 1  # count backwards to reserve last module 1st
+            if index not in self._reserved_modules:
                 module = self.all_modules[index]
                 if module.owner is None:
-                    module.owner = owner # this changes the module's visibility
+                    module.owner = owner  # this changes the module's visibility
                     return module
-        raise InsufficientResourceError('No more ' + self.name + ' left.')
+        raise InsufficientResourceError("No more " + self.name + " left.")
 
     def free(self, module):
         if module.owner is not None:
@@ -137,7 +150,7 @@ class ModuleManager(Module):
         """
         total = 0
         for index, module in enumerate(self.all_modules):  # start with
-            if not index in self._reserved_modules:
+            if index not in self._reserved_modules:
                 if module.owner is None:
                     total += 1
         return total
@@ -152,8 +165,10 @@ class ModuleManager(Module):
 class Asgs(ModuleManager):
     _widget_class = AsgManagerWidget
 
+
 class Pwms(ModuleManager):
     _widget_class = PwmManagerWidget
+
 
 class Pids(ModuleManager):
     _widget_class = PidManagerWidget
@@ -161,13 +176,14 @@ class Pids(ModuleManager):
 
 class Iqs(ModuleManager):
     _widget_class = IqManagerWidget
-    #_reserved_modules = [2] # iq2 is reserved for spectrum_analyzer
+    # _reserved_modules = [2] # iq2 is reserved for spectrum_analyzer
 
 
 class Scopes(ModuleManager):
     """
     Only one scope, but it should be protected by the slave/owner mechanism.
     """
+
     _widget_class = ScopeManagerWidget
 
 
@@ -175,6 +191,7 @@ class Iirs(ModuleManager):
     """
     Only one iir, but it should be protected by the slave/owner mechanism.
     """
+
     _widget_class = IirManagerWidget
 
 
@@ -182,11 +199,13 @@ class Trigs(ModuleManager):
     """
     Only one trig, but it should be protected by the slave/owner mechanism.
     """
-    pass #_widget_class = IirManagerWidget
+
+    pass  # _widget_class = IirManagerWidget
 
 
 class Hks(ModuleManager):
     """
     Only one trig, but it should be protected by the slave/owner mechanism.
     """
-    pass #_widget_class = IirManagerWidget
+
+    pass  # _widget_class = IirManagerWidget

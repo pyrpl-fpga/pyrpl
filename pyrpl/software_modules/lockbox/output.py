@@ -3,10 +3,16 @@ from __future__ import division
 import numpy as np
 
 from ...software_modules.lockbox.input import Signal
-from ...attributes import BoolProperty, FloatProperty, SelectProperty, \
-    FilterProperty, FrequencyProperty, IntProperty
+from ...attributes import (
+    BoolProperty,
+    FloatProperty,
+    SelectProperty,
+    FilterProperty,
+    FrequencyProperty,
+    IntProperty,
+)
 from ...curvedb import CurveDB
-from ...hardware_modules.asg import Asg0, Asg1
+from ...hardware_modules.asg import Asg1
 from ...hardware_modules.pid import Pid
 from ...widgets.module_widgets import OutputSignalWidget
 
@@ -49,70 +55,80 @@ class OutputSignal(Signal):
       - tf_type: ["flat", "curve", "filter"], how is the analog transfer
         function specified.
     """
+
     _widget_class = OutputSignalWidget
-    _gui_attributes = ['unit',
-                      'sweep_amplitude',
-                      'sweep_offset',
-                      'sweep_frequency',
-                      'sweep_waveform',
-                      'dc_gain',
-                      'output_channel',
-                      'p',
-                      'i',
-                      'additional_filter',
-                      'analog_filter_cutoff',
-                      'extra_module',
-                      'extra_module_state',
-                      'desired_unity_gain_frequency',
-                      'max_voltage',
-                      'min_voltage']
-    _setup_attributes = _gui_attributes + ['assisted_design', 'tf_curve',
-                                           'tf_type']
+    _gui_attributes = [
+        "unit",
+        "sweep_amplitude",
+        "sweep_offset",
+        "sweep_frequency",
+        "sweep_waveform",
+        "dc_gain",
+        "output_channel",
+        "p",
+        "i",
+        "additional_filter",
+        "analog_filter_cutoff",
+        "extra_module",
+        "extra_module_state",
+        "desired_unity_gain_frequency",
+        "max_voltage",
+        "min_voltage",
+    ]
+    _setup_attributes = _gui_attributes + ["assisted_design", "tf_curve", "tf_type"]
     # main attributes
     dc_gain = FloatProperty(default=1.0, min=-1e10, max=1e10, call_setup=True)
-    output_channel = SelectProperty(options=['out1', 'out2',
-                                             'pwm0', 'pwm1'])
-    unit = SelectProperty(default='V/V',
-                          options=lambda inst:
-                          [u+"/V" for u in inst.lockbox._output_units],
-                          call_setup=True,
-                          ignore_errors=True)
-    tf_type = SelectProperty(["flat", "filter", "curve"],
-                             default="filter",
-                             call_setup=True)
+    output_channel = SelectProperty(options=["out1", "out2", "pwm0", "pwm1"])
+    unit = SelectProperty(
+        default="V/V",
+        options=lambda inst: [u + "/V" for u in inst.lockbox._output_units],
+        call_setup=True,
+        ignore_errors=True,
+    )
+    tf_type = SelectProperty(["flat", "filter", "curve"], default="filter", call_setup=True)
     tf_curve = IntProperty(call_setup=True)
     # sweep properties
-    sweep_amplitude = FloatProperty(default=1., min=-1, max=1, call_setup=True)
+    sweep_amplitude = FloatProperty(default=1.0, min=-1, max=1, call_setup=True)
     sweep_offset = FloatProperty(default=0.0, min=-1, max=1, call_setup=True)
     sweep_frequency = FrequencyProperty(default=50.0, call_setup=True)
-    sweep_waveform = SelectProperty(options=Asg1.waveforms, default='ramp', call_setup=True)
+    sweep_waveform = SelectProperty(options=Asg1.waveforms, default="ramp", call_setup=True)
     # gain properties
     assisted_design = BoolProperty(default=True, call_setup=True)
-    desired_unity_gain_frequency = FrequencyProperty(default=100.0, min=0, max=1e10, call_setup=True)
-    analog_filter_cutoff = FrequencyProperty(default=0, min=0, max=1e10, increment=0.1, call_setup=True)
+    desired_unity_gain_frequency = FrequencyProperty(
+        default=100.0, min=0, max=1e10, call_setup=True
+    )
+    analog_filter_cutoff = FrequencyProperty(
+        default=0, min=0, max=1e10, increment=0.1, call_setup=True
+    )
     p = FloatProperty(min=-1e10, max=1e10, call_setup=True)
     i = FloatProperty(min=-1e10, max=1e10, call_setup=True)
     # additional filter properties
-    additional_filter = AdditionalFilterAttribute() #call_setup=True)
-    extra_module = SelectProperty(['None', 'iir', 'pid', 'iq'], call_setup=True)
-    extra_module_state = SelectProperty(options=['None'], call_setup=True)
+    additional_filter = AdditionalFilterAttribute()  # call_setup=True)
+    extra_module = SelectProperty(["None", "iir", "pid", "iq"], call_setup=True)
+    extra_module_state = SelectProperty(options=["None"], call_setup=True)
     # internal state of the output
-    current_state = SelectProperty(options=['lock', 'unlock', 'sweep'],
-                                   default='unlock')
-    max_voltage = FloatProperty(default=1.0, min=-1.0, max=1.0,
-                                call_setup=True,
-                                doc="positive saturation voltage")
-    min_voltage = FloatProperty(default=-1.0,
-                                min=-1.0, max=1.0,
-                                call_setup=True,
-                                doc="negative saturation voltage")
+    current_state = SelectProperty(options=["lock", "unlock", "sweep"], default="unlock")
+    max_voltage = FloatProperty(
+        default=1.0,
+        min=-1.0,
+        max=1.0,
+        call_setup=True,
+        doc="positive saturation voltage",
+    )
+    min_voltage = FloatProperty(
+        default=-1.0,
+        min=-1.0,
+        max=1.0,
+        call_setup=True,
+        doc="negative saturation voltage",
+    )
 
     def signal(self):
         return self.pid.name
 
     @property
     def pid(self):
-        if not hasattr(self, '_pid') or self._pid is None:
+        if not hasattr(self, "_pid") or self._pid is None:
             self._pid = self.pyrpl.pids.pop(self.name)
             self._setup_pid_output()
         return self._pid
@@ -125,8 +141,7 @@ class OutputSignal(Signal):
         True: if the output has saturated
         False: otherwise
         """
-        ival, max, min = self.pid.ival, self.max_voltage, \
-                         self.min_voltage
+        ival, max, min = self.pid.ival, self.max_voltage, self.min_voltage
         sample = getattr(self.pyrpl.rp.sampler, self.pid.name)
         # criterion for saturation: integrator value saturated
         # and current value (including pid) as well
@@ -138,19 +153,19 @@ class OutputSignal(Signal):
     def _setup_pid_output(self):
         self.pid.max_voltage = self.max_voltage
         self.pid.min_voltage = self.min_voltage
-        if self.output_channel.startswith('out'):
+        if self.output_channel.startswith("out"):
             self.pid.output_direct = self.output_channel
             for pwm in [self.pyrpl.rp.pwm0, self.pyrpl.rp.pwm1]:
                 if pwm.input == self.pid.name:
-                    pwm.input = 'off'
-        elif self.output_channel.startswith('pwm'):
-            self.pid.output_direct = 'off'
+                    pwm.input = "off"
+        elif self.output_channel.startswith("pwm"):
+            self.pid.output_direct = "off"
             pwm = getattr(self.pyrpl.rp, self.output_channel)
             pwm.input = self.pid
         else:
             raise NotImplementedError(
-                "Selected output_channel '%s' is not implemented"
-                % self.output_channel)
+                "Selected output_channel '%s' is not implemented" % self.output_channel
+            )
 
     def _clear(self):
         """
@@ -165,22 +180,24 @@ class OutputSignal(Signal):
         self.pid.i = 0
         if reset_offset:
             self.pid.ival = 0
-        self.current_state = 'unlock'
+        self.current_state = "unlock"
         # benefit from the occasion and do proper initialization
         self._setup_pid_output()
 
     def sweep(self):
         self.unlock(reset_offset=True)
         self.pid.input = self.lockbox.asg
-        self.lockbox.asg.setup(amplitude=self.sweep_amplitude,
-                               offset=self.sweep_offset,
-                               frequency=self.sweep_frequency,
-                               waveform=self.sweep_waveform,
-                               trigger_source='immediately',
-                               cycles_per_burst=0)
-        self.pid.setpoint = 0.
-        self.pid.p = 1.
-        self.current_state = 'sweep'
+        self.lockbox.asg.setup(
+            amplitude=self.sweep_amplitude,
+            offset=self.sweep_offset,
+            frequency=self.sweep_frequency,
+            waveform=self.sweep_waveform,
+            trigger_source="immediately",
+            cycles_per_burst=0,
+        )
+        self.pid.setpoint = 0.0
+        self.pid.p = 1.0
+        self.current_state = "sweep"
 
     def lock(self, input=None, setpoint=None, offset=None, gain_factor=None):
         """
@@ -192,12 +209,14 @@ class OutputSignal(Signal):
         self._lock_gain_factor = self._lock_gain_factor if gain_factor is None else gain_factor
         # Parameter 'offset' is not internally stored because another call to 'lock()'
         # shouldnt reset the offset by default as this would un-lock an existing lock
-        #self._setup_pid_output()  # optional to ensure that pid output is properly set
-        self._setup_pid_lock(input=self._lock_input,
-                             setpoint=self._lock_setpoint,
-                             offset=offset,
-                             gain_factor=self._lock_gain_factor)
-        self.current_state = 'lock'
+        # self._setup_pid_output()  # optional to ensure that pid output is properly set
+        self._setup_pid_lock(
+            input=self._lock_input,
+            setpoint=self._lock_setpoint,
+            offset=offset,
+            gain_factor=self._lock_gain_factor,
+        )
+        self.current_state = "lock"
 
     def _setup_pid_lock(self, input, setpoint, offset=None, gain_factor=1.0):
         """
@@ -212,7 +231,7 @@ class OutputSignal(Signal):
         # The external parts are 1) the output with the predefined gain and 2)
         # the input (error signal) with a setpoint-dependent slope.
         # 1) model the output: dc_gain converted into units of setpoint_unit_per_V
-        output_unit = self.unit.split('/')[0]
+        output_unit = self.unit.split("/")[0]
         external_loop_gain = self.dc_gain * self.lockbox._unit_in_setpoint_unit(output_unit)
         # 2) model the input: slope comes in units of V_per_setpoint_unit,
         # which cancels previous unit and we end up with a dimensionless ext. gain.
@@ -220,9 +239,10 @@ class OutputSignal(Signal):
 
         # we should avoid setting gains to infinity
         if external_loop_gain == 0:
-            self._logger.warning("External loop gain for output %s is zero. "
-                                 "Skipping pid lock for this step. ",
-                                 self.name)
+            self._logger.warning(
+                "External loop gain for output %s is zero. Skipping pid lock for this step. ",
+                self.name,
+            )
             if offset is not None:
                 self.pid.ival = offset
         else:  # write values to pid module
@@ -230,13 +250,15 @@ class OutputSignal(Signal):
             # to avoid huge gains while transiting
             self.pid.p = 0
             self.pid.i = 0
-            self.pid.setpoint = input.expected_signal(setpoint) + input.calibration_data._analog_offset
-            if self.extra_module != 'None':
+            self.pid.setpoint = (
+                input.expected_signal(setpoint) + input.calibration_data._analog_offset
+            )
+            if self.extra_module != "None":
                 module = getattr(self.pyrpl.rp, self.extra_module)
                 module.input = input.signal()
                 self.pid.input = module
-                if self.extra_module=='iir':
-                    external_loop_gain*=module.gain
+                if self.extra_module == "iir":
+                    external_loop_gain *= module.gain
                 module.output_direct = "off"
             else:
                 self.pid.input = input.signal()
@@ -248,15 +270,22 @@ class OutputSignal(Signal):
             i_pid = self.i / external_loop_gain * gain_factor
             self.pid.p = p_pid
             self.pid.i = i_pid
-            if np.abs(p_pid)<self.pid.__class__.p.increment or p_pid>self.pid.__class__.p.max or p_pid<self.pid.__class__.p.min:
+            if (
+                np.abs(p_pid) < self.pid.__class__.p.increment
+                or p_pid > self.pid.__class__.p.max
+                or p_pid < self.pid.__class__.p.min
+            ):
                 self.lockbox._signal_launcher.p_gain_rounded.emit([self])
             else:
                 self.lockbox._signal_launcher.p_gain_ok.emit([self])
-            if np.abs(i_pid) < self.pid.__class__.i.increment or i_pid > self.pid.__class__.i.max or i_pid < self.pid.__class__.i.min:
+            if (
+                np.abs(i_pid) < self.pid.__class__.i.increment
+                or i_pid > self.pid.__class__.i.max
+                or i_pid < self.pid.__class__.i.min
+            ):
                 self.lockbox._signal_launcher.i_gain_rounded.emit([self])
             else:
                 self.lockbox._signal_launcher.i_gain_ok.emit([self])
-
 
     def _setup_offset(self, offset):
         self.pid.ival = offset
@@ -278,15 +307,14 @@ class OutputSignal(Signal):
                 self.analog_filter_cutoff = self.i / self.p
         self._setup_ongoing = False
         # re-enable lock/sweep/unlock with new parameters
-        if self.current_state == 'sweep':
+        if self.current_state == "sweep":
             self.sweep()
-        elif self.current_state == 'unlock':
+        elif self.current_state == "unlock":
             self.unlock()
-        elif self.current_state == 'lock':
+        elif self.current_state == "lock":
             self.lock()
         # plot current transfer function
         self.lockbox._signal_launcher.update_transfer_function.emit([self])
-
 
     ##############################
     # transfer function plotting #
@@ -296,12 +324,11 @@ class OutputSignal(Signal):
         Frequency values to plot the transfer function. Frequency (abcissa) of
         the tf_curve if tf_type=="curve", else: logspace(0, 6, 20000)
         """
-        if self.tf_type == 'curve':  # req axis should be that of the curve
+        if self.tf_type == "curve":  # req axis should be that of the curve
             try:
                 c = CurveDB.get(self.tf_curve)
             except:
-                self._logger.warning("Cannot load specified transfer function %s",
-                                     self.tf_curve)
+                self._logger.warning("Cannot load specified transfer function %s", self.tf_curve)
             else:
                 return c.data.index
         # by default
@@ -314,20 +341,26 @@ class OutputSignal(Signal):
         """
         input = self.lockbox.inputs[stage.input]
 
-        output_unit = self.unit.split('/')[0]
-        external_loop_gain = self.dc_gain*input.expected_slope(stage.setpoint) \
-                                    *self.lockbox._unit_in_setpoint_unit(output_unit)
-        p = self.p/external_loop_gain*stage.gain_factor
-        i = self.i/external_loop_gain*stage.gain_factor
+        output_unit = self.unit.split("/")[0]
+        external_loop_gain = (
+            self.dc_gain
+            * input.expected_slope(stage.setpoint)
+            * self.lockbox._unit_in_setpoint_unit(output_unit)
+        )
+        p = self.p / external_loop_gain * stage.gain_factor
+        i = self.i / external_loop_gain * stage.gain_factor
 
         p = Pid.p.validate_and_normalize(self.pid, p)
         i = Pid.i.validate_and_normalize(self.pid, i)
 
         result = Pid._transfer_function(
-            freqs, p=p, i=i,
+            freqs,
+            p=p,
+            i=i,
             frequency_correction=self.pid._frequency_correction,
-            filter_values=self.additional_filter)
-        if self.extra_module == 'iir':
+            filter_values=self.additional_filter,
+        )
+        if self.extra_module == "iir":
             result *= self.pyrpl.rp.iir.transfer_function(freqs)
         return result
 
@@ -336,10 +369,10 @@ class OutputSignal(Signal):
         Returns the design open-loop transfer function for the output (including analog plant)
         """
         analog_tf = np.ones(len(freqs), dtype=complex)
-        if self.tf_type == 'filter':
+        if self.tf_type == "filter":
             # use logic implemented in PID to simulate analog filters
             analog_tf = Pid._filter_transfer_function(freqs, self.analog_filter_cutoff)
-        if self.tf_type == 'curve':
+        if self.tf_type == "curve":
             curve = CurveDB.get(self.tf_curve)
             x = curve.data.index
             y = curve.data.values
@@ -350,13 +383,15 @@ class OutputSignal(Signal):
         # multiply by PID transfer function to get the loop transfer function
         # same as Pid.transfer_function(freqs) but avoids reading registers form FPGA
         result = analog_tf * Pid._transfer_function(
-            freqs, p=self.p, i=self.i,
+            freqs,
+            p=self.p,
+            i=self.i,
             frequency_correction=self.pid._frequency_correction,
-            filter_values=self.additional_filter)
-        if self.extra_module=='iir':
-            result*=self.pyrpl.rp.iir.transfer_function(freqs)/self.pyrpl.rp.iir.gain
+            filter_values=self.additional_filter,
+        )
+        if self.extra_module == "iir":
+            result *= self.pyrpl.rp.iir.transfer_function(freqs) / self.pyrpl.rp.iir.gain
         return result
-
 
     # TODO: re-implement this function for if an iir filter is set
     # def setup_iir(self, **kwargs):
@@ -410,8 +445,10 @@ class OutputSignal(Signal):
     #     # route iir output through pid
     #     self.pid.input = self.iir.name
 
+
 class PiezoOutput(OutputSignal):
-    unit = SelectProperty(default='m/V',
-                          options=lambda inst:
-                          [u + "/V" for u in inst.lockbox._output_units],
-                          call_setup=True)
+    unit = SelectProperty(
+        default="m/V",
+        options=lambda inst: [u + "/V" for u in inst.lockbox._output_units],
+        call_setup=True,
+    )

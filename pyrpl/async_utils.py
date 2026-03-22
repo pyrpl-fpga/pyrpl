@@ -33,6 +33,7 @@ the background loop
 # sleep_async and that should be used in place of time.sleep.
 
 """
+
 import logging
 from qtpy import QtWidgets, QtCore
 import asyncio
@@ -49,7 +50,7 @@ logger = logging.getLogger(name=__name__)
 APP = QtWidgets.QApplication.instance()
 if APP is None:
     # logger.debug('Creating new QApplication instance "pyrpl"')
-    APP = QtWidgets.QApplication(['pyrpl'])
+    APP = QtWidgets.QApplication(["pyrpl"])
 
 LOOP = qasync.QEventLoop(already_running=False)  # Since tasks scheduled in this loop seem to
 # fall in the standard QEventLoop, and we never explicitly ask to run this
@@ -61,7 +62,6 @@ FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
 FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
 ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
 
-from pyrpl_utils import isnotebook 
 
 INTERACTIVE = isnotebook()  # True if we are in an interactive IPython session
 
@@ -88,9 +88,7 @@ async def sleep_async(delay, result=None):
         raise ValueError("Invalid delay: NaN (not a number)")
 
     future = LOOP.create_future()
-    h = LOOP.call_later(delay,
-                        futures._set_result_unless_cancelled,
-                        future, result)
+    h = LOOP.call_later(delay, futures._set_result_unless_cancelled, future, result)
     try:
         return await future
     finally:
@@ -108,7 +106,7 @@ def ensure_future(coroutine):
 async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     """
     (This is the asyncio.wait() function rewritten here to work on the qasync LOOP)
-    
+
     Wait for the Futures or Tasks given by fs to complete.
 
     The fs iterable must not be empty.
@@ -125,16 +123,16 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
-        raise ValueError('Set of Tasks/Futures is empty.')
+        raise ValueError("Set of Tasks/Futures is empty.")
     if return_when not in (FIRST_COMPLETED, FIRST_EXCEPTION, ALL_COMPLETED):
-        raise ValueError(f'Invalid return_when value: {return_when}')
+        raise ValueError(f"Invalid return_when value: {return_when}")
 
     fs = set(fs)
 
     if any(coroutines.iscoroutine(f) for f in fs):
         raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
 
-    # loop = events.get_running_loop()  
+    # loop = events.get_running_loop()
     # Here we send the right qasync LOOP
     return await _wait(fs, timeout, return_when, LOOP)
 
@@ -146,16 +144,16 @@ def wait(future, timeout=None):
            Returns the result of the future only once it is ready. This function
            won't block the eventloop while waiting for other events.
            ex:
-           def curve(self):
+           def single(self):
                curve = scope.single_async()
                return wait(curve)
 
            BEWARE: never use wait in a coroutine (use builtin await instead)
            """
         # assert isinstance(future, Future) or iscoroutine(future)
-        new_future = ensure_future(asyncio_wait({future},
-                                                timeout=timeout))
-        # if sys.version>='3.7': # this way, it was not possible to execute wait behind a qt slot !!!
+        new_future = ensure_future(asyncio_wait({future}, timeout=timeout))
+        # if sys.version>='3.7':
+        # # this way, it was not possible to execute wait behind a qt slot !!!
 
         #   LOOP.run_until_complete(new_future)
         #   done, pending = new_future.result()

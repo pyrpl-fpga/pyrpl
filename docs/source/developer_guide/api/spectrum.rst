@@ -192,7 +192,7 @@ estimate the cross-spectrum by performing the product
 ``conjugate(fft1)*fft2``, where ``fft1`` and ``fft2`` are the DFTs of
 the individual scope channels before taking their modulus square.
 
-Hence, in baseband mode, the method ``curve()`` returns a 4x2^13 array
+Hence, in baseband mode, the method ``single()`` returns a 4x2^13 array
 with the following content: - spectrum1 - spectrum2 - real part of cross
 spectrum - imaginary part of cross spectrum
 
@@ -208,8 +208,8 @@ suggest the following:
    with scope, and I think that makes things much cleaner.
    Unfortunately, for ``baseband``, making 2 parallel piplines such as
    ``curve_iq``, ``curve_baseband`` is not so trivial, because
-   ``curve()`` is already part of the ``AcquisitionModule``. So I think
-   we will have to live with the fact that ``curve()`` returns 2
+   ``single()`` is already part of the ``AcquisitionModule``. So I think
+   we will have to live with the fact that ``single()`` returns 2
    different kinds of data in ``baseband`` and ``iq-mode``.
 -  Moreover, in baseband, we clearly want both individual spectra +
    cross-spectrum to be calculated from the beginning, since once the
@@ -222,12 +222,12 @@ suggest the following:
    finally, ``.../Hz`` requires a conversion-factor involving the
    bandwidth for unittesting with coherent signals
 
-I suggest the following return values for ``curve()``:
+I suggest the following return values for ``single()``:
 
--  In normal (iq-mode): ``curve()`` returns a real valued 1D-array with
+-  In normal (iq-mode): ``single()`` returns a real valued 1D-array with
    the normal spectrum in ``V_pk^2``
 
--  In baseband: ``curve()`` returns a 4xN/2-real valued array with
+-  In baseband: ``single()`` returns a 4xN/2-real valued array with
    ``(spectrum1, spectrum2, cross_spectrum_real, cross_spectrum_imag)``.
    Otherwise, manipulating a complex array for the 2 real spectra is
    painful and inefficient.
@@ -327,9 +327,9 @@ elliptical filter for maximum steepness):
     plt.show()
     plt.savefig('c://pyrpl-fpga//github//pyrpl//doc//specan_filter.png',DPI=300)
 
-    print "Final biquad coefficients [b0, b1, b2, a0, a1, a2]:"
+    print("Final biquad coefficients [b0, b1, b2, a0, a1, a2]:")
     for biquad in signal.zpk2sos(z, p, k):
-        print biquad
+        print(biquad)
 
 .. figure:: https://github.com/pyrpl-fpga/pyrpl/blob/master/doc/specan_filter.png
    :alt: Resulting filter

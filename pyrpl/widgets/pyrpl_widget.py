@@ -2,13 +2,11 @@ from qtpy import QtCore, QtWidgets
 import sys
 from traceback import format_exception, format_exception_only
 import logging
-from .. import APP
-
 
 
 class ExceptionLauncher(QtCore.QObject):
     #  Used to display exceptions in the status bar of PyrplWidgets
-    show_exception = QtCore.Signal(list) # use a signal to make
+    show_exception = QtCore.Signal(list)  # use a signal to make
     # sure no thread is messing up with gui
     show_log = QtCore.Signal(list)
 
@@ -16,9 +14,9 @@ class ExceptionLauncher(QtCore.QObject):
         super(ExceptionLauncher, self).__init__()
 
     def display_exception(self, etype, evalue, tb):
-        #self.etype = etype
-        #self.evalue = evalue
-        #self.tb = tb
+        # self.etype = etype
+        # self.evalue = evalue
+        # self.tb = tb
         self.show_exception.emit([etype, evalue, tb])
         self.old_except_hook(etype, evalue, tb)
 
@@ -31,9 +29,11 @@ EL = ExceptionLauncher()
 # see http://stackoverflow.com/questions/40608610/exceptions-in-pyqt-event-loop-and-ipython
 # when running in ipython, we have to monkeypatch sys.excepthook in the qevent loop.
 
+
 def patch_excepthook():
     EL.old_except_hook = sys.excepthook
     sys.excepthook = EL.display_exception
+
 
 TIMER = QtCore.QTimer()
 TIMER.setSingleShot(True)
@@ -46,6 +46,7 @@ class LogHandler(QtCore.QObject, logging.Handler):
     """
     A handler class which sends log strings to a wx object
     """
+
     show_log = QtCore.Signal(list)
 
     def __init__(self):
@@ -55,7 +56,7 @@ class LogHandler(QtCore.QObject, logging.Handler):
         logging.Handler.__init__(self)
         QtCore.QObject.__init__(self)
         # set format of logged messages
-        self.setFormatter(logging.Formatter('%(levelname)s (%(name)s): %(message)s'))
+        self.setFormatter(logging.Formatter("%(levelname)s (%(name)s): %(message)s"))
 
     def emit(self, record):
         """
@@ -64,10 +65,10 @@ class LogHandler(QtCore.QObject, logging.Handler):
         try:
             msg = self.format(record)
             self.show_log.emit([msg])
-            #EL.display_log(record)
+            # EL.display_log(record)
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
+        except Exception:
             self.handleError(record)
 
 
@@ -75,6 +76,7 @@ class MyDockWidget(QtWidgets.QDockWidget):
     """
     A DockWidget where the inner widget is only created when needed (To reduce load times).
     """
+
     scrollable = True  # use scroll bars?
 
     def __init__(self, create_widget_func, name):
@@ -84,10 +86,11 @@ class MyDockWidget(QtWidgets.QDockWidget):
         super(MyDockWidget, self).__init__(name)
         self.setObjectName(name)
         self.setFeatures(
-            QtWidgets.QDockWidget.DockWidgetFloatable |
-            QtWidgets.QDockWidget.DockWidgetMovable |
-            QtWidgets.QDockWidget.DockWidgetVerticalTitleBar|
-            QtWidgets.QDockWidget.DockWidgetClosable)
+            QtWidgets.QDockWidget.DockWidgetFloatable
+            | QtWidgets.QDockWidget.DockWidgetMovable
+            | QtWidgets.QDockWidget.DockWidgetVerticalTitleBar
+            | QtWidgets.QDockWidget.DockWidgetClosable
+        )
         self.create_widget_func = create_widget_func
         self.widget = None
 
@@ -108,9 +111,9 @@ class MyDockWidget(QtWidgets.QDockWidget):
         if event.type() == 176:  # QEvent::NonClientAreaMouseButtonDblClick
             if self.isFloating():
                 if self.isMaximized():
-                    fn = lambda: self.showNormal()
+                    fn = self.showNormal()
                 else:
-                    fn = lambda: self.showMaximized()
+                    fn = self.showMaximized()
                 # strange bug: always goes back to normal
                 # self.showMaximized()
                 # dirty workaround: make a timer
@@ -122,7 +125,7 @@ class MyDockWidget(QtWidgets.QDockWidget):
             event.accept()
             return True
         else:
-            #return super(MyDockWidget, self).event(event)
+            # return super(MyDockWidget, self).event(event)
             return QtWidgets.QDockWidget.event(self, event)
 
 
@@ -152,9 +155,9 @@ class PyrplWidget(QtWidgets.QMainWindow):
         self.centrallayout = QtWidgets.QVBoxLayout()
         self.centrallayout.setAlignment(QtCore.Qt.AlignCenter)
         self.centralwidget.setLayout(self.centrallayout)
-        self.centralbutton = QtWidgets.QPushButton('Click on "Modules" in the '
-                                             'upper left corner to load a '
-                                             'specific PyRPL module!')
+        self.centralbutton = QtWidgets.QPushButton(
+            'Click on "Modules" in the upper left corner to load a specific PyRPL module!'
+        )
         self.centralbutton.clicked.connect(self.click_menu_modules)
         self.centrallayout.addWidget(self.centralbutton)
 
@@ -174,10 +177,10 @@ class PyrplWidget(QtWidgets.QMainWindow):
         self.handler.show_log.connect(self.show_log)
         self.setWindowTitle(self.parent.c.pyrpl.name)
         self.timers = [self.timer_save_pos, self.timer_toolbar]
-        #self.set_background_color(self)
+        # self.set_background_color(self)
 
     def click_menu_modules(self):
-        self.menu_modules.popup(self.mapToGlobal(QtCore.QPoint(10,10)))
+        self.menu_modules.popup(self.mapToGlobal(QtCore.QPoint(10, 10)))
 
     def hide_centralbutton(self):
         for dock_widget in self.dock_widgets.values():
@@ -193,18 +196,18 @@ class PyrplWidget(QtWidgets.QMainWindow):
         """
         typ, val, tb = typ_val_tb
         self.timer_toolbar.stop()
-        self.status_bar.showMessage(''.join(format_exception_only(typ, val)))
-        self.status_bar.setStyleSheet('color: white;background-color: red;')
-        self._next_toolbar_style = 'color: orange;'
-        self.status_bar.setToolTip(''.join(format_exception(typ, val, tb)))
+        self.status_bar.showMessage("".join(format_exception_only(typ, val)))
+        self.status_bar.setStyleSheet("color: white;background-color: red;")
+        self._next_toolbar_style = "color: orange;"
+        self.status_bar.setToolTip("".join(format_exception(typ, val, tb)))
         self.timer_toolbar.start()
 
     def show_log(self, records):
         record = records[0]
         self.timer_toolbar.stop()
         self.status_bar.showMessage(record)
-        self.status_bar.setStyleSheet('color: white;background-color: green;')
-        self._next_toolbar_style = 'color: grey;'
+        self.status_bar.setStyleSheet("color: white;background-color: green;")
+        self._next_toolbar_style = "color: grey;"
         self.timer_toolbar.start()
 
     def vanish_toolbar(self):
@@ -218,16 +221,13 @@ class PyrplWidget(QtWidgets.QMainWindow):
             timer.stop()
 
     def add_dock_widget(self, create_widget, name):
-        dock_widget = MyDockWidget(create_widget,
-                                   name + ' (%s)' % self.parent.name)
+        dock_widget = MyDockWidget(create_widget, name + " (%s)" % self.parent.name)
         self.dock_widgets[name] = dock_widget
-        self.addDockWidget(QtCore.Qt.TopDockWidgetArea,
-                           dock_widget)
+        self.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock_widget)
         if self.last_docked is not None:
             self.tabifyDockWidget(self.last_docked, dock_widget)
         # put tabs on top
-        self.setTabPosition(dock_widget.allowedAreas(),
-                            QtWidgets.QTabWidget.North)
+        self.setTabPosition(dock_widget.allowedAreas(), QtWidgets.QTabWidget.North)
         self.last_docked = dock_widget
         self.last_docked.hide()  # by default no widget is created...
 
@@ -238,7 +238,7 @@ class PyrplWidget(QtWidgets.QMainWindow):
 
         # make sure menu and widget are in sync
         action.changed.connect(lambda: dock_widget.setVisible(action.isChecked()))
-        dock_widget.visibilityChanged.connect(lambda:action.setChecked(dock_widget.isVisible()))
+        dock_widget.visibilityChanged.connect(lambda: action.setChecked(dock_widget.isVisible()))
         dock_widget.visibilityChanged.connect(self.hide_centralbutton)
         self.set_background_color(dock_widget)
 
@@ -287,42 +287,43 @@ class PyrplWidget(QtWidgets.QMainWindow):
         if visible:
             self.dock_widgets[name].show()
 
-
     def save_window_position(self):
         # Don't try to save position if window is closed (otherwise, random position is saved)
         if self.isVisible():
             #  pre-serialize binary data as "latin1" string
             act_state = (bytes(self.saveState())).decode("latin1")
-            if (not "dock_positions" in self.parent.c.pyrpl._keys()) or \
-               (self.parent.c.pyrpl["dock_positions"]!=act_state):
+            if ("dock_positions" not in self.parent.c.pyrpl._keys()) or (
+                self.parent.c.pyrpl["dock_positions"] != act_state
+            ):
                 self.parent.c.pyrpl["dock_positions"] = act_state
             act_window_pos = self.window_position
             saved_window_pos = self.parent.c.pyrpl._get_or_create("window_position")._data
             if saved_window_pos != act_window_pos:
                 self.parent.c.pyrpl.window_position = self.window_position
-        #else:
+        # else:
         #    self.logger.debug("Gui is not started. Cannot save position.\n")
 
     def set_window_position(self):
         if "dock_positions" in self.parent.c.pyrpl._keys():
             try:
-                self.restoreState(
-                    self.parent.c.pyrpl.dock_positions.encode("latin1"))
-            except:
-                self.logger.warning("Sorry, there was a problem with the "
-                                    "restoration of Dock positions. ")
+                self.restoreState(self.parent.c.pyrpl.dock_positions.encode("latin1"))
+            except Exception:
+                self.logger.warning(
+                    "Sorry, there was a problem with the restoration of Dock positions."
+                )
+
         try:
             coords = self.parent.c.pyrpl["window_position"]._data
         except KeyError:
             coords = [0, 0, 800, 600]
+
         try:
             self.window_position = coords
-            if QtWidgets.QApplication.desktop().screenNumber(self)==-1:
+            if QtWidgets.QApplication.desktop().screenNumber(self) == -1:
                 # window doesn't fit inside screen
-                self.window_position = (0,0)
+                self.window_position = (0, 0)
         except Exception as e:
-            self.logger.warning("Gui is not started. Cannot set window position.\n"\
-                                + str(e))
+            self.logger.warning("Gui is not started. Cannot set window position.\n" + str(e))
 
     @property
     def window_position(self):
@@ -352,5 +353,5 @@ class PyrplWidget(QtWidgets.QMainWindow):
             except ValueError:
                 pass
             else:
-                color = "#"+color
-            widget.setStyleSheet("background-color:%s"%color)
+                color = "#" + color
+            widget.setStyleSheet("background-color:%s" % color)

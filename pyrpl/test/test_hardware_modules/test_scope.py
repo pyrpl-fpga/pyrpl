@@ -1,17 +1,17 @@
 import logging
-logger = logging.getLogger(name=__name__)
-import time
 import numpy as np
-from pyrpl.async_utils import ensure_future, wait, sleep
-from qtpy import QtCore, QtWidgets
+from pyrpl.async_utils import wait, sleep
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl import APP
-from pyrpl.curvedb import CurveDB
+
+logger = logging.getLogger(name=__name__)
+
 
 class TestScope(TestPyrpl):
     """
     Be carreful to stop the scope at the end of each test!!!
     """
+
     # somehow the file seems to suffer from other nosetests, so pick an
     # individual name for this test:
     # tmp_config_file = "nosetests_config_scope.yml"
@@ -20,7 +20,7 @@ class TestScope(TestPyrpl):
         """
         This was so hard to detect, I am making a unit test
         """
-        assert(self.r.scope.running_state=='stopped')
+        assert self.r.scope.running_state == "stopped"
 
     def data_changing(self):
         sleep(0.1)
@@ -47,14 +47,16 @@ class TestScope(TestPyrpl):
         setup when something is changed
         """
         self.r.asg1.frequency = 0
-        self.r.asg1.trigger_source = 'immediately'
-        self.r.scope.setup_attributes = dict(duration=0.5,
-                           trigger_source='asg1',
-                           trigger_delay=0.,
-                           rolling_mode=True,
-                           input1='in1',
-                           ch1_active=True,
-                           ch2_active=True)
+        self.r.asg1.trigger_source = "immediately"
+        self.r.scope.setup_attributes = dict(
+            duration=0.5,
+            trigger_source="asg1",
+            trigger_delay=0.0,
+            rolling_mode=True,
+            input1="in1",
+            ch1_active=True,
+            ch2_active=True,
+        )
         self.r.scope.continuous()
         assert self.data_changing()  # rolling mode should be active
         self.r.scope.save_state("running_roll")
@@ -102,17 +104,19 @@ class TestScope(TestPyrpl):
         recalling a state with rolling mode should work.
         """
         ### Careful, setup(...) wont (see comment at the end of scop._setup)
-        self.r.scope.setup_attributes = dict(duration=0.5,
-                                             trigger_delay=0.,
-                                             input1='in1',
-                                             ch1_active=True,
-                                             ch2_active=True,
-                                             rolling_mode=True)
+        self.r.scope.setup_attributes = dict(
+            duration=0.5,
+            trigger_delay=0.0,
+            input1="in1",
+            ch1_active=True,
+            ch2_active=True,
+            rolling_mode=True,
+        )
         self.r.scope.continuous()
         assert self.data_changing()
         sleep(1)
         assert self.data_changing()  # Make sure scope is not blocked
-                                     # after one buffer loop
+        # after one buffer loop
 
         self.r.scope.stop()
 
@@ -120,37 +124,41 @@ class TestScope(TestPyrpl):
         """
         Make sure the scope returns to rolling mode after being freed
         """
-        self.pyrpl.rp.scope.setup(duration=0.2,
-                            trigger_delay=0.,
-                            trigger_source='immediately',
-                            input1='in1',
-                            trace_average=1,
-                            ch1_active=True,
-                            ch2_active=True,
-                            rolling_mode=True)
-        #self.pyrpl.rp.scope.run_continuous = True
+        self.pyrpl.rp.scope.setup(
+            duration=0.2,
+            trigger_delay=0.0,
+            trigger_source="immediately",
+            input1="in1",
+            trace_average=1,
+            ch1_active=True,
+            ch2_active=True,
+            rolling_mode=True,
+        )
+        # self.pyrpl.rp.scope.run_continuous = True
         self.pyrpl.rp.scope.continuous()
         sleep(1)
         assert self.pyrpl.rp.scope.run_continuous
         with self.pyrpl.scopes.pop("myapplication") as sco:
-            sco.setup(duration=0.5,
-                      trigger_delay=0.,
-                      trigger_source='immediately',
-                      input1='in1',
-                      trace_average=1,
-                      ch1_active=True,
-                      ch2_active=True,
-                      rolling_mode=False)
+            sco.setup(
+                duration=0.5,
+                trigger_delay=0.0,
+                trigger_source="immediately",
+                input1="in1",
+                trace_average=1,
+                ch1_active=True,
+                ch2_active=True,
+                rolling_mode=False,
+            )
             sco.stop()
             assert not self.data_changing()
             curve = sco.single()
             assert not self.pyrpl.rp.scope.run_continuous
-            print('exiting')
+            print("exiting")
         assert self.pyrpl.rp.scope.run_continuous
         assert self.data_changing()
         sleep(1)
         assert self.data_changing()  # Make sure scope is not blocked
-            # after one buffer loop
+        # after one buffer loop
         self.pyrpl.rp.scope.stop()
 
     def test_no_write_in_config(self):
@@ -164,16 +172,18 @@ class TestScope(TestPyrpl):
         old = self.pyrpl.c._save_counter
         sleep(1.0)
         new = self.pyrpl.c._save_counter
-        assert (old == new), (old, new, "scope is not the reason")
+        assert old == new, (old, new, "scope is not the reason")
         # next, check whether the scope does this
         for rolling_mode in (True, False):
-            self.pyrpl.rp.scope.setup(duration=0.005,
-                                      trigger_delay=0.,
-                                      input1='in1',
-                                      ch1_active=True,
-                                      ch2_active=True,
-                                      rolling_mode=True,
-                                      trace_average=1)
+            self.pyrpl.rp.scope.setup(
+                duration=0.005,
+                trigger_delay=0.0,
+                input1="in1",
+                ch1_active=True,
+                ch2_active=True,
+                rolling_mode=True,
+                trace_average=1,
+            )
             self.pyrpl.rp.scope.continuous()
             sleep(1.0)
             APP.processEvents()
@@ -182,19 +192,21 @@ class TestScope(TestPyrpl):
             APP.processEvents()
             new = self.pyrpl.c._save_counter
             self.pyrpl.rp.scope.stop()
-            assert(old==new), (old, new, "scope is the problem", rolling_mode)
+            assert old == new, (old, new, "scope is the problem", rolling_mode)
 
     def test_save_curve_old(self):
-        self.r.scope.setup(duration=0.01,
-                           trigger_source='immediately',
-                           trigger_delay=0.,
-                           rolling_mode=True,
-                           input1='in1',
-                           ch1_active=True,
-                           ch2_active=True)
+        self.r.scope.setup(
+            duration=0.01,
+            trigger_source="immediately",
+            trigger_delay=0.0,
+            rolling_mode=True,
+            input1="in1",
+            ch1_active=True,
+            ch2_active=True,
+        )
         curve = self.r.scope.single_async()
         attr = self.r.scope.setup_attributes
-        wait(curve, 10) # 1 to 10. Increase timeout for remote tests
+        wait(curve, 10)  # 1 to 10. Increase timeout for remote tests
         curve1, curve2 = self.r.scope.save_curve()
 
         for curve in (curve1, curve2):
@@ -202,20 +214,22 @@ class TestScope(TestPyrpl):
             assert len(intersect) >= 5  # make sure some parameters are saved
             p1 = dict((k, curve.params[k]) for k in intersect)
             p2 = dict((k, attr[k]) for k in intersect)
-            assert p1 == p2   # make sure those parameters are equal to the
+            assert p1 == p2  # make sure those parameters are equal to the
             # setup_attributes of the scope
         self.curves += [curve1, curve2]  # for later deletion
 
     def test_save_curve(self):
         self.pyrpl.rp.scope.stop()
-        self.pyrpl.rp.scope.setup(duration=0.005,
-                                  trigger_delay=0.,
-                                  input1='in1',
-                                  ch1_active=True,
-                                  ch2_active=True,
-                                  rolling_mode=True,
-                                  trace_average=1,
-                                  running_state="stopped")
+        self.pyrpl.rp.scope.setup(
+            duration=0.005,
+            trigger_delay=0.0,
+            input1="in1",
+            ch1_active=True,
+            ch2_active=True,
+            rolling_mode=True,
+            trace_average=1,
+            running_state="stopped",
+        )
         self.pyrpl.rp.scope.single()
         curves = self.pyrpl.rp.scope.save_curve()
         for i in range(2):

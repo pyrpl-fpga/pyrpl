@@ -1,50 +1,53 @@
 # conftest.py - pytest automatically discovers fixtures from this file
 import logging
 import pytest
-logger = logging.getLogger(name=__name__)
 import os
 import socket
 from collections import namedtuple
-
-# Import your project modules
 from .. import Pyrpl, RedPitaya, user_config_dir, global_config
 from ..pyrpl_utils import time
 from ..async_utils import sleep
 
+logger = logging.getLogger(name=__name__)
 
 # Global state to determine what we need to build
 _source_config_file = "nosetests_source.yml"
-_require_full_pyrpl = False 
+_require_full_pyrpl = False
 
 # A container to standardize what the fixture returns
 # rp is always present; pyrpl is None if running in light mode
-HardwareSession = namedtuple('HardwareSession', ['rp', 'pyrpl', 'read_time', 'write_time'])
+HardwareSession = namedtuple("HardwareSession", ["rp", "pyrpl", "read_time", "write_time"])
+
 
 def pytest_collection_modifyitems(session, config, items):
     """
-    Hook called after test collection. 
+    Hook called after test collection.
     Determines if we need the full Pyrpl app or just the RedPitaya driver.
     """
     global _source_config_file
     global _require_full_pyrpl
-    
+
     found_attribute = False
     found_lockbox = False
     found_heavy_test = False
-    
+
     for item in items:
         test_file = item.fspath.basename
-        
+
         # If we find any file that ISN'T TestRedpitaya, we assume we need full Pyrpl
-        # (You can add more "light" files to this list if needed)
-        if test_file not in ['test_redpitaya.py', 'test_pyqtgraph_benchmark.py', 'test_registers.py']:
+
+        if test_file not in [
+            "test_redpitaya.py",
+            "test_pyqtgraph_benchmark.py",
+            "test_registers.py",
+        ]:
             found_heavy_test = True
 
-        if test_file == 'test_attribute.py':
+        if test_file == "test_attribute.py":
             found_attribute = True
-        elif test_file == 'test_lockbox.py':
+        elif test_file == "test_lockbox.py":
             found_lockbox = True
-    
+
     _require_full_pyrpl = found_heavy_test
 
     # Config selection logic
@@ -52,7 +55,7 @@ def pytest_collection_modifyitems(session, config, items):
         _source_config_file = "nosetests_source_dummy_module.yml"
     elif found_lockbox:
         _source_config_file = "nosetests_source_lockbox.yml"
-    
+
     mode = "FULL PYRPL APP" if _require_full_pyrpl else "LIGHT REDPITAYA DRIVER"
     logger.info(f"Test Collection Complete. Mode: {mode}")
 
@@ -61,7 +64,7 @@ def _apply_keepalive(rp_object):
     """Helper to apply the GitHub Actions/NAT fix to any RedPitaya object"""
     # 1. SSH Transport KeepAlive
     try:
-        if hasattr(rp_object.ssh, 'scp') and hasattr(rp_object.ssh.scp, 'transport'):
+        if hasattr(rp_object.ssh, "scp") and hasattr(rp_object.ssh.scp, "transport"):
             rp_object.ssh.scp.transport.set_keepalive(30)
             logger.info("SSH KeepAlive enabled (30s).")
     except Exception as e:
@@ -70,17 +73,17 @@ def _apply_keepalive(rp_object):
     # 2. Socket KeepAlive
     try:
         sock = rp_object.client
-        if not hasattr(sock, 'setsockopt') and hasattr(sock, 'socket'):
+        if not hasattr(sock, "setsockopt") and hasattr(sock, "socket"):
             sock = sock.socket
 
-        if hasattr(sock, 'setsockopt'):
+        if hasattr(sock, "setsockopt"):
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             # Linux/macOS specific
-            if hasattr(socket, 'TCP_KEEPIDLE'):
+            if hasattr(socket, "TCP_KEEPIDLE"):
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 60)
-            if hasattr(socket, 'TCP_KEEPINTVL'):
+            if hasattr(socket, "TCP_KEEPINTVL"):
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 10)
-            if hasattr(socket, 'TCP_KEEPCNT'):
+            if hasattr(socket, "TCP_KEEPCNT"):
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3)
             logger.info("Socket (Port 2222) KeepAlive enabled.")
         else:
@@ -90,10 +93,11 @@ def _apply_keepalive(rp_object):
 
     # ---------------------------------------------------------
 
+
 @pytest.fixture(scope="session")
 def hardware_session():
     """
-    Creates either a full Pyrpl instance OR just a RedPitaya instance 
+    Creates either a full Pyrpl instance OR just a RedPitaya instance
     depending on the test requirements.
     """
     pyrpl_obj = None
@@ -103,8 +107,10 @@ def hardware_session():
 
     # Cleanup start
     if os.path.isfile(tmp_conf):
-        try: os.remove(tmp_conf)
-        except: pass
+        try:
+            os.remove(tmp_conf)
+        except (WindowsError, OSError):
+            pass
 
     if _require_full_pyrpl:
         # --- HEAVY PATH ---
@@ -116,7 +122,7 @@ def hardware_session():
         logger.info("Initializing Light RedPitaya (No Pyrpl App config)")
         # This uses environment variables or defaults defined in RedPitaya class
         # Assuming 'hostname' is handled by RedPitaya's internal logic checking env vars
-        rp_obj = RedPitaya(config=None, autostart=True, reloadfpga=True) 
+        rp_obj = RedPitaya(config=None, autostart=True, reloadfpga=True)
 
     # --- APPLY FIXES ---
     _apply_keepalive(rp_obj)
@@ -127,41 +133,46 @@ def hardware_session():
     t0 = time()
     for i in range(N):
         _ = rp_obj.hk.led
-    read_time = (time()-t0)/float(N)
-    
+    read_time = (time() - t0) / float(N)
+
     t0 = time()
     for i in range(N):
         rp_obj.hk.led = 0
-    write_time = (time()-t0)/float(N)
-    
-    print("Est. Read/Write: %.1f ms / %.1f ms" % (read_time*1000.0, write_time*1000.0))
-    
+    write_time = (time() - t0) / float(N)
+
+    print("Est. Read/Write: %.1f ms / %.1f ms" % (read_time * 1000.0, write_time * 1000.0))
+
     # Yield the container
     yield HardwareSession(rp=rp_obj, pyrpl=pyrpl_obj, read_time=read_time, write_time=write_time)
 
     # --- TEARDOWN ---
     logger.info("Tearing down hardware session...")
     if pyrpl_obj:
-        try: pyrpl_obj._clear()
-        except: pass
+        try:
+            pyrpl_obj._clear()
+        except:
+            pass
     else:
         # If we only made the RP, we close it manually
-        try: rp_obj.end_all()
-        except: pass
-    
+        try:
+            rp_obj.end_all()
+        except:
+            pass
+
     sleep(0.2)
     if os.path.isfile(tmp_conf):
         try:
             os.remove(tmp_conf)
         except (WindowsError, OSError):
             pass
-    
+
     # Wait for file to be fully deleted
     max_attempts = 10
     for _ in range(max_attempts):
         if not os.path.exists(tmp_conf):
             break
         sleep(0.1)
+
 
 @pytest.fixture(scope="session", autouse=True)
 def pyrpl_session_sanity(hardware_session):
@@ -200,4 +211,3 @@ def pyrpl_session_sanity(hardware_session):
         pytest.exit("Pyrpl instance was not created!", returncode=1)
 
     logger.info("Hardware sanity checks passed.")
-
