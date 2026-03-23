@@ -20,7 +20,7 @@ class CurveViewerWidget(ReducedModuleWidget):
         super(CurveViewerWidget, self).init_attribute_layout()
         self.textbox = QtWidgets.QHBoxLayout()
         self.bottom_layout.addLayout(self.textbox)
-        curve = self.attribute_widgets["curve"]
+        self.attribute_widgets["curve"]
         for name in ["pk", "curve", "params"]:
             widget = self.attribute_widgets[name]
             self.main_layout.removeWidget(widget)

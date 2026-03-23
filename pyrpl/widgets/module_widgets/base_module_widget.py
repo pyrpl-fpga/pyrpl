@@ -242,7 +242,7 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
                 self.attribute_layout = QtWidgets.QHBoxLayout()
                 self.attributes_layout.addLayout(self.attribute_layout)
             else:
-                attribute_value = getattr(self.module, attr_name)  # needed for
+                getattr(self.module, attr_name)  # needed for
                 # passing the instance to the descriptor
                 attribute = getattr(self.module.__class__, attr_name)
                 if callable(attribute):

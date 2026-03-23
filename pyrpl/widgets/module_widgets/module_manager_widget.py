@@ -62,10 +62,6 @@ class IirManagerWidget(ModuleManagerWidget):
     pass
 
 
-class IirManagerWidget(ModuleManagerWidget):
-    pass
-
-
 class PwmManagerWidget(ModuleManagerWidget):
     pass
 
@@ -80,7 +76,6 @@ class IqManagerWidget(ModuleManagerWidget):
         self.button_hide = QtWidgets.QPushButton("^", parent=self)
         self.button_hide.setMaximumHeight(15)
         self.button_hide.clicked.connect(self.button_hide_clicked)
-        nr = 0
         self.main_layout.setAlignment(QtCore.Qt.AlignTop)
         self.scene = QtWidgets.QGraphicsScene()
         self.view = QtWidgets.QGraphicsView(self.scene)
@@ -102,7 +97,7 @@ class IqManagerWidget(ModuleManagerWidget):
                 frame.show()
             for frame in self.frames_drawing:
                 frame.show()
-            last_module_widget = self.module_widgets[-1]
+            self.module_widgets[-1]
             # self.setMaximumHeight(600)
         else:
             self.button_hide.setText("v")
@@ -168,7 +163,7 @@ class IqManagerWidget(ModuleManagerWidget):
         """
         Uses the primitives defined in schematics.py to draw the diagram.
         """
-        brush = QtGui.QBrush(QtCore.Qt.black)
+        QtGui.QBrush(QtCore.Qt.black)
 
         row_center = 0.45
         row_up = 0.2

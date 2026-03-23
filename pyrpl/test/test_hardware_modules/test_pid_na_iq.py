@@ -11,7 +11,6 @@ logger = logging.getLogger(name=__name__)
 @pytest.fixture(autouse=True, scope="class")
 def setup_na(hardware_session):
     pyrpl = hardware_session.pyrpl
-    r = hardware_session.rp
 
     # shortcuts
     na = pyrpl.networkanalyzer
@@ -52,7 +51,6 @@ class TestPidNaIq(TestPyrpl):
             return
         else:
             r = self.r
-        extradelay = self.extradelay
         # shortcuts and na configuration
         na = self.na
         for iq in [r.iq0, r.iq1, r.iq2]:
@@ -157,7 +155,7 @@ class TestPidNaIq(TestPyrpl):
         if self.r is None:
             return
         else:
-            r = self.r
+            pass
         plotdata = []
 
         # shortcuts and na configuration
@@ -274,7 +272,7 @@ class TestPidNaIq(TestPyrpl):
         if self.r is None:
             return
         else:
-            r = self.r
+            pass
         plotdata = []
 
         # shortcuts and na configuration
@@ -342,13 +340,11 @@ class TestPidNaIq(TestPyrpl):
             return
         else:
             r = self.r
-        plotdata = []
 
         # shortcut for na and bpf (bandpass filter)
         na = self.pyrpl.networkanalyzer
 
         for bpf in [r.iq0, r.iq1]:
-            plotdata = []
             # setup na for measurement
             na.setup(
                 start_freq=300e3,

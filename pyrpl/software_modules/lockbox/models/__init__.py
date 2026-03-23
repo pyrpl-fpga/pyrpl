@@ -19,7 +19,6 @@ try:
             continue
         usermodels.append(__import__(module[:-3], locals(), globals(), [], 0))
         logger.debug("Custom user models from %s were successfully imported!" % module)
-    del module
 except KeyError:
     logger.warning(
         "An error occured during the import of user model files! "

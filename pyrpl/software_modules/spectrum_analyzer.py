@@ -706,7 +706,6 @@ class SpectrumAnalyzer(AcquisitionModule):
         return self._scope_decimation() * 8e-9 * self.data_length
 
     def _start_trace_acquisition(self):
-        autosave_backup = self._autosave_active
         # setup iq module
         if not self.baseband:
             # raise NotImplementedError("iq mode is not supported in the "

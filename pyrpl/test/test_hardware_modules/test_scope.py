@@ -151,7 +151,7 @@ class TestScope(TestPyrpl):
             )
             sco.stop()
             assert not self.data_changing()
-            curve = sco.single()
+            sco.single()
             assert not self.pyrpl.rp.scope.run_continuous
             print("exiting")
         assert self.pyrpl.rp.scope.run_continuous

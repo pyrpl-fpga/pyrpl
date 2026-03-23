@@ -313,7 +313,6 @@ class PidProperties(QtWidgets.QGroupBox):
         super(PidProperties, self).__init__(parent)
         self.parent = parent
         self.module = self.parent.module
-        aws = self.parent.attribute_widgets
         self.layout = QtWidgets.QHBoxLayout(self)
         self.v2 = QtWidgets.QVBoxLayout()
         self.layout.addLayout(self.v2)
@@ -422,7 +421,6 @@ class OutputSignalWidget(ModuleWidget):
         self.upper_layout.addLayout(self.col4)
         self.upper_layout.addStretch(1)
 
-        aws = self.attribute_widgets
         self.main_props = MainOutputProperties(self)
         self.col1.addWidget(self.main_props)
         self.col1.addStretch(5)

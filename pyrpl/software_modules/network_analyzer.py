@@ -631,13 +631,6 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         )  # and nan*current_avg = nan
         # even if current_avg = 0
 
-    @property
-    def last_valid_point(self):
-        if self.current_avg >= 1:
-            return self.points - 1
-        else:
-            return self.current_point
-
     def _setup(self):
         # self._update_data_x()  # precalculate frequency values
         self._frequencies = None  # forget precalculated frequencies

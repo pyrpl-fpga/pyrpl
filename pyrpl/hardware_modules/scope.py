@@ -125,7 +125,6 @@ large an integrator gain will quickly saturate the outputs.
     print("First point in data buffer 1 [V]:", s.ch1_firstpoint)
 """
 
-import time
 from .dsp import all_inputs, dsp_addr_base, InputSelectRegister
 from ..acquisition_module import AcquisitionModule
 from ..async_utils import wait, sleep_async

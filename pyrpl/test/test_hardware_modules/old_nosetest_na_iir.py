@@ -127,7 +127,6 @@ class TestIir(TestPyrpl):
         should be able to figure out what went wrong in the iir filter...
         """
 
-        extradelay = 0
         error_threshold = 0.005  # mean relative error over the whole curve,
         # values will be redifined individually
         if self.r is None:

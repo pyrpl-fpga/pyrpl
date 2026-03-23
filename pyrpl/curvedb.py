@@ -119,7 +119,6 @@ except (ImportError, AttributeError, KeyError, TypeError):
             obj.params = kwds
             if "name" not in obj.params:
                 obj.params["name"] = "new_curve"
-            pk = obj.pk  # make a pk
             if "childs" not in obj.params:
                 obj.params["childs"] = None
             if ("autosave" not in kwds) or (kwds["autosave"]):

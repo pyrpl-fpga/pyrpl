@@ -56,7 +56,7 @@ class TestScopeAsgAms(TestPyrpl):
             measured, _ = self.r.scope.single(timeout=4)
             diff = np.max(np.abs(measured - expect))
             if diff > 0.001:
-                c = CurveDB.create(
+                CurveDB.create(
                     expect,
                     measured,
                     name="failed test asg_to_scope: measured trace vs expected one",

@@ -107,7 +107,7 @@ class MyDockWidget(QtWidgets.QDockWidget):
         super(MyDockWidget, self).showEvent(event)
 
     def event(self, event):
-        event_type = event.type()
+        event.type()
         if event.type() == 176:  # QEvent::NonClientAreaMouseButtonDblClick
             if self.isFloating():
                 if self.isMaximized():

@@ -630,8 +630,8 @@ class LedAttributeWidget(BaseAttributeWidget):
     """Boolean property with a button whose text and color indicates whether"""
 
     def _make_widget(self):
-        desc = pyrpl_utils.recursive_getattr(self.module, "__class__." + self.attribute_name)
-        val = pyrpl_utils.recursive_getattr(self.module, self.attribute_name)
+        pyrpl_utils.recursive_getattr(self.module, "__class__." + self.attribute_name)
+        pyrpl_utils.recursive_getattr(self.module, self.attribute_name)
         self.widget = QtWidgets.QPushButton("setting up...")
         self.widget.clicked.connect(self.button_clicked)
 

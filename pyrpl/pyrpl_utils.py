@@ -1,4 +1,3 @@
-import time
 from timeit import default_timer
 import logging
 from collections import OrderedDict

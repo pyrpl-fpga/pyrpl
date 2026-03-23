@@ -371,7 +371,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
             it = self.getItem(0, 0)
             pos = it.mapToScene(event.pos())  #  + it.vb.pos()
             point = it.vb.mapSceneToView(pos)
-            x, y = point.x(), point.y()
+            x, _y = point.x(), point.y()
             x = 10**x
             new_z = -100 - 1.0j * x
             if modifier == QtCore.Qt.CTRL:

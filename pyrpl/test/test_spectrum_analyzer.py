@@ -152,7 +152,7 @@ class TestClass(TestPyrpl):
             self.iq.frequency = freq  # set the bandpass filter
             in1, in2, cre, cim = self.sa.single()
             # average neighbouring points
-            in1_av = in1[: -(len(in1) % 100)].reshape(len(in1) // 100, 100).mean(axis=1)
+            in1[: -(len(in1) % 100)].reshape(len(in1) // 100, 100).mean(axis=1)
             var_spectrum = self.sa.data_to_unit(in1, "Vrms^2/Hz", self.sa.rbw)
 
             (amplitude,) = least_squares(to_minimize, 1e-6).x

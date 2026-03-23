@@ -136,9 +136,9 @@ class AcquisitionModuleWidget(ModuleWidget):
         """
         self.update_current_average()
         if self.module.current_avg > 0:
-            number_str = " (" + str(self.module.current_avg) + ")"
+            " (" + str(self.module.current_avg) + ")"
         else:
-            number_str = ""
+            pass
         if self.module.running_state == "running_continuous":
             # if self.module.current_avg >= self.module.trace_average:
             #    # shows a plus sign when number of averages is available

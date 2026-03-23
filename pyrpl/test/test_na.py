@@ -13,6 +13,7 @@ logger = logging.getLogger(name=__name__)
 try:
     from pysine import sine
 except ImportError:
+
     def sine(frequency, duration):
         print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
 

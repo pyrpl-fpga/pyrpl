@@ -16,7 +16,6 @@ MAIN_THREAD = APP.thread()
 try:
     from asyncio import (
         Future,
-        ensure_future,
         CancelledError,
         set_event_loop,
         TimeoutError,

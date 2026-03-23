@@ -132,9 +132,13 @@ line-length = 100
 extend-exclude = ["*.ipynb", "docs/example-notebooks"]
 
 [tool.ruff.lint]
-select = ["E"]  # start minimal: errors + pyflakes
-ignore = ["E731"]
+select = ["E","F"]  # start minimal: errors + pyflakes
+ignore = ["E731", "F403", "F405"]
 
 [tool.ruff.lint.per-file-ignores]
-"pyrpl/__init__.py" = ["E402"]
-"pyrpl/software_modules/lockbox/__init__.py" = ["E402"]
+"pyrpl/__init__.py" = ["E402", "F401"]
+"pyrpl/hardware_modules/__init__.py" = ["F401"]
+"pyrpl/hardware_modules/iir/__init__.py" = ["F401"]
+"pyrpl/software_modules/__init__.py" = ["F401"]
+"pyrpl/software_modules/lockbox/__init__.py" = ["E402", "F401"]
+"pyrpl/widgets/module_widgets/__init__.py" = ["F401"]

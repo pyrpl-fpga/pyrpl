@@ -63,7 +63,7 @@ class TestMemory(object):
             assert (["list"] + m.l) == ["list", "memory"]
             # read from saved file
             m._write_to_file()
-            m2 = MemoryTree(m._filename)
+            MemoryTree(m._filename)
             assert m.d.f.g[1].h[2] == 98
             assert isinstance(m.d.f.g[1].h, MemoryBranch)
             # save and delete file

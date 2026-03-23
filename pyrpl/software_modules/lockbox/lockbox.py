@@ -369,7 +369,7 @@ class Lockbox(LockboxModule):
         """
         if self.current_state == "lock_on" and self.is_locked():
             try:
-                res = wait(ensure_future(self.unlock_event.wait()), timeout=time_to_sleep)
+                wait(ensure_future(self.unlock_event.wait()), timeout=time_to_sleep)
             except TimeoutError:
                 return True
             else:

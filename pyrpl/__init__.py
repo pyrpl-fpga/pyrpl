@@ -30,8 +30,11 @@ from pyrpl_utils import isnotebook
 from qtpy import QtCore, QtWidgets
 from .pyrpl_utils import setloglevel
 from .directories import (
-    user_dir, user_config_dir, user_curve_dir,
-    user_lockbox_dir, default_config_dir,
+    user_dir,
+    user_config_dir,
+    user_curve_dir,
+    user_lockbox_dir,
+    default_config_dir,
 )
 from .memory import MemoryTree
 

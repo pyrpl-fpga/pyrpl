@@ -5,9 +5,9 @@ try:
 except KeyError:
     user_dir = os.path.join(os.path.expanduser("~"), "pyrpl_user_dir")
 
-user_config_dir    = os.path.join(user_dir, "config")
-user_curve_dir     = os.path.join(user_dir, "curve")
-user_lockbox_dir   = os.path.join(user_dir, "lockbox")
+user_config_dir = os.path.join(user_dir, "config")
+user_curve_dir = os.path.join(user_dir, "curve")
+user_lockbox_dir = os.path.join(user_dir, "lockbox")
 default_config_dir = os.path.join(os.path.dirname(__file__), "config")
 
 # create dirs if necessary

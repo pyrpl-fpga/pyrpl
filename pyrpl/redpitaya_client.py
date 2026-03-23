@@ -24,6 +24,7 @@ import logging
 try:
     from pysine import sine  # for debugging read/write calls
 except ImportError:
+
     def sine(frequency, duration):
         print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
 
@@ -226,7 +227,6 @@ class DummyClient(object):  # pragma: no cover
         if offset == 0x168:  # trigger_timestamp mv part
             return 0
         # DSP modules
-        all = DSP_INPUTS
         for module in DSP_INPUTS:
             offset = addr - dsp_addr_base(module)
             if module.startswith("pid"):

@@ -12,14 +12,12 @@ logger = logging.getLogger(name=__name__)
 def setup_iir(hardware_session):
     # shortcuts
     pyrpl = hardware_session.pyrpl
-    rp = hardware_session.rp
     na = pyrpl.networkanalyzer
     # set na loglevel to DEBUG
     loglevel = na._logger.getEffectiveLevel()
     na._logger.setLevel(10)
     na.auto_bandwidth = False
     na.auto_amplitude = False
-    iir = rp.iir
     yield
 
     # Teardown

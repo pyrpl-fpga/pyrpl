@@ -160,7 +160,6 @@ def make_asg(channel=0):
         # the bottom value is also the fpga default
         _default_counter_wrap = 2**16 * (2**14) - 1
 
-        output_directs = None
         addr_base = 0x40200000
 
         def __init__(self, parent, name=None):
