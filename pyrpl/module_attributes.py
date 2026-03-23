@@ -73,7 +73,7 @@ class ModuleList(Module, list):
         def element_next(element_self):
             try:
                 return element_self.parent[element_self.parent.index(element_self) + 1]
-            except:
+            except (IndexError, ValueError):
                 return None
 
         def element_init(element_self, parent, initial_name=None, *args, **kwargs):

@@ -89,7 +89,7 @@ class Loop(Module):
                     self.loop(self.parent, self)
                 except TypeError:
                     self.loop(self.parent)
-        except BaseException as e:
+        except Exception as e:
             # we do not want the loop to stop launching the next cycle (code
             # below this) if there is an exception raised by the loop function)
             self._logger.error("Error in main_loop of %s: %s", self.name, e)
@@ -206,7 +206,7 @@ class PlotLoop(Loop):
             else:
                 try:
                     self.plot.append(**kwargs)
-                except BaseException as e:
+                except Exception as e:
                     self._logger.error("Error occured during plotting in Loop %s: %s", self.name, e)
 
     def _clear(self):

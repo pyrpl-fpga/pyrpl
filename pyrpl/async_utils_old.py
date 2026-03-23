@@ -116,9 +116,12 @@ class PyrplFuture(Future):
         cancelled: Returns whether the promise has been cancelled.
         exception: Blocks until:
                 a. the result is ready --> returns None
-                b. an exception accured in the execution --> returns the exception the Qt event-loop is allowed to run in parallel.
+                b. an exception accured in the execution --> returns the exception.
+                   The Qt event-loop is allowed to run in parallel.
         done: Checks whether the result is ready or not.
-        add_done_callback (callback function): add a callback to execute when result becomes available. The callback function takes 1 argument (the result of the promise).
+        add_done_callback (callback function): add a callback to execute when
+            result becomes available. The callback function takes 1 argument
+            (the result of the promise).
 
     Methods to implement in derived class:
         _set_data_as_result(): set
@@ -249,9 +252,15 @@ def sleep(delay):
     Sleeps for :code:`delay` seconds + runs the event loop in the background.
 
         * This function will never return until the specified delay in seconds is elapsed.
-        * During the execution of this function, the qt event loop (== asyncio event-loop in pyrpl) continues to process events from the gui, or from other coroutines.
-        * Contrary to time.sleep() or async.sleep(), this function will try to achieve a precision much better than 1 millisecond (of course, occasionally, the real delay can be longer than requested), but on average, the precision is in the microsecond range.
-        * Finally, care has been taken to use low level system-functions to reduce CPU-load when no events need to be processed.
+        * During the execution of this function, the qt event loop
+          (== asyncio event-loop in pyrpl) continues to process events from the
+          gui, or from other coroutines.
+        * Contrary to time.sleep() or async.sleep(), this function will try to
+          achieve a precision much better than 1 millisecond (of course,
+          occasionally, the real delay can be longer than requested), but on
+          average, the precision is in the microsecond range.
+        * Finally, care has been taken to use low level system-functions to
+          reduce CPU-load when no events need to be processed.
 
     More details on the implementation can be found on the page: `<https://github.com/lneuhaus/pyrpl/wiki/Benchmark-asynchronous-sleep-functions>`_.
     """

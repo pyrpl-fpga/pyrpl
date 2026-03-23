@@ -270,7 +270,8 @@ class InputSignal(Signal):
         for i in range(5):  # try at most 5 hierarchy levels
             try:
                 signal = recursive_getattr(self.pyrpl, signal).signal()
-            except:  # do not insist on this to work as signal may be a str
+            except (AttributeError, TypeError):
+                # do not insist on this to work as signal may be a str
                 pass
             if signal in DSP_INPUTS:
                 return signal
@@ -491,7 +492,7 @@ class InputSignal(Signal):
         widget = super(InputSignal, self)._create_widget()
         try:
             self.update_graph()
-        except:
+        except (AttributeError, RuntimeError, TypeError, ValueError):
             pass
         return widget
 
@@ -575,7 +576,7 @@ class IqFilterProperty(FilterProperty):
     def set_value(self, instance, val):
         try:
             val = list(val)
-        except:
+        except TypeError:
             val = [val, val]  # preferentially choose second order filter
         instance.iq.bandwidth = val
         super(IqFilterProperty, self).set_value(instance, self.get_value(instance))

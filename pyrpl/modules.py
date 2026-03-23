@@ -200,10 +200,10 @@ class ModuleMetaClass(type):
         # get initial docstring (python 2 and python 3 syntax)
         try:
             doc = self._setup.__doc__ + "\n"
-        except:
+        except (AttributeError, TypeError):
             try:
                 doc = self._setup.__func__.__doc__ + "\n"
-            except:
+            except (AttributeError, TypeError):
                 doc = ""
         doc += "attributes\n=========="
         for attr_name in self._setup_attributes:
@@ -244,7 +244,7 @@ class DoSetup(object):
                 # now _setup_ongoing is True
                 assert self._setup_ongoing == True
                 # do stuff that might fail
-                raise BaseException()
+                raise Exception()
             # even if _setup fails, _setup_ongoing is False afterwards or in
             # the next call to _setup()
             assert self._setup_ongoing == False
@@ -665,7 +665,8 @@ class Module(metaclass=ModuleMetaClass):
         """
         if self._widget_class is None:
             self._logger.warning(
-                "Module %s of type %s is trying to create a widget, but no widget_class is defined!",
+                "Module %s of type %s is trying to create a widget, "
+                "but no widget_class is defined!",
                 self.name,
                 type(self),
             )

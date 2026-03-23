@@ -306,7 +306,7 @@ def bodeplot(data, xlog=True):
         import matplotlib.pyplot as plt
 
         ax1 = plt.subplot(211)
-    except:
+    except ImportError:
         raise ExpectedPyrplError(
             "No installation of matplotlib found. "
             "Please install matplotlib in order to use "
@@ -965,7 +965,7 @@ class IirFilter(object):
         frequencies = np.asarray(frequencies, dtype=complex)
         try:
             len(inputfilter)
-        except:
+        except TypeError:
             inputfilter = [inputfilter]  # make it iterable
         tf = frequencies * 0 + 1.0
         for f in inputfilter:

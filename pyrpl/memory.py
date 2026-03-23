@@ -22,7 +22,7 @@ from shutil import copyfile
 import numpy as np
 import time
 from qtpy import QtCore
-from . import default_config_dir, user_config_dir
+from .directories import default_config_dir, user_config_dir
 from .pyrpl_utils import time
 import yaml
 
@@ -607,7 +607,8 @@ class MemoryTree(MemoryBranch):
                 f.close()
                 os.unlink(self._filename)
                 os.rename(self._buffer_filename, self._filename)
-            except:
+            except Exception:
+                # Keep this broad: any write failure should restore backup before re-raising.
                 copyfile(self._filename + ".bak", self._filename)
                 logger.error("Error writing to file. Backup version was restored.")
                 raise
@@ -640,5 +641,5 @@ class MemoryTree(MemoryBranch):
     def _filename_stripped(self):
         try:
             return os.path.split(self._filename)[1].split(".")[0]
-        except:
+        except (AttributeError, IndexError, TypeError):
             return "default"

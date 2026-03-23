@@ -260,7 +260,7 @@ class Lockbox(LockboxModule):
                 c = input.calibrate(autosave=autosave, timeout_min=timeout_min)
                 if c is not None:
                     curves.append(c)
-            except BaseException as e:
+            except Exception as e:
                 print(e)
         return curves
 

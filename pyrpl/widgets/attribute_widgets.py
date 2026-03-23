@@ -795,7 +795,7 @@ class PlotAttributeWidget(BaseAttributeWidget):
     def _set_widget_value(self, new_value):
         try:
             args, kwargs = new_value
-        except:
+        except (TypeError, ValueError):
             if isinstance(new_value, dict):
                 args, kwargs = [], new_value
             elif isinstance(new_value, list):
@@ -906,7 +906,7 @@ class CurveAttributeWidget(DataAttributeWidget):
         try:
             data = getattr(self.module, "_" + self.attribute_name + "_object").data
             name = getattr(self.module, "_" + self.attribute_name + "_object").params["name"]
-        except:
+        except (AttributeError, KeyError, TypeError, ValueError):
             return None, None, None
         else:
             x, y = data

@@ -86,7 +86,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
 
         na.output_direct = "out2"                      # Driving output of the network analyzer
         na.input = "out2"
-        na.acbandwidth = 4                             # High pass filtering of the input signal before demodulation
+        na.acbandwidth = 4                             # High pass filtering before demodulation
         na.logscale = True
         na.trace_average = 1
         na.average_per_point = average_per_point
@@ -95,12 +95,14 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         na.start_freq = 2e4
         na.stop_freq = 5e5
 
-        na.auto_bandwidth = True                      # adapts the resolution bandwidth so that the q=rbw/frequency ratio stays constant
+        # adapt the resolution bandwidth so the q=rbw/frequency ratio stays constant
+        na.auto_bandwidth = True
         na.q_factor_min = q_factor_min                # min value of the q=rbw/frequency ratio
         na.rbw = rbw                                  # Starting resolution bandwidth value
 
         na.amplitude = 0.2
-        na.auto_amplitude = is_auto_amplitude        # adapts the output amplitude so that the input stays around the target_dbv value (avoids saturation for system with high dynamics)
+        # adapt output amplitude to keep input around target_dbv and avoid saturation
+        na.auto_amplitude = is_auto_amplitude
         na.target_dbv = -40
         na.auto_amp_min = 0.001                      # min value of the amplitude
         na.auto_amp_max = 0.2
@@ -108,7 +110,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         na.start = 100
         na.stop = 1000
         freqs = na.frequencies
-        closed_loop_tf = na.single()                 # returns the complex values of the response measurement
+        closed_loop_tf = na.single()                 # complex response values
 
 
     """
@@ -381,7 +383,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
             try:
                 delay = self._time_last_point - self._lastprinttime
                 self._lastpointnumber += 1
-            except:
+            except (AttributeError, TypeError):
                 delay = 999.0
                 self._lastpointnumber = 0
             if self._lastpointnumber < 100 or delay >= 10.0:

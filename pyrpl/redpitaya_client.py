@@ -22,10 +22,8 @@ import socket
 import logging
 
 try:
-    raise  # disable sound output for now
     from pysine import sine  # for debugging read/write calls
 except ImportError:
-
     def sine(frequency, duration):
         print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
 

@@ -8,7 +8,8 @@ output selected in :code:`output_direct`.
 
 * :attr:`~pyrpl.software_modules.network_analyzer.NetworkAnalyzer.amplitude`
   sets the amplitude of the sinusoidal excitation in Volts.
-* :attr:`~pyrpl.software_modules.network_analyzer.NetworkAnalyzer.start_freq`/:attr:`~pyrpl.software_modules.network_analyzer.NetworkAnalyzer.stop_freq`
+* :attr:`~pyrpl.software_modules.network_analyzer.NetworkAnalyzer.start_freq`
+  / :attr:`~pyrpl.software_modules.network_analyzer.NetworkAnalyzer.stop_freq`
   define the frequency range over which a transfer function is recorded.
   Swapping the values of :code:`start_freq` and :code:`stop_freq` reverses the
   direction of the frequency sweep. Setting :code:`stop_freq = start_freq`
@@ -379,7 +380,7 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
             if modifier == QtCore.Qt.SHIFT:
                 self.parent_widget.module.zeros += [new_z]
                 self.parent_widget.attribute_widgets["zeros"].set_selected(-1)
-        except BaseException as e:
+        except Exception as e:
             self.parent_widget.module._logger.error(e)
         finally:
             return super(pg.GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)

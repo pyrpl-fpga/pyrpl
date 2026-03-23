@@ -109,7 +109,7 @@ def setloglevel(level="info", loggername="pyrpl"):
             "critical": logging.CRITICAL,
         }
         level = loglevels[level]
-    except:
+    except (KeyError, TypeError):
         pass
     else:
         logging.getLogger(name=loggername).setLevel(level)

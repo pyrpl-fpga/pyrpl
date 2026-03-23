@@ -4,7 +4,8 @@ import pytest
 import os
 import socket
 from collections import namedtuple
-from .. import Pyrpl, RedPitaya, user_config_dir, global_config
+from .. import Pyrpl, RedPitaya, global_config
+from ..directories import user_config_dir
 from ..pyrpl_utils import time
 from ..async_utils import sleep
 
@@ -67,7 +68,7 @@ def _apply_keepalive(rp_object):
         if hasattr(rp_object.ssh, "scp") and hasattr(rp_object.ssh.scp, "transport"):
             rp_object.ssh.scp.transport.set_keepalive(30)
             logger.info("SSH KeepAlive enabled (30s).")
-    except Exception as e:
+    except (AttributeError, OSError, RuntimeError) as e:
         logger.warning(f"SSH KeepAlive failed: {e}")
 
     # 2. Socket KeepAlive
@@ -88,7 +89,7 @@ def _apply_keepalive(rp_object):
             logger.info("Socket (Port 2222) KeepAlive enabled.")
         else:
             logger.warning("Could not enable Socket KeepAlive: setsockopt method missing.")
-    except Exception as e:
+    except (AttributeError, OSError, RuntimeError) as e:
         logger.warning(f"Error setting Socket KeepAlive: {e}")
 
     # ---------------------------------------------------------
@@ -150,13 +151,13 @@ def hardware_session():
     if pyrpl_obj:
         try:
             pyrpl_obj._clear()
-        except:
+        except (AttributeError, OSError, RuntimeError):
             pass
     else:
         # If we only made the RP, we close it manually
         try:
             rp_obj.end_all()
-        except:
+        except (AttributeError, OSError, RuntimeError):
             pass
 
     sleep(0.2)
@@ -189,7 +190,7 @@ def pyrpl_session_sanity(hardware_session):
 
     try:
         maxtime = global_config.test.max_communication_time
-    except Exception:
+    except (AttributeError, KeyError, TypeError):
         pytest.exit(
             "Error with global config file. Delete global_config.yml and retry!",
             returncode=1,

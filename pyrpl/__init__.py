@@ -29,6 +29,10 @@ import logging
 from pyrpl_utils import isnotebook
 from qtpy import QtCore, QtWidgets
 from .pyrpl_utils import setloglevel
+from .directories import (
+    user_dir, user_config_dir, user_curve_dir,
+    user_lockbox_dir, default_config_dir,
+)
 from .memory import MemoryTree
 
 logging.basicConfig()
@@ -60,22 +64,13 @@ try:  # first try from environment variable
 except KeyError:  # otherwise, try ~/pyrpl_user_dir (where ~ is the user's home dir)
     user_dir = os.path.join(os.path.expanduser("~"), "pyrpl_user_dir")
 
-# make variable directories
-user_config_dir = os.path.join(user_dir, "config")
-user_curve_dir = os.path.join(user_dir, "curve")
-user_lockbox_dir = os.path.join(user_dir, "lockbox")
-default_config_dir = os.path.join(os.path.dirname(__file__), "config")
-# create dirs if necessary
-for path in [user_dir, user_config_dir, user_curve_dir, user_lockbox_dir]:
-    if not os.path.isdir(path):
-        os.mkdir(path)  # pragma: no cover
 
 # try to set log level (and automatically generate custom global_config file)
 
 global_config = MemoryTree("global_config", source="global_config")
 try:
     setloglevel(global_config.general.loglevel, loggername=logger.name)
-except:  # pragma: no cover
+except (AttributeError, KeyError, TypeError, ValueError):  # pragma: no cover
     pass
 
 # main imports

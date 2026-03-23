@@ -159,7 +159,7 @@ class AnalogTfDialog(QtWidgets.QDialog):
         if self.curve.isChecked():
             try:
                 curve_id = int(str(self.line.text()))
-            except BaseException:
+            except (TypeError, ValueError):
                 self.line.setStyleSheet("background-color:red;")
             else:
                 self.res = "curve"
@@ -952,7 +952,7 @@ class LockboxWidget(ModuleWidget):
                 try:
                     widget = module._create_widget()
                     self.main_layout.addWidget(widget)
-                except BaseException:
+                except Exception:
                     self.module._logger.warning(
                         "Problem while creating lockbox submodule widget for %s.", name
                     )

@@ -7,6 +7,8 @@ from pyrpl.hardware_modules import *
 from pyrpl.modules import *
 from pyrpl.async_utils import sleep
 from pyrpl.test.test_attribute import DummyModule
+import numbers
+
 
 logger = logging.getLogger(name=__name__)
 
@@ -110,7 +112,7 @@ class TestLoadSave(TestPyrpl):
                 # make sure all modules are stopped at the end of this test
                 try:
                     mod.stop()
-                except:
+                except (AttributeError, RuntimeError, OSError):
                     pass
 
     def assert_load_save_module(self, mod):

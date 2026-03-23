@@ -165,10 +165,10 @@ from .software_modules import get_module
 from .async_utils import sleep
 
 # it is important that Lockbox is loaded before the models
-# from .software_modules.lockbox import *
-# from .software_modules.lockbox.models import *  # make sure all models are
+from .software_modules.lockbox import *
+from .software_modules.lockbox.models import *  # make sure all models are
 # loaded when we get started
-from . import user_config_dir
+from .directories import user_config_dir
 from ._version import __version__
 
 
@@ -330,7 +330,7 @@ class Pyrpl(object):
                 module._load_setup_attributes()
                 # try:
                 #     module._load_setup_attributes()
-                # except BaseException as e:
+                # except Exception as e:
                 #     self.logger.error('Something went wrong when loading the '
                 #                       'stored setup_attributes of module "%s". '
                 #                       'If you do not know what this means, you should '
@@ -382,7 +382,7 @@ class Pyrpl(object):
                     module = getattr(cls, "_make_" + cls.__name__)(self, name)
                 else:
                     module = cls(self, name)
-            except BaseException as e:
+            except Exception as e:
                 self.logger.error(
                     'Something went wrong when loading the software module "%s": %s',
                     name,

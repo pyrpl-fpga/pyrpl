@@ -7,7 +7,7 @@ from .pll import *
 # try to import user models if applicable
 import sys
 import os
-from .... import user_lockbox_dir
+from ....directories import user_lockbox_dir
 
 sys.path.append(user_lockbox_dir)
 

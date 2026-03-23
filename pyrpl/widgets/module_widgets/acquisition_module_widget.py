@@ -15,9 +15,11 @@ panel ABOVE the plot are for settings that are only available for that module.
 
 The different buttons in the acquisition module control panel below the plot are:
 
-- :attr:`~.AcquisitionModule.trace_average` chooses the number of successive traces to average together.
+- :attr:`~.AcquisitionModule.trace_average` chooses the number of successive
+  traces to average together.
 - :attr:`~.AcquisitionModule.curve_name` is the name for the next curve that is saved.
-- :code:`Run single` starts a single acquisition of :code:`trace_average` traces (calls :meth:`.AcquisitionModule.single`).
+- :code:`Run single` starts a single acquisition of :code:`trace_average`
+  traces (calls :meth:`.AcquisitionModule.single`).
 - :code:`Run continuous` starts a continuous acquisition with a running
   average filter, where :code:`trace_average` is the decay constant of the
   running average filter (calls :meth:`.AcquisitionModule.continuous`).

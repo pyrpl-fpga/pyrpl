@@ -991,7 +991,7 @@ class AttributeList(list):
     def _get_unique_index(self, index):
         try:
             return self.index(self[index])
-        except:
+        except (IndexError, TypeError, ValueError):
             return None
 
     def select(self, value):
@@ -1444,7 +1444,7 @@ class ProxyProperty(BaseProperty):
                 + recursive_getattr(self.instance, self.path_to_target_descriptor).__repr__()
                 + ")"
             )
-        except:
+        except (AttributeError, TypeError):
             targetdescr = ""
         return super(ProxyProperty, self).__repr__() + targetdescr
 
@@ -1504,7 +1504,7 @@ class ProxyProperty(BaseProperty):
                 # widget_name=widget_name,
                 **kwargs,
             )
-        except:  # make a renamed widget for target
+        except (AttributeError, TypeError):  # make a renamed widget for target
             return recursive_getattr(
                 module, self.path_to_target_descriptor + ".__class__._create_widget"
             )(target_descriptor, target_module, widget_name=widget_name, **kwargs)
@@ -1546,7 +1546,7 @@ class CurveSelectProperty(SelectProperty):
             value = value.pk
         try:
             pk = int(value)
-        except:
+        except (TypeError, ValueError):
             pk = -1
         return pk
 
@@ -1554,7 +1554,7 @@ class CurveSelectProperty(SelectProperty):
         SelectProperty.set_value(self, obj, pk)
         try:
             curve = CurveDB.get(pk)
-        except:
+        except (OSError, TypeError, ValueError, EOFError):
             curve = None
         setattr(obj, "_" + self.name + "_object", curve)
 

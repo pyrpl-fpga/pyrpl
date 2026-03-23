@@ -40,8 +40,8 @@ try:
     from . import global_config
 
     CurveDB = __import__(global_config.general.curvedb).CurveDB
-except:
-    from . import user_curve_dir
+except (ImportError, AttributeError, KeyError, TypeError):
+    from .directories import user_curve_dir
 
     class XYSeries:
         def __init__(self, x, y):

@@ -21,7 +21,8 @@ attributes specific to the :class:`~pyrpl.hardware_modules.scope.Scope`:
   two successive points of the trace. If disabled, only a sample of the
   full-rate signal is shown as the trace. The averaging mode corresponds to a
   moving-average filter with a cutoff frequency of
-  :attr:`~.pyrpl.hardware_modules.scope.Scope.sampling_time` :math:`^{-1} = 2^{14}/\\mathrm{duration}`
+  :attr:`~.pyrpl.hardware_modules.scope.Scope.sampling_time`
+  :math:`^{-1} = 2^{14}/\\mathrm{duration}`
   in units of Hz.
 * :attr:`~.Scope.xy_mode`: If selected, channel 2 is plotted as a function of
   channel 1 (instead of channels 1 and 2 as a function of time).
@@ -249,7 +250,7 @@ class ScopeWidget(AcquisitionModuleWidget):
                         self.module.math_formula,
                         dict(ch1=ch1, ch2=ch2, np=np, times=times),
                     )
-                except BaseException:
+                except Exception:
                     pass
                 else:
                     self.curves[2].setData(times, math_data)

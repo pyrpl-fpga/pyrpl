@@ -11,10 +11,8 @@ import pytest
 logger = logging.getLogger(name=__name__)
 
 try:
-    raise  # disables sound output during this test
     from pysine import sine
 except ImportError:
-
     def sine(frequency, duration):
         print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
 
@@ -85,7 +83,7 @@ class TestNA(TestPyrpl):
 
         try:
             reads_per_na_cycle = global_config.test.reads_per_na_cycle
-        except:
+        except (AttributeError, KeyError, TypeError):
             reads_per_na_cycle = 3.1
             logger.info(
                 "Could not find global config file entry "
@@ -122,7 +120,7 @@ class TestNA(TestPyrpl):
 
         try:
             reads_per_na_cycle = global_config.test.reads_per_na_cycle
-        except:
+        except (AttributeError, KeyError, TypeError):
             reads_per_na_cycle = 2.9
             logger.info(
                 "Could not find global config file entry "

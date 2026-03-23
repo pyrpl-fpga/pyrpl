@@ -405,7 +405,7 @@ class IirWidget(ModuleWidget):
             name = self.module._selected_pole_or_zero
             index = self.module._selected_index
             return self.attribute_widgets[name].widgets[index].keyPressEvent(event)
-        except:
+        except (AttributeError, KeyError, IndexError, TypeError):
             return super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
@@ -413,5 +413,5 @@ class IirWidget(ModuleWidget):
             name = self.module._selected_pole_or_zero
             index = self.module._selected_index
             return self.attribute_widgets[name].widgets[index].keyReleaseEvent(event)
-        except Exception:
+        except (AttributeError, KeyError, IndexError, TypeError):
             return super().keyReleaseEvent(event)

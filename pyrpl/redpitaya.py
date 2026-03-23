@@ -55,7 +55,8 @@ defaultparameters = dict(
     reloadfpga="auto",  # reload the fpga binfile at startup? True/False/'auto'
     filename="fpga/red_pitaya.bin",  # default name of the binfile for the fpga
     dtbo_filename="fpga/red_pitaya.dtbo",  # default name of device tree file
-    serverbinfilename="fpga.bit.bin",  # name of the binfile on the server and in the device tree overlay file
+    # name of the binfile on the server and in the device tree overlay file
+    serverbinfilename="fpga.bit.bin",
     serverdtbofilename="fpga.dtbo",  # name of the device tree overlay file on the server
     serverdirname="//opt//pyrpl//",  # server directory for server app and bitfile
     leds_off=True,  # turn off all GPIO lets at startup (improves analog performance)
@@ -105,14 +106,16 @@ class RedPitaya(object):
             reloadfpga='auto',  # reload the fpga bitfile at startup? True/False/'auto'
             filename='fpga/red_pitaya.bin',  # name of the binfile for the fpga
             dtbo_filename='fpga/red_pitaya.dtbo', # name of device tree file
-            serverbinfilename='fpga.bit.bin',  # name of the binfile on the server and in the device tree overlay file
+            # name of the binfile on the server and in the device tree overlay file
+            serverbinfilename='fpga.bit.bin',
             serverdtbofilename='fpga.dtbo',  # name of the device tree overlay file on the server
             serverdirname = "//opt//pyrpl//",  # server directory for server app and bitfile
             leds_off=True,  # turn off all GPIO lets at startup (improves analog performance)
             frequency_correction=1.0,  # actual FPGA frequency is 125 MHz * frequency_correction
             timeout=3,  # timeout in seconds for ssh communication
             monitor_server_name='monitor_server',  # name of the server program on redpitaya
-            silence_env=False,   # suppress all environment variables that may override the configuration?
+            # suppress all environment variables that may override the configuration?
+            silence_env=False,
             gui=True  # show graphical user interface or work on command-line only?
 
         if you are experiencing problems, try to increase delay, or try
@@ -158,7 +161,7 @@ class RedPitaya(object):
         # settings from config file
         try:
             update_with_typeconversion(self.parameters, self.c._get_or_create("redpitaya")._data)
-        except BaseException as e:
+        except Exception as e:
             self.logger.warning(
                 "An error occured during the loading of your "
                 "Red Pitaya settings from the config file: %s",
@@ -292,7 +295,7 @@ class RedPitaya(object):
                 self.logger.debug("FPGA loaded with different image: %s", result)
                 return False
 
-        except Exception as e:
+        except (AttributeError, OSError, RuntimeError) as e:
             self.logger.warning("Could not determine FPGA image status: %s", e)
             # If we can't check, assume we need to reload
             return False
@@ -306,7 +309,7 @@ class RedPitaya(object):
         try:
             # close pre-existing connection if necessary
             self.end_ssh()
-        except:
+        except (AttributeError, OSError, RuntimeError):
             pass
         if self.parameters["hostname"] == "_FAKE_REDPITAYA_":
             # simulation mode - start without connecting
@@ -326,7 +329,7 @@ class RedPitaya(object):
                 )
                 # test ssh connection for exceptions
                 self.ssh.ask()
-            except BaseException as e:  # connection problem
+            except Exception as e:  # connection problem
                 if attempt < 3:
                     # try to connect up to 3 times
                     return self.start_ssh(attempt=attempt + 1)
@@ -566,7 +569,7 @@ class RedPitaya(object):
         for line in result.split("\r"):
             try:
                 age = int(line.strip())
-            except:
+            except (TypeError, ValueError):
                 pass
             else:
                 break
@@ -657,7 +660,7 @@ class RedPitaya(object):
     def endserver(self):
         try:
             self.ssh.ask("\x03")  # exit running server application
-        except:
+        except (AttributeError, OSError, RuntimeError):
             self.logger.exception("Server not responding...")
         if "pitaya" in self.ssh.ask():
             self.logger.debug(">")  # formerly 'console ready'

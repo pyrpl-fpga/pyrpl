@@ -336,7 +336,7 @@ class TestIir(TestPyrpl):
                 theory = module.transfer_function_by_kind(f, kind=kind)
                 try:
                     eth = error_threshold[kinds.index(kind)]
-                except:
+                except (IndexError, TypeError, ValueError):
                     eth = error_threshold
             if relative:
                 error = np.abs((data - theory) / theory)

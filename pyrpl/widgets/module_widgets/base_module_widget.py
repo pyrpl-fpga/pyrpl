@@ -269,7 +269,8 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
             widget = self.attribute_widgets[str(name)]
             try:  # try to propagate the change of attribute to the widget
                 widget.update_attribute_by_name(new_value_list)
-            except:  # directly set the widget value otherwise
+            except (AttributeError, KeyError, IndexError, RuntimeError, TypeError, ValueError):
+                # directly set the widget value otherwise
                 self.attribute_widgets[str(name)].widget_value = new_value_list[0]
 
     def change_options(self, select_attribute_name, new_options):

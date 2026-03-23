@@ -12,6 +12,7 @@ from ...attributes import (
     IntProperty,
 )
 from ...curvedb import CurveDB
+
 from ...hardware_modules.asg import Asg1
 from ...hardware_modules.pid import Pid
 from ...widgets.module_widgets import OutputSignalWidget
@@ -327,7 +328,7 @@ class OutputSignal(Signal):
         if self.tf_type == "curve":  # req axis should be that of the curve
             try:
                 c = CurveDB.get(self.tf_curve)
-            except:
+            except (OSError, TypeError, ValueError, EOFError):
                 self._logger.warning("Cannot load specified transfer function %s", self.tf_curve)
             else:
                 return c.data.index

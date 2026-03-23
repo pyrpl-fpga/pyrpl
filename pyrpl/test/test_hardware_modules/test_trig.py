@@ -29,7 +29,7 @@ class TestScope(TestPyrpl):
             trigger_source="pos_edge",
             output_signal="asg0_phase",
         )
-        assert not self.t.armed
+        assert self.t.armed
         # asg on, confirm trigger works
         self.asg.setup(
             frequency=10000.0,

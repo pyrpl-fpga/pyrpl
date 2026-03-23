@@ -45,7 +45,7 @@ class TestValidateAndNormalize(TestPyrpl):
                 # make sure all modules are stopped at the end of this test
                 try:
                     mod.stop()
-                except:
+                except (AttributeError, RuntimeError, OSError):
                     pass
 
     def assert_validate_and_normalize(self, mod):
