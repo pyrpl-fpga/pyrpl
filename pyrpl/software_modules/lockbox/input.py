@@ -1,4 +1,5 @@
 from __future__ import division
+import asyncio
 import numpy as np
 import logging
 from ...attributes import (
@@ -16,6 +17,7 @@ from ...module_attributes import ModuleProperty
 from ...software_modules.lockbox import LockboxModule
 from ...modules import SignalModule
 from ...software_modules.module_managers import InsufficientResourceError
+from ...async_utils import wait
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +297,12 @@ class InputSignal(Signal):
         returns an experimental curve in V obtained from a sweep of the
         lockbox.
         """
+        return wait(self.sweep_acquire_async(timeout_min=timeout_min))
+
+    async def sweep_acquire_async(self, timeout_min=1):
+        """
+        Asynchronous variant of sweep_acquire.
+        """
         try:
             with self.pyrpl.scopes.pop(self.name) as scope:
                 self.lockbox._sweep()
@@ -318,7 +326,9 @@ class InputSignal(Signal):
                     )
                     scope.save_state("autosweep")
                 timeout = max(1.0 / self.lockbox.asg.frequency + scope.duration, timeout_min)
-                curve1, curve2 = scope.single(timeout=timeout)
+                curve1, curve2 = await asyncio.wait_for(
+                    asyncio.shield(scope.single_async()), timeout=timeout
+                )
                 times = scope.times
                 curve1 -= self.calibration_data._analog_offset
                 return curve1, times
@@ -332,7 +342,13 @@ class InputSignal(Signal):
         This function should be reimplemented to measure whatever property of
         the curve is needed by expected_signal.
         """
-        curve, times = self.sweep_acquire(timeout_min=timeout_min)
+        return wait(self.calibrate_async(autosave=autosave, timeout_min=timeout_min))
+
+    async def calibrate_async(self, autosave=False, timeout_min=1):
+        """
+        Asynchronous variant of calibrate.
+        """
+        curve, times = await self.sweep_acquire_async(timeout_min=timeout_min)
         if curve is None:
             self._logger.warning("Aborting calibration because no scope is available...")
             return None
@@ -503,9 +519,13 @@ class InputDirect(InputSignal):
 
 
 class InputFromOutput(InputDirect):
-    def calibrate(self, autosave=False):
+    def calibrate(self, autosave=False, timeout_min=1):
         """no need to calibrate this"""
-        pass
+        return None
+
+    async def calibrate_async(self, autosave=False, timeout_min=1):
+        """no need to calibrate this"""
+        return None
 
     input_signal = InputSelectProperty(
         options=(

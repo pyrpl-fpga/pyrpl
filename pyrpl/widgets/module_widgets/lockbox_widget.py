@@ -94,6 +94,7 @@ import numpy as np
 from .base_module_widget import ReducedModuleWidget, ModuleWidget
 from ...pyrpl_utils import get_base_module_class
 from ... import APP
+from ...async_utils import ensure_future
 
 
 class AnalogTfDialog(QtWidgets.QDialog):
@@ -496,8 +497,36 @@ class LockboxInputWidget(ModuleWidget):
         self.main_layout.addWidget(self.win)
         self.button_calibrate = QtWidgets.QPushButton("Calibrate")
         self.main_layout.addWidget(self.button_calibrate)
-        self.button_calibrate.clicked.connect(lambda: self.module.calibrate())
+        self.button_calibrate.clicked.connect(self._run_calibrate)
+        self._calibrate_future = None
         self.input_calibrated()
+
+    def _run_calibrate(self):
+        """
+        Run calibration from a Qt slot as an async task to avoid blocking
+        nested event loops in click callbacks.
+        """
+        if self._calibrate_future is not None and not self._calibrate_future.done():
+            self.module._logger.warning(
+                "Calibration already running for lockbox input '%s'. Ignoring click.",
+                self.module.name,
+            )
+            return
+        self.button_calibrate.setEnabled(False)
+        self._calibrate_future = ensure_future(self.module.calibrate_async())
+        self._calibrate_future.add_done_callback(self._calibrate_done)
+
+    def _calibrate_done(self, future):
+        self.button_calibrate.setEnabled(True)
+        if future.cancelled():
+            return
+        exc = future.exception()
+        if exc is not None:
+            self.module._logger.error(
+                "Calibration failed for lockbox input '%s'.",
+                self.module.name,
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
 
     def hide_lock(self):
         self.curve_slope.setData([], [])
