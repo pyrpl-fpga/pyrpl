@@ -47,6 +47,9 @@ class LogHandler(QtCore.QObject, logging.Handler):
     A handler class which sends log strings to a wx object
     """
 
+    # Prevent logging.shutdown() from calling flush() on a QObject that may
+    # already be partially torn down by Qt at interpreter exit.
+    flushOnClose = False
     show_log = QtCore.Signal(list)
 
     def __init__(self):
@@ -66,10 +69,20 @@ class LogHandler(QtCore.QObject, logging.Handler):
             msg = self.format(record)
             self.show_log.emit([msg])
             # EL.display_log(record)
+        except RuntimeError:
+            # Happens when underlying Qt object has been deleted at shutdown.
+            return
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception:
             self.handleError(record)
+
+    def close(self):
+        try:
+            self.show_log.disconnect()
+        except Exception:
+            pass
+        logging.Handler.close(self)
 
 
 class MyDockWidget(QtWidgets.QDockWidget):
@@ -178,6 +191,14 @@ class PyrplWidget(QtWidgets.QMainWindow):
         self.setWindowTitle(self.parent.c.pyrpl.name)
         self.timers = [self.timer_save_pos, self.timer_toolbar]
         # self.set_background_color(self)
+
+    def closeEvent(self, event):
+        try:
+            self.logger.removeHandler(self.handler)
+            self.handler.close()
+        except Exception:
+            pass
+        return super(PyrplWidget, self).closeEvent(event)
 
     def click_menu_modules(self):
         self.menu_modules.popup(self.mapToGlobal(QtCore.QPoint(10, 10)))
