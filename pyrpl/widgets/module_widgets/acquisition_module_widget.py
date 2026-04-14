@@ -15,9 +15,11 @@ panel ABOVE the plot are for settings that are only available for that module.
 
 The different buttons in the acquisition module control panel below the plot are:
 
-- :attr:`~.AcquisitionModule.trace_average` chooses the number of successive traces to average together.
+- :attr:`~.AcquisitionModule.trace_average` chooses the number of successive
+  traces to average together.
 - :attr:`~.AcquisitionModule.curve_name` is the name for the next curve that is saved.
-- :code:`Run single` starts a single acquisition of :code:`trace_average` traces (calls :meth:`.AcquisitionModule.single`).
+- :code:`Run single` starts a single acquisition of :code:`trace_average`
+  traces (calls :meth:`.AcquisitionModule.single`).
 - :code:`Run continuous` starts a continuous acquisition with a running
   average filter, where :code:`trace_average` is the decay constant of the
   running average filter (calls :meth:`.AcquisitionModule.continuous`).
@@ -44,10 +46,10 @@ class CurrentAvgLabel(QtWidgets.QWidget):
         self.main_lay.addWidget(self.value_label)
         self.main_lay.addStretch(1)
         self.value_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.main_lay.setContentsMargins(0,0,0,0)
+        self.main_lay.setContentsMargins(0, 0, 0, 0)
 
     def set_value(self, val):
-        self.value_label.setText(str(val) + ' /')
+        self.value_label.setText(str(val) + " /")
 
 
 class AcquisitionModuleWidget(ModuleWidget):
@@ -58,8 +60,7 @@ class AcquisitionModuleWidget(ModuleWidget):
         self.button_continuous = QtWidgets.QPushButton("Run continuous")
         self.button_continuous.clicked.connect(self.run_continuous_clicked)
 
-        self.button_stop = QtWidgets.QPushButton(
-            'Stop')
+        self.button_stop = QtWidgets.QPushButton("Stop")
         self.button_stop.clicked.connect(self.stop_clicked)
 
         self.button_save = QtWidgets.QPushButton("Save curve")
@@ -85,7 +86,7 @@ class AcquisitionModuleWidget(ModuleWidget):
         self.button_layout.setStretchFactor(self.button_stop, 1)
         self.button_layout.setStretchFactor(self.button_save, 1)
         self.button_layout.addStretch(1)
-        self.attribute_layout.setStretch(0, 0) # since widgets are all removed
+        self.attribute_layout.setStretch(0, 0)  # since widgets are all removed
         # and re-added, the stretch ends up on the left, so better cancel it
         # and make a new one at the end
         self.update_running_buttons()
@@ -95,7 +96,7 @@ class AcquisitionModuleWidget(ModuleWidget):
             self.module.single_async()
         else:
             if str(self.button_single.text()).startswith("Resume single"):
-                if self.module.running_state=='paused_single':
+                if self.module.running_state == "paused_single":
                     self.module.resume()
                 else:
                     self.module._resume_new_single()
@@ -112,17 +113,16 @@ class AcquisitionModuleWidget(ModuleWidget):
         if str(self.button_continuous.text()).startswith("Run continuous"):
             self.module.continuous()
         else:
-            if str(self.button_continuous.text()).startswith("Resume "
-                                                             "continuous"):
+            if str(self.button_continuous.text()).startswith("Resume continuous"):
                 self.module._resume_new_continuous()
             else:
                 if str(self.button_continuous.text()).startswith("Pause"):
                     self.module.pause()
 
     def stop_clicked(self):
-        #old_running_state = self.module.running_state
+        # old_running_state = self.module.running_state
         self.module.stop()
-        #if old_running_state in ["running_single", "running_continuous"]:
+        # if old_running_state in ["running_single", "running_continuous"]:
         #    self.module.running_state = old_running_state
         self.update_current_average()
 
@@ -135,12 +135,12 @@ class AcquisitionModuleWidget(ModuleWidget):
         according to module.running_continuous
         """
         self.update_current_average()
-        if self.module.current_avg>0:
-            number_str = ' (' + str(self.module.current_avg) + ")"
+        if self.module.current_avg > 0:
+            " (" + str(self.module.current_avg) + ")"
         else:
-            number_str = ""
-        if self.module.running_state == 'running_continuous':
-            #if self.module.current_avg >= self.module.trace_average:
+            pass
+        if self.module.running_state == "running_continuous":
+            # if self.module.current_avg >= self.module.trace_average:
             #    # shows a plus sign when number of averages is available
             #    number_str = number_str[:-1] + '+)'
             self.button_continuous.setText("Pause")

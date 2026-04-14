@@ -19,7 +19,7 @@ The working principle in synchronous mode is the following:
    (otherwise, the current values are used)
 2. (optional) curve\_ready(): returns True if the acquisition is
    finished, False otherwise.
-3. curve(timeout=None): returns a curve (numpy arrays). The function
+3. single(timeout=None): returns a curve (numpy arrays). The function
    only returns when the acquisition is done, or a timeout occurs. The
    parameter timeout (only available for scope and specan) has the
    following meaning:
@@ -59,7 +59,6 @@ public methods (All methods return immediately)
 -  stop(): stops the current acquisition and restarts the averaging.
 -  save\_curve(): saves the currently averaged curve (or curves for
    scope)
--  curve(): the currently averaged curve
 
 Public attributes:
 ------------------

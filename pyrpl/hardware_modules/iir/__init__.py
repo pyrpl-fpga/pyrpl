@@ -13,10 +13,16 @@ following properties:
 - poles (zeros) either real or complex-conjugate pairs
 - no three or more identical real poles (zeros)
 - no two or more identical pairs of complex conjugate poles (zeros)
-- pole and zero frequencies should be larger than :math:`\frac{f_\rm{nyquist}}{1000}` (but you can optimize the nyquist frequency of your filter by tuning the 'loops' parameter)
-- the DC-gain of the filter must be 1.0. Despite the FPGA implemention being more flexible, we found this constraint rather practical. If you need different behavior, pass the IIR signal through a PID module and use its input filter and proportional gain. If you still need different behaviour, the file iir.py is a good starting point.
+- pole and zero frequencies should be larger than f_nyquist / 1000
+  (but you can optimize the nyquist frequency of your filter by tuning
+  the 'loops' parameter)
+- the DC-gain of the filter must be 1.0. Despite the FPGA implemention being more flexible, we
+  found this constraint rather practical. If you need different behavior, pass the IIR signal
+  through a PID module and use its input filter and proportional gain. If you still need different
+  behaviour, the file iir.py is a good starting point.
 - total filter order <= 16 (realizable with 8 parallel biquads)
-- a remaining bug limits the dynamic range to about 30 dB before internal saturation interferes with filter performance
+- a remaining bug limits the dynamic range to about 30 dB before internal saturation interferes
+  with filter performance
 
 Filters whose poles have a positive real part are unstable by design.
 Zeros with positive real part lead to non-minimum phase lag.
@@ -76,7 +82,7 @@ Let's check if the filter is really working as it is supposed:
     iir.input = na.iq
     na.setup(iq_name='iq1', start=1e4, stop=3e6, points = 301, rbw=100, avg=1,
              amplitude=0.1, input='iir', output_direct='off', logscale=True)
-    tf = na.curve()
+    tf = na.single()
 
     # first thing to check if the filter is not ok
     print("IIR overflows after:", bool(iir.overflow))
@@ -118,7 +124,7 @@ default value g=1.0) does here:
 
     # measure tf of iir filter
     iir.input = na.iq
-    tf = na.curve()
+    tf = na.single()
 
     # first thing to check if the filter is not ok
     print("IIR overflows after:", bool(iir.overflow))
@@ -164,4 +170,5 @@ internal iir registers:
     # set the unity transfer function to the filter
     iir._setup_unity()
 """
+
 from .iir import IIR

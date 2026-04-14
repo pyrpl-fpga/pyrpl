@@ -1,6 +1,15 @@
 ﻿
+:orphan:
+
 Introduction to pyrpl
 =====================
+
+.. warning::
+
+   This page is a legacy tutorial kept for reference. Some parts are outdated
+   (for example Python 2 syntax and old GUI examples). For current
+   installation and usage guidance, prefer :doc:`../installation/index`,
+   :doc:`../../installation`, :doc:`../../gui` and :doc:`../../api`.
 
 1) Introduction
 ---------------
@@ -17,7 +26,7 @@ the Verilog source code is provided together with this package and may
 be modified to customize the software to your needs.
 
 2) Table of contents
-====================
+--------------------
 
 In this document, you will find the following sections: 1. Introduction
 2. ToC 3. Installation 4. First steps 5. RedPitaya Modules 6. The Pyrpl
@@ -39,71 +48,59 @@ described in section 5. Please, read section 7 for a quick description
 of the GUI.
 
 3) Installation
-===============
+---------------
 
-Option 3: Simple clone from GitHub (developers)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 1: Install latest PyRPL from GitHub with pip (recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If instead you plan to synchronize with github on a regular basis, you
-can also leave the downloaded code where it is and add the parent
-directory of the pyrpl folder to the PYTHONPATH environment variable as
-described in this thread:
-http://stackoverflow.com/questions/3402168/permanently-add-a-directory-to-pythonpath.
-For all beta-testers and developers, this is the preferred option. So
-the typical PYTHONPATH environment variable should look somewhat like
-this: :math:`\texttt{PYTHONPATH=C:\OTHER_MODULE;C:\GITHUB\PYRPL}`
+The package published on PyPI is outdated. Install PyRPL from GitHub instead
+(preferably in a fresh environment):
 
-If you are experiencing problems with the dependencies on other python
-packages, executing the following command in the pyrpl directory might
-help:
+.. code:: bash
 
-:math:`\texttt{python setup.py install develop}`
+    pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 
-If at a later point, you have the impression that updates from github
-are not reflected in the program's behavior, try this:
+
+You can replace ``qt-pyqt5`` with ``qt-pyqt6``, ``qt-pyside2`` or
+``qt-pyside6``.
+
+.. code:: ipython3
+
+    #no-test
+    !pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 
 .. code:: ipython3
 
     import pyrpl
-    print pyrpl.__file__
+    print(pyrpl.__version__)
+    print(pyrpl.__file__)
 
-Should the directory not be the one of your local github installation,
-you might have an older version of pyrpl installed. Just delete any such
-directories other than your principal github clone and everything should
-work.
+Option 2: Clone the repository (developers)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Option 2: from GitHub using setuptools (beta version)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+If you have a `git client <https://git-scm.com/downloads>`__ installed
+(recommended), clone the repository and install from the project root:
 
-Download the code manually from
-https://github.com/lneuhaus/pyrpl/archive/master.zip and unzip it or get
-it directly from git by typing
+.. code:: bash
 
-:math:`\texttt{git clone https://github.com/lneuhaus/pyrpl.git YOUR_DESTINATIONFOLDER}`
+    git clone https://github.com/pyrpl-fpga/pyrpl.git
+    cd pyrpl
+    pip install -e .[qt-pyqt5]
 
-In a command line shell, navigate into your new local pyrplockbox
-directory and execute
+For a non-editable installation, use ``pip install .[qt-pyqt5]``.
 
-:math:`\texttt{python setup.py install}`
+Option 3: Conda environment (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This copies the files into the side-package directory of python. The
-setup should make sure that you have the python libraries paramiko
-(http://www.paramiko.org/installing.html) and scp
-(https://pypi.python.org/pypi/scp) installed. If this is not the case
-you will get a corresponding error message in a later step of this
-tutorial.
+If you prefer conda, create and activate a dedicated environment first:
 
-Option 1: with pip (coming soon)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code:: bash
 
-If you have pip correctly installed, executing the following line in a
-command line should install pyrplockbox and all dependencies:
+    conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
+    conda activate pyrpl-env
 
-:math:`\texttt{pip install pyrpl}`
-
-.. code:: ipython3
-
-    !pip install pyrpl #if you look at this file in ipython notebook, just execute this cell to install pyrplockbox
+Then install PyRPL from GitHub as shown above. Do not use
+``pip install pyrpl`` because the PyPI package is outdated.
 
 Compiling the server application (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -113,7 +110,7 @@ The software comes with a precompiled version of the server application
 automatically when you start the connection. If you made changes to this
 file, you can recompile it by typing
 
-:math:`\texttt{python setup.py compile_server}`
+``python setup.py compile_server``
 
 For this to work, you must have gcc and the cross-compiling libraries
 installed. Basically, if you can compile any of the official RedPitaya
@@ -122,7 +119,7 @@ working cross-compiler installed on your UserPC, you can also compile
 directly on the RedPitaya (tested with ecosystem v0.95). To do so, you
 must upload the directory pyrpl/monitor\_server on the redpitaya, and
 launch the compilation with the command
-:math:`\texttt{make CROSS_COMPILE=}`
+``make CROSS_COMPILE=``
 
 Compiling the FPGA bitfile (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,14 +135,14 @@ following commands. You should adapt the path in the first and second
 commands to the locations of the Vivado installation / the fpga
 directory in your filesystem:
 
-:math:`\texttt{source /opt/Xilinx/Vivado/2015.4/settings64.sh}`
+``source /opt/Xilinx/Vivado/2015.4/settings64.sh``
 
-:math:`\texttt{cd /home/myusername/fpga}`
+``cd /home/myusername/fpga``
 
-:math:`\texttt{make}`
+``make``
 
 The compilation should take between 15 and 30 minutes. The result will
-be the file :math:`\texttt{fpga/red_pitaya.bin}`. To test the new FPGA
+be the file ``fpga/red_pitaya.bin``. To test the new FPGA
 design, make sure that this file in the fpga subdirectory of your pyrpl
 code directory. That is, if you used a virtual machine for the
 compilation, you must copy the file back to the original machine on
@@ -169,11 +166,11 @@ functionality of all major submodules against reference benchmarks
 To run the test, navigate in command line into the pyrpl directory and
 type
 
-:math:`\texttt{set REDPITAYA=192.168.1.100}` (in windows) or
+``set REDPITAYA=192.168.1.100`` (in windows) or
 
-:math:`\texttt{export REDPITAYA=192.168.1.100}` (in linux)
+``export REDPITAYA=192.168.1.100`` (in linux)
 
-:math:`\texttt{python setup.py nosetests}`
+``python setup.py nosetests``
 
 The first command tells the test at which IP address it can find a
 RedPitaya. The last command runs the actual test. After a few seconds,
@@ -184,8 +181,8 @@ After you have implemented additional features, you are encouraged to
 add unitary tests to consolidate the changes. If you immediately
 validate your changes with unitary tests, this will result in a huge
 productivity improvement for you. You can find all test files in the
-folder :math:`\texttt{pyrpl/pyrpl/test}`, and the existing examples
-(notably :math:`\texttt{test_example.py}`) should give you a good point
+folder ``pyrpl/pyrpl/test``, and the existing examples
+(notably ``test_example.py``) should give you a good point
 to start. As long as you add a function starting with 'test\_' in one of
 these files, your test should automatically run along with the others.
 As you add more tests, you will see the number of total tests increase
@@ -280,7 +277,7 @@ console to the directory, for example:
 
 .. code:: ipython3
 
-    cd c:\lneuhaus\github\pyrpl
+    cd c:\pyrpl-fpga\github\pyrpl
 
 Now retry to load the module. It should really work now.
 
@@ -325,7 +322,7 @@ Basic communication with your RedPitaya
 .. code:: ipython3
 
     #check the value of input1
-    print r.scope.voltage1
+    print(r.scope.voltage1)
 
 With the last command, you have successfully retrieved a value from an
 FPGA register. This operation takes about 300 µs on my computer. So
@@ -342,7 +339,7 @@ there is enough time to repeat the reading n times.
     for i in range(n):
         times.append(time.time()-t0)
         data.append(r.scope.voltage1)
-    print "Rough time to read one FPGA register: ", (time.time()-t0)/n*1e6, "µs"
+    print("Rough time to read one FPGA register: ", (time.time()-t0)/n*1e6, "µs")
     %matplotlib inline
     f, axarr = plt.subplots(1,2, sharey=True)
     axarr[0].plot(times, data, "+");
@@ -433,8 +430,8 @@ upon a trigger event.
 .. code:: ipython3
 
     asg = r.asg1 # make a shortcut
-    print "Trigger sources:", asg.trigger_sources
-    print "Output options: ", asg.output_directs
+    print("Trigger sources:", asg.trigger_sources)
+    print("Output options: ", asg.output_directs)
 
 Let's set up the ASG to output a sawtooth signal of amplitude 0.8 V
 (peak-to-peak 1.6 V) at 1 MHz on output 2:
@@ -459,9 +456,9 @@ interval.
 .. code:: ipython3
 
     s = r.scope # shortcut
-    print "Available decimation factors:", s.decimations
-    print "Trigger sources:", s.trigger_sources
-    print "Available inputs: ", s.inputs
+    print("Available decimation factors:", s.decimations)
+    print("Trigger sources:", s.trigger_sources)
+    print("Available inputs: ", s.inputs)
 
 Let's have a look at a signal generated by asg1. Later we will use
 convenience functions to reduce the amount of code necessary to set up
@@ -494,12 +491,12 @@ the scope:
     s.input2 = 'pid0'
 
     # trig at zero volt crossing
-    s.threshold_ch1 = 0
+    s.threshold = 0
 
     # positive/negative slope is detected by waiting for input to
     # sweept through hysteresis around the trigger threshold in
     # the right direction
-    s.hysteresis_ch1 = 0.01
+    s.hysteresis = 0.01
 
     # trigger on the input signal positive slope
     s.trigger_source = 'ch1_positive_edge'
@@ -513,21 +510,21 @@ the scope:
     # setup the scope for an acquisition
     s.setup()
 
-    print "\nBefore turning on asg:"
-    print "Curve ready:", s.curve_ready() # trigger should still be armed
+    print("\nBefore turning on asg:")
+    print("Curve ready:", s.curve_ready()) # trigger should still be armed
 
     # turn on asg and leave enough time for the scope to record the data
     asg.setup(frequency=1e3, amplitude=0.3, start_phase=90, waveform='halframp', trigger_source='immediately')
     sleep(0.010)
 
     # check that the trigger has been disarmed
-    print "\nAfter turning on asg:"
-    print "Curve ready:", s.curve_ready()
-    print "Trigger event age [ms]:",8e-9*((s.current_timestamp&0xFFFFFFFFFFFFFFFF) - s.trigger_timestamp)*1000
+    print("\nAfter turning on asg:")
+    print("Curve ready:", s.curve_ready())
+    print("Trigger event age [ms]:",8e-9*((s.current_timestamp&0xFFFFFFFFFFFFFFFF) - s.trigger_timestamp)*1000)
 
     # plot the data
     %matplotlib inline
-    plt.plot(s.times*1e3,s.curve(ch=1),s.times*1e3,s.curve(ch=2));
+    plt.plot(s.times*1e3,s.single(ch=1),s.times*1e3,s.single(ch=2));
     plt.xlabel("Time [ms]");
     plt.ylabel("Voltage");
 
@@ -553,17 +550,17 @@ large an integrator gain will quickly saturate the outputs.
 .. code:: ipython3
 
     # useful functions for scope diagnostics
-    print "Curve ready:", s.curve_ready()
-    print "Trigger source:",s.trigger_source
-    print "Trigger threshold [V]:",s.threshold_ch1
-    print "Averaging:",s.average
-    print "Trigger delay [s]:",s.trigger_delay
-    print "Trace duration [s]: ",s.duration
-    print "Trigger hysteresis [V]", s.hysteresis_ch1
-    print "Current scope time [cycles]:",hex(s.current_timestamp)
-    print "Trigger time [cycles]:",hex(s.trigger_timestamp)
-    print "Current voltage on channel 1 [V]:", r.scope.voltage1
-    print "First point in data buffer 1 [V]:", s.ch1_firstpoint
+    print("Curve ready:", s.curve_ready())
+    print("Trigger source:",s.trigger_source)
+    print("Trigger threshold [V]:",s.threshold)
+    print("Averaging:",s.average)
+    print("Trigger delay [s]:",s.trigger_delay)
+    print("Trace duration [s]: ",s.duration)
+    print("Trigger hysteresis [V]", s.hysteresis)
+    print("Current scope time [cycles]:",hex(s.current_timestamp))
+    print("Trigger time [cycles]:",hex(s.trigger_timestamp))
+    print("Current voltage on channel 1 [V]:", r.scope.voltage1)
+    print("First point in data buffer 1 [V]:", s.ch1_firstpoint)
 
 PID module
 ~~~~~~~~~~
@@ -573,7 +570,7 @@ PID modules available: pid0 to pid3.
 
 .. code:: ipython3
 
-    print r.pid0.help()
+    print(r.pid0.help())
 
 Proportional and integral gain
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -585,23 +582,23 @@ Proportional and integral gain
 
     #turn off by setting gains to zero
     pid.p,pid.i = 0,0
-    print "P/I gain when turned off:", pid.i,pid.p
+    print("P/I gain when turned off:", pid.i,pid.p)
 
 .. code:: ipython3
 
     # small nonzero numbers set gain to minimum value - avoids rounding off to zero gain
     pid.p = 1e-100
     pid.i = 1e-100
-    print "Minimum proportional gain: ",pid.p
-    print "Minimum integral unity-gain frequency [Hz]: ",pid.i
+    print("Minimum proportional gain: ", pid.p)
+    print("Minimum integral unity-gain frequency [Hz]: ", pid.i)
 
 .. code:: ipython3
 
     # saturation at maximum values
     pid.p = 1e100
     pid.i = 1e100
-    print "Maximum proportional gain: ",pid.p
-    print "Maximum integral unity-gain frequency [Hz]: ",pid.i
+    print("Maximum proportional gain: ", pid.p)
+    print("Maximum integral unity-gain frequency [Hz]: ", pid.i)
 
 Control with the integral value register
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -682,25 +679,25 @@ take values that scale as the powers of 2.
 
     # minimum cutoff frequency is 2 Hz, maximum 77 kHz (for now)
     r.pid0.inputfilter = [1,1e10,-1,-1e10]
-    print r.pid0.inputfilter
+    print(r.pid0.inputfilter)
 
 .. code:: ipython3
 
     # not setting a coefficient turns that filter off
     r.pid0.inputfilter = [0,4,8]
-    print r.pid0.inputfilter
+    print(r.pid0.inputfilter)
 
 .. code:: ipython3
 
     # setting without list also works
     r.pid0.inputfilter = -2000
-    print r.pid0.inputfilter
+    print(r.pid0.inputfilter)
 
 .. code:: ipython3
 
     # turn off again
     r.pid0.inputfilter = []
-    print r.pid0.inputfilter
+    print(r.pid0.inputfilter)
 
 You should now go back to the Scope and ASG example above and play
 around with the setting of these filters to convince yourself that they
@@ -778,8 +775,8 @@ put a 50 Ohm terminator in parallel with input 1.
     na.iq_name = 'iq1'
 
     #take transfer functions. first: iq1 -> iq1, second iq1->out1->(your cable)->adc1
-    f, iq1, amplitudes = na.curve(start=1e3,stop=62.5e6,points=1001,rbw=1000,avg=1,amplitude=0.2,input='iq1',output_direct='off', acbandwidth=0)
-    f, adc1, amplitudes = na.curve(start=1e3,stop=62.5e6,points=1001,rbw=1000,avg=1,amplitude=0.2,input='adc1',output_direct='out1', acbandwidth=0)
+    f, iq1, amplitudes = na.single(start=1e3,stop=62.5e6,points=1001,rbw=1000,avg=1,amplitude=0.2,input='iq1',output_direct='off', acbandwidth=0)
+    f, adc1, amplitudes = na.single(start=1e3,stop=62.5e6,points=1001,rbw=1000,avg=1,amplitude=0.2,input='adc1',output_direct='out1', acbandwidth=0)
 
     #plot
     from pyrpl.iir import bodeplot
@@ -824,12 +821,12 @@ with the network analyzer:
               input='iq1')
 
     # take transfer function
-    f, tf1, ampl = na.curve(start=1e5, stop=4e6, points=201, rbw=100, avg=3,
+    f, tf1, ampl = na.single(start=1e5, stop=4e6, points=201, rbw=100, avg=3,
                          amplitude=0.2, input='iq2',output_direct='off')
 
     # add a phase advance of 82.3 degrees and measure transfer function
     bpf.phase = 82.3
-    f, tf2, ampl = na.curve(start=1e5, stop=4e6, points=201, rbw=100, avg=3,
+    f, tf2, ampl = na.single(start=1e5, stop=4e6, points=201, rbw=100, avg=3,
                          amplitude=0.2, input='iq2',output_direct='off')
 
     #plot
@@ -865,13 +862,13 @@ reasonable frequency lock).
     iq.output_direct = 'off'
     iq.output_signal = 'pfd'
 
-    print "Before turning on:"
-    print "Frequency difference error integral", iq.pfd_integral
+    print("Before turning on:")
+    print("Frequency difference error integral", iq.pfd_integral)
 
-    print "After turning on:"
+    print("After turning on:")
     iq.pfd_on = True
     for i in range(10):
-        print "Frequency difference error integral", iq.pfd_integral
+        print("Frequency difference error integral", iq.pfd_integral)
 
 IIR module
 ~~~~~~~~~~
@@ -889,7 +886,7 @@ poles > number of zeros) - poles (zeros) either real or
 complex-conjugate pairs - no three or more identical real poles (zeros)
 - no two or more identical pairs of complex conjugate poles (zeros) -
 pole and zero frequencies should be larger than
-:math:`\frac{f_\rm{nyquist}}{1000}` (but you can optimize the nyquist
+:math:`\frac{f_{\mathrm{nyquist}}}{1000}` (but you can optimize the nyquist
 frequency of your filter by tuning the 'loops' parameter) - the DC-gain
 of the filter must be 1.0. Despite the FPGA implemention being more
 flexible, we found this constraint rather practical. If you need
@@ -922,7 +919,7 @@ internal filter signals limits its performance.
     iir = r.iir
 
     #print docstring of the setup function
-    print iir.setup.__doc__
+    print(iir.setup.__doc__)
 
 .. code:: ipython3
 
@@ -935,7 +932,7 @@ internal filter signals limits its performance.
     zeros = [ -4e4j-300, +4e4j-300,-2e5j-1000, +2e5j-1000, -2e6j-3000, +2e6j-3000]
     poles = [ -1e6, -5e4j-300, +5e4j-300, -1e5j-3000, +1e5j-3000, -1e6j-30000, +1e6j-30000]
     designdata = iir.setup(zeros, poles, loops=None, plot=True);
-    print "Filter sampling frequency: ", 125./iir.loops,"MHz"
+    print("Filter sampling frequency: ", 125./iir.loops,"MHz")
 
 If you try changing a few coefficients, you will see that your design
 filter is not always properly realized. The bottleneck here is the
@@ -951,15 +948,15 @@ Let's check if the filter is really working as it is supposed:
 .. code:: ipython3
 
     # first thing to check if the filter is not ok
-    print "IIR overflows before:", bool(iir.overflow)
+    print("IIR overflows before:", bool(iir.overflow))
 
     # measure tf of iir filter
     r.iir.input = 'iq1'
-    f, tf, ampl = r.na.curve(iq_name='iq1', start=1e4, stop=3e6, points = 301, rbw=100, avg=1,
+    f, tf, ampl = r.na.single(iq_name='iq1', start=1e4, stop=3e6, points = 301, rbw=100, avg=1,
                            amplitude=0.1, input='iir', output_direct='off', logscale=True)
 
     # first thing to check if the filter is not ok
-    print "IIR overflows after:", bool(iir.overflow)
+    print("IIR overflows after:", bool(iir.overflow))
 
     #plot with design data
     %matplotlib inline
@@ -989,7 +986,7 @@ default value g=1.0) does here:
     designdata = iir.setup(zeros,poles,g=0.1,loops=None,plot=False);
 
     # first thing to check if the filter is not ok
-    print "IIR overflows before:", bool(iir.overflow)
+    print("IIR overflows before:", bool(iir.overflow))
 
     # measure tf of iir filter
     r.iir.input = 'iq1'
@@ -997,7 +994,7 @@ default value g=1.0) does here:
                            amplitude=0.1, input='iir', output_direct='off', logscale=True)
 
     # first thing to check if the filter is not ok
-    print "IIR overflows after:", bool(iir.overflow)
+    print("IIR overflows after:", bool(iir.overflow))
 
     #plot with design data
     %matplotlib inline
@@ -1022,13 +1019,13 @@ internal iir registers:
     iir = r.iir
 
     # useful diagnostic functions
-    print "IIR on:", iir.on
-    print "IIR bypassed:", iir.shortcut
-    print "IIR copydata:", iir.copydata
-    print "IIR loops:", iir.loops
-    print "IIR overflows:", bin(iir.overflow)
-    print "\nCoefficients (6 per biquad):"
-    print iir.coefficients
+    prin("IIR on:", iir.on)
+    prin("IIR bypassed:", iir.shortcut)
+    prin("IIR copydata:", iir.copydata)
+    prin("IIR loops:", iir.loops)
+    prin("IIR overflows:", bin(iir.overflow))
+    prin("\nCoefficients (6 per biquad):"
+    print(iir.coefficients)
 
     # set the unity transfer function to the filter
     iir._setup_unity()
@@ -1104,7 +1101,7 @@ prints all available registers and their description:
 .. code:: ipython3
 
     pid = r.pid0
-    print pid.help()
+    print(pid.help())
     pid.ival #bug: help forgets about pid.ival: current integrator value [volts]
 
 We need to inform our RedPitaya about which connections we want to make.
@@ -1116,8 +1113,8 @@ The cabling discussed above translates into:
     pid.output_direct = 'out1'
 
     #see other available options just for curiosity:
-    print pid.inputs
-    print pid.output_directs
+    print(pid.inputs)
+    print(pid.output_directs)
 
 Finally, we need to define a setpoint. Lets first measure the offset
 when the laser is away from the resonance, and then measure or estimate
@@ -1171,36 +1168,16 @@ integrator will naturally drift into the resonance and stay there:
     while True:
         relative_error = abs((r.scope.voltage1-pid.setpoint)/(offresonant-resonant))
         if time()-t0 > 2: #diagnostics every 2 seconds
-            print "relative error:",relative_error
+            print("relative error:", relative_error)
             t0 = time()
         if relative_error < 0.1:
             break
         sleep(0.01)
         if pid.ival <= -1:
-            print "Resonance missed. Trying again slower.."
+            print("Resonance missed. Trying again slower..")
             pid.ival = 1.2 #overshoot a little
             pid.i /= 2
-    print "Resonance approch successful"
-
-::
-
-    Questions to users: what parameters do you know?
-    finesse of the cavity? 1000
-    length? 1.57m
-    what error signals are available? transmission direct, reflection AC -> directement pdh analogique
-
-    are modulators available n/a
-
-    what cavity length / laser frequency actuators are available? PZT mephisto DC - 10kHz, 48MHz opt./V, V_rp apmplifie x20
-    temperature du laser <1 Hz 2.5~GHz/V, apres AOM
-
-    what is known about them (displacement, bandwidth, amplifiers)?
-
-    what analog filters are present? YAG PZT a 10kHz
-
-    imposer le design des sorties
-
-More to come
+    print("Resonance approch successful"
 
 .. code:: ipython3
 
@@ -1231,7 +1208,7 @@ More to come
     pid.inputfilter = []#[-1e3, 5e3, 20e3, 80e3]
 
     # take the transfer function through pid1, this will take a few seconds...
-    x, y, ampl = na.curve(start=0,stop=200e3,points=101,rbw=100,avg=1,amplitude=0.5,input='iq1',output_direct='off', acbandwidth=0)
+    x, y, ampl = na.single(start=0,stop=200e3,points=101,rbw=100,avg=1,amplitude=0.5,input='iq1',output_direct='off', acbandwidth=0)
 
     #plot
     import matplotlib.pyplot as plt
@@ -1510,7 +1487,7 @@ the eventloop.
                 spectrum = await sa.single_async() #  wait for 10 averages to be ready
                 freq = sa.data_x[spectrum.argmax()] #  take the max of the spectrum
                 freqs.append(freq) #  append it ti the result
-                print("measured peak frequency: ", freq) #  print to show how the execution goes
+                print("measured peak frequency: ", freq) #  print(to show how the execution goes
             return freqs #  Once the execution is over, the Future will be filled with the result...
 
     from asyncio import ensure_future, get_event_loop

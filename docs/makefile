@@ -50,8 +50,8 @@ clean:
 	rm -rf $(BUILDDIR)/*
 
 common:
-	# Preliminaries to a real build - convert tutorial to readable format
-	ipython nbconvert --to html source/user_guide/tutorial/tutorial.ipynb
+	@echo "Preliminaries to a real build - convert tutorial to readable format"
+	jupyter nbconvert --to=html source/user_guide/tutorial/tutorial.ipynb
 
 html: common
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

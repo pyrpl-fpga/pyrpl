@@ -1,0 +1,244 @@
+name: Manual Binary Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to build (branch, tag, or commit SHA)"
+        required: true
+        default: "main"
+
+      build_linux:
+        description: "Build Linux binary"
+        type: boolean
+        default: true
+
+      build_macos:
+        description: "Build macOS universal binary (Intel + Apple Silicon)"
+        type: boolean
+        default: true
+
+      build_windows:
+        description: "Build Windows binary"
+        type: boolean
+        default: true
+
+      publish_release:
+        description: "Publish binaries to GitHub Release"
+        type: boolean
+        default: false
+
+concurrency:
+  group: manual-build
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  build-linux:
+    if: inputs.build_linux
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qtbase5-dev qt5-qmake
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller pyqt5
+        pip install .
+
+    - name: Build Linux binary
+      run: |
+        pyinstaller pyrpl.spec
+        # PyInstaller creates a directory, so we need to archive it
+        cd dist
+        tar -czf pyrpl-linux-${{ inputs.ref }}.tar.gz pyrpl
+        cd ..
+      env:
+        QT_QPA_PLATFORM: offscreen
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-linux
+        path: dist/pyrpl-linux-${{ inputs.ref }}.tar.gz
+
+  build-macos:
+    if: inputs.build_macos
+    strategy:
+      matrix:
+        arch:
+          - name: arm64
+            runner: macos-14
+          - name: x86_64
+            runner: macos-14
+
+    runs-on: ${{ matrix.arch.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pyqt5
+          pip install .
+
+      - name: Build pyrpl (macOS ${{ matrix.arch.name }})
+        run: |
+          pyinstaller pyrpl.spec
+          # Create a zip archive of the directory
+          cd dist
+          zip -r pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}.zip pyrpl
+          cd ..
+
+      - name: Verify build
+        run: |
+          file dist/pyrpl/pyrpl
+          
+      - uses: actions/upload-artifact@v4
+        with:
+            name: pyrpl-macos-${{ matrix.arch.name }}
+            path: dist/pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}.zip
+
+  build-windows:
+    if: inputs.build_windows
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.ref }}
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller pyqt5
+        pip install .
+
+    - name: Build Windows binary
+      run: |
+        # Clean any previous builds
+        if (Test-Path "build") { Remove-Item -Recurse -Force build }
+        if (Test-Path "dist") { Remove-Item -Recurse -Force dist }
+        
+        # Build with verbose output
+        pyinstaller --clean pyrpl.spec
+        
+        # Debug: List what's in dist
+        Write-Host "`nContents of dist directory:"
+        Get-ChildItem -Path dist -Force | Format-Table Name, Length, Mode
+        
+        Write-Host "`nFull directory structure:"
+        Get-ChildItem -Path dist -Recurse -Force | Select-Object FullName
+        
+        # Check if it's a directory or single file
+        if (Test-Path "dist\pyrpl" -PathType Container) {
+          Write-Host "`nFound pyrpl directory, creating zip..."
+          Compress-Archive -Path dist\pyrpl -DestinationPath dist\pyrpl-windows-${{ inputs.ref }}.zip
+        } elseif (Test-Path "dist\pyrpl.exe" -PathType Leaf) {
+          Write-Host "`nWARNING: Found single pyrpl.exe file instead of directory!"
+          Write-Host "The spec file should create a directory, but PyInstaller created a single file."
+          Write-Host "Creating zip of single exe file..."
+          Compress-Archive -Path dist\pyrpl.exe -DestinationPath dist\pyrpl-windows-${{ inputs.ref }}.zip
+        } else {
+          Write-Host "`nERROR: Could not find dist\pyrpl or dist\pyrpl.exe"
+          exit 1
+        }
+      env:
+        QT_QPA_PLATFORM_PLUGIN_PATH: ${{ env.Python_ROOT_DIR }}\Lib\site-packages\PyQt5\Qt5\plugins\platforms
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: pyrpl-windows
+        path: dist/pyrpl-windows-${{ inputs.ref }}.zip
+
+  publish-release:
+    if: inputs.publish_release
+    needs: [build-linux, build-macos, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-assets
+
+    - name: Create GitHub Release (if needed)
+      id: release
+      uses: actions/create-release@v1
+      with:
+        tag_name: ${{ inputs.ref }}
+        release_name: Release ${{ inputs.ref }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Linux binary
+      if: inputs.build_linux
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-linux/pyrpl-linux-${{ inputs.ref }}.tar.gz
+        asset_name: pyrpl-linux.tar.gz
+        asset_content_type: application/gzip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload macOS arm64 binary
+      if: inputs.build_macos
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-macos-arm64/pyrpl-macos-arm64-${{ inputs.ref }}.zip
+        asset_name: pyrpl-macos-arm64.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload macOS x86_64 binary
+      if: inputs.build_macos
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-macos-x86_64/pyrpl-macos-x86_64-${{ inputs.ref }}.zip
+        asset_name: pyrpl-macos-x86_64.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload Windows binary
+      if: inputs.build_windows
+      uses: actions/upload-release-asset@v1
+      with:
+        upload_url: ${{ steps.release.outputs.upload_url }}
+        asset_path: release-assets/pyrpl-windows/pyrpl-windows-${{ inputs.ref }}.zip
+        asset_name: pyrpl-windows.zip
+        asset_content_type: application/zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

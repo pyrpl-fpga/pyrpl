@@ -3,11 +3,8 @@ import numpy as np
 import time
 import logging
 
-import sys
-if sys.version_info < (3,):
-    integer_types = (int, long)
-else:
-    integer_types = (int,)
+
+integer_types = (int,)
 
 
 class NumberSpinBox(QtWidgets.QWidget):
@@ -27,15 +24,17 @@ class NumberSpinBox(QtWidgets.QWidget):
         timer_initial_latency. Only after that the value is incremented by
         "increment" every timer_min_interval.
     """
+
     MOUSE_WHEEL_ACTIVATED = False
     value_changed = QtCore.Signal()
     selected = QtCore.Signal(list)
     # timeouts for updating values when mouse button / key is pessed
     change_interval = 0.02
-    _change_initial_latency = 0.1 # 100 ms before starting to update continuously.
+    _change_initial_latency = 0.1  # 100 ms before starting to update continuously.
+
     @property
     def change_initial_latency(self):
-        """ latency for continuous update when a button is pressed """
+        """latency for continuous update when a button is pressed"""
         # if sigleStep is zero, there is no need to wait for continuous update
         if self.singleStep != 0:
             return self._change_initial_latency
@@ -46,19 +45,30 @@ class NumberSpinBox(QtWidgets.QWidget):
         """
         a decorator that forwards function calls to subspinboxes
         """
+
         # in base class, the trivial forwarder is chosen
         def func_wrapper(self, *args, **kwargs):
             return func(*args, **kwargs)
+
         return func_wrapper
 
-    def __init__(self, label="", min=-1, max=1, increment=2.**(-13),
-                 log_increment=False, halflife_seconds=0.5, per_second=0.2):
+    def __init__(
+        self,
+        label="",
+        min=-1,
+        max=1,
+        increment=2.0 ** (-13),
+        log_increment=False,
+        halflife_seconds=0.5,
+        per_second=0.2,
+    ):
         """
         :param label: label of the button
         :param min: min value
         :param max: max value
         :param increment: increment of the underlying register
-        :param log_increment: boolean: when buttons up/down are pressed, should the value change linearly or log
+        :param log_increment: boolean: when buttons up/down are pressed,
+            should the value change linearly or logarithmically
         :param halflife_seconds: when button is in log, how long to change the value by a factor 2.
         :param per_second: when button is in lin, how long to change the value by 1 unit.
         """
@@ -80,7 +90,7 @@ class NumberSpinBox(QtWidgets.QWidget):
         self.singleStep = increment
         self.change_timer = QtCore.QTimer()
         self.change_timer.setSingleShot(True)
-        self.change_timer.setInterval(int(np.ceil(self.change_interval*1000)))
+        self.change_timer.setInterval(int(np.ceil(self.change_interval * 1000)))
         self.change_timer.timeout.connect(self.continue_step)
         self.make_layout()
         self.update_tooltip()
@@ -92,20 +102,22 @@ class NumberSpinBox(QtWidgets.QWidget):
 
     def make_layout(self):
         self.lay = QtWidgets.QHBoxLayout()
-        self.lay.setContentsMargins(0,0,0,0)
+        self.lay.setContentsMargins(0, 0, 0, 0)
         self.lay.setSpacing(0)
         self.setLayout(self.lay)
         if self.labeltext is not None:
             self.label = QtWidgets.QLabel(self.labeltext)
             self.lay.addWidget(self.label)
         if self.log_increment:
-            self.up = QtWidgets.QPushButton('*')
-            self.down = QtWidgets.QPushButton('/')
+            self.up = QtWidgets.QPushButton("*")
+            self.down = QtWidgets.QPushButton("/")
         else:
-            self.up = QtWidgets.QPushButton('+')
-            self.down = QtWidgets.QPushButton('-')
+            self.up = QtWidgets.QPushButton("+")
+            self.down = QtWidgets.QPushButton("-")
         self.line = QtWidgets.QLineEdit()
-        self.line.setStyleSheet("QLineEdit { qproperty-cursorPosition: 0; }") # align text on the left
+        self.line.setStyleSheet(
+            "QLineEdit { qproperty-cursorPosition: 0; }"
+        )  # align text on the left
         # http://stackoverflow.com/questions/18662157/qt-qlineedit-widget-to-get-long-text-left-aligned
         self.lay.addWidget(self.down)
         self.lay.addWidget(self.line)
@@ -135,20 +147,21 @@ class NumberSpinBox(QtWidgets.QWidget):
                 self.first_step()
             elif event.key() in [QtCore.Qt.Key_PageUp, QtCore.Qt.Key_PageDown]:
                 # PageUp increases increment by a factor of 10
-                if event.key() in [QtCore.Qt.Key_PageUp]:\
+                if event.key() in [QtCore.Qt.Key_PageUp]:
                     factor = 2
                 elif event.key() in [QtCore.Qt.Key_PageDown]:
                     factor = 0.5
                 else:
                     raise Exception("Unclear KeyPressEvent")
                 if self.log_increment:
-                    self.set_halflife_seconds(self.halflife_seconds/factor)
-                    self._logger.info("Spinbox inverse halflife changed to %.2e Hz.",
-                                      1./self.halflife_seconds)
+                    self.set_halflife_seconds(self.halflife_seconds / factor)
+                    self._logger.info(
+                        "Spinbox inverse halflife changed to %.2e Hz.",
+                        1.0 / self.halflife_seconds,
+                    )
                 else:
-                    self.set_per_second(self.per_second*factor)
-                    self._logger.info("Spinbox tuning rate changed to %.2e Hz.",
-                                      self.per_second)
+                    self.set_per_second(self.per_second * factor)
+                    self._logger.info("Spinbox tuning rate changed to %.2e Hz.", self.per_second)
                 self.update_tooltip()
             else:
                 return super(NumberSpinBox, self).keyPressEvent(event)
@@ -168,10 +181,15 @@ class NumberSpinBox(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.RightButton:
             pass  # no functionality so far
             # right button opens context menu for setting scanning speed etc.
-            #res, okPressed = QtWidgets.QInputDialog.getDouble(self.widget.parent, "Pyrpl GUI settings", "Scanning speed", 5)
-            #if okPressed:
+            # res, okPressed = QtWidgets.QInputDialog.getDouble(
+            #     self.widget.parent,
+            #     "Pyrpl GUI settings",
+            #     "Scanning speed",
+            #     5,
+            # )
+            # if okPressed:
             #    self.module._logger.warning("Number: %d", res)
-        #else:
+        # else:
         return super(NumberSpinBox, self).mousePressEvent(event)
 
     @property
@@ -203,7 +221,6 @@ class NumberSpinBox(QtWidgets.QWidget):
             for i in range(abs(nsteps)):
                 func(single_increment=True)
 
-
     # def sizeHint(self): #doesn t do anything, probably need to change
     #    # sizePolicy
     #    return QtCore.QSize(200, 20)
@@ -214,7 +231,7 @@ class NumberSpinBox(QtWidgets.QWidget):
         """
         font = QtGui.QFont("", 0)
         font_metric = QtGui.QFontMetrics(font)
-        pixel_wide = font_metric.width("0"*self.max_num_letter)
+        pixel_wide = font_metric.width("0" * self.max_num_letter)
         self.line.setFixedWidth(pixel_wide)
 
     @property
@@ -225,25 +242,28 @@ class NumberSpinBox(QtWidgets.QWidget):
         return 5
 
     def set_log_increment(self):
-        #self.up.setText("*")
-        #self.down.setText("/")
-        self.up.setText(u'\u2191')  # up arrow unicode symbol
-        self.down.setText(u'\u2193')  # down arrow unicode symbol
-        #self.up.setStyleSheet("font-weight: italic; font-size: 8pt")
-        #self.down.setStyleSheet("font-weight: bold; font-size: 8pt")
+        # self.up.setText("*")
+        # self.down.setText("/")
+        self.up.setText("\u2191")  # up arrow unicode symbol
+        self.down.setText("\u2193")  # down arrow unicode symbol
+        # self.up.setStyleSheet("font-weight: italic; font-size: 8pt")
+        # self.down.setStyleSheet("font-weight: bold; font-size: 8pt")
         self.log_increment = True
 
     def update_tooltip(self):
         """
         The tooltip uses the values of min/max/increment...
         """
-        string = "Increment is %.5e\nmin value: %.1e\nmax value: %.1e\n"\
-                 %(self.singleStep, self.minimum, self.maximum)
+        string = "Increment is %.5e\nmin value: %.1e\nmax value: %.1e\n" % (
+            self.singleStep,
+            self.minimum,
+            self.maximum,
+        )
         if self.log_increment:
-            string += "Tuning speed (1/halflife): %.1e Hz.\n" % (1.0/self.halflife_seconds)
+            string += "Tuning speed (1/halflife): %.1e Hz.\n" % (1.0 / self.halflife_seconds)
         else:
             string += "Tuning speed (linear): %.1e Hz.\n" % self.per_second
-        string += "Press up/down to tune.\nPress Page up/Page down to modify tuning speed." #  or mouse wheel
+        string += "Press up/down to tune.\nPress Page up/Page down to modify tuning speed."
         self.setToolTip(string)
 
     def setDecimals(self, val):
@@ -251,8 +271,8 @@ class NumberSpinBox(QtWidgets.QWidget):
         self.set_min_size()
 
     def validate(self):
-        """ make sure a new value is inside the allowed bounds after a
-        manual change of the value """
+        """make sure a new value is inside the allowed bounds after a
+        manual change of the value"""
         if self.line.isModified():
             self.setValue(self.saturate(self.val))
             self.value_changed.emit()
@@ -283,11 +303,11 @@ class NumberSpinBox(QtWidgets.QWidget):
         self.halflife_seconds = val
 
     def setValue(self, val):  # imitates original QSpinBox API
-        """ replace this function with something useful in derived classes """
+        """replace this function with something useful in derived classes"""
         self.val = val
 
     def value(self):  # imitates original QSpinBox API
-        """ replace this function with something useful in derived classes """
+        """replace this function with something useful in derived classes"""
         return self.val
 
     # code for managing value change with buttons or keyboard
@@ -298,7 +318,7 @@ class NumberSpinBox(QtWidgets.QWidget):
         self.start_time = time.time()
         self.start_value = self.value()
         value = self.start_value + self.singleStep * self.change_sign
-        if np.sign(value)*np.sign(self.start_value) < 0:
+        if np.sign(value) * np.sign(self.start_value) < 0:
             # zero passage occured, make sure to stop at exactly 0
             value = 0
         self.setValue(self.saturate(value))
@@ -316,7 +336,7 @@ class NumberSpinBox(QtWidgets.QWidget):
                     return self.first_step()  # start over when zero is crossed
                 sign = self.change_sign * np.sign(self.start_value)
                 halflifes = dt / self.halflife_seconds * sign
-                value = self.start_value * 2 ** halflifes
+                value = self.start_value * 2**halflifes
                 # change behavior when value is effectively zero
                 if abs(value) <= self.singleStep / 2.0 and sign < 0:
                     self.start_value = 0
@@ -332,13 +352,13 @@ class NumberSpinBox(QtWidgets.QWidget):
                     self.start_time = time.time()  # ensures to stay 0 some time
 
             # don't do anything if the change is smaller than singleStep
-            if abs(self.val - value)>self.singleStep:
+            if abs(self.val - value) > self.singleStep:
                 self.setValue(self.saturate(value))
         self.change_timer.start()
 
     def finish_step(self):
         self.change_timer.stop()
-        if hasattr(self, 'start_time'):
+        if hasattr(self, "start_time"):
             dt = time.time() - self.start_time
         else:
             dt = 0
@@ -350,14 +370,16 @@ class IntSpinBox(NumberSpinBox):
     """
     Number spin box for integer values
     """
-    def __init__(self, label, min=-2**13, max=2**13, increment=1,
-                 per_second=10, **kwargs):
-        super(IntSpinBox, self).__init__(label=label,
-                                         min=min,
-                                         max=max,
-                                         increment=increment,
-                                         per_second=per_second,
-                                         **kwargs)
+
+    def __init__(self, label, min=-(2**13), max=2**13, increment=1, per_second=10, **kwargs):
+        super(IntSpinBox, self).__init__(
+            label=label,
+            min=min,
+            max=max,
+            increment=increment,
+            per_second=per_second,
+            **kwargs,
+        )
 
     @property
     def val(self):
@@ -365,7 +387,7 @@ class IntSpinBox(NumberSpinBox):
 
     @val.setter
     def val(self, new_val):
-        self.line.setText(("%.i")%round(new_val))
+        self.line.setText(("%.i") % round(new_val))
         self.value_changed.emit()
         return new_val
 
@@ -377,7 +399,7 @@ class IntSpinBox(NumberSpinBox):
         if np.isinf(self.maximum):
             return super(IntSpinBox, self).max_num_letter
         else:
-            return int(np.log10(np.abs(self.maximum))+1)
+            return int(np.log10(np.abs(self.maximum)) + 1)
 
     def setMaximum(self, val):  # imitates original QSpinBox API
         super(IntSpinBox, self).setMaximum(val)
@@ -388,20 +410,18 @@ class FloatSpinBox(NumberSpinBox):
     """
     Number spin box for float values
     """
-    def __init__(self, label, decimals=4, min=-1, max=1,
-                 increment=2.**(-13), **kwargs):
+
+    def __init__(self, label, decimals=4, min=-1, max=1, increment=2.0 ** (-13), **kwargs):
         self.decimals = decimals
-        super(FloatSpinBox, self).__init__(label=label,
-                                           min=min,
-                                           max=max,
-                                           increment=increment,
-                                           **kwargs)
+        super(FloatSpinBox, self).__init__(
+            label=label, min=min, max=max, increment=increment, **kwargs
+        )
 
     @property
     def val(self):
-        if str(self.line.text())!=("%."+str(self.decimals) + "e")%self._val:
+        if str(self.line.text()) != ("%." + str(self.decimals) + "e") % self._val:
             return float(str(self.line.text()))
-        return self._val # the value needs to be known to a precision better
+        return self._val  # the value needs to be known to a precision better
         # than the display to avoid deadlocks in increments
 
     @val.setter
@@ -415,8 +435,7 @@ class FloatSpinBox(NumberSpinBox):
         # we want to use the cached value rather than the corase grained
         # value read-out from the lineedit.
         self.line.blockSignals(True)
-        self.line.setText(('{:.'+str(self.decimals)+'e}').format(
-            float(new_val)))
+        self.line.setText(("{:." + str(self.decimals) + "e}").format(float(new_val)))
         self.line.blockSignals(False)
 
         # This will cause a write of the value to the redpitaya, and in turns
@@ -439,13 +458,16 @@ class ComplexSpinBox(FloatSpinBox):
     Two spinboxes representing a complex number, with the right keyboard
     shortcuts (up down for imag, left/right for real).
     """
+
     def forward_to_subspinboxes(func):
         """
         a decorator that forwards function calls to subspinboxes
         """
+
         # in base class, the trivial forwarder is chosen
         def func_wrapper(self, *args, **kwargs):
             return func(*args, **kwargs)
+
         return func_wrapper
 
     def __init__(self, *args, **kwargs):
@@ -454,20 +476,24 @@ class ComplexSpinBox(FloatSpinBox):
     def make_layout(self):
         self.lay = QtWidgets.QHBoxLayout()
         self.lay.setContentsMargins(0, 0, 0, 0)
-        self.real = FloatSpinBox(label=self.labeltext,
-                                 min=self.minimum,
-                                 max=self.maximum,
-                                 increment=self.singleStep,
-                                 log_increment=self._log_increment,
-                                 halflife_seconds=self._halflife_seconds,
-                                 decimals=self.decimals)
-        self.imag = FloatSpinBox(label=self.labeltext,
-                                 min=self.minimum,
-                                 max=self.maximum,
-                                 increment=self.singleStep,
-                                 log_increment=self._log_increment,
-                                 halflife_seconds=self._halflife_seconds,
-                                 decimals=self.decimals)
+        self.real = FloatSpinBox(
+            label=self.labeltext,
+            min=self.minimum,
+            max=self.maximum,
+            increment=self.singleStep,
+            log_increment=self._log_increment,
+            halflife_seconds=self._halflife_seconds,
+            decimals=self.decimals,
+        )
+        self.imag = FloatSpinBox(
+            label=self.labeltext,
+            min=self.minimum,
+            max=self.maximum,
+            increment=self.singleStep,
+            log_increment=self._log_increment,
+            halflife_seconds=self._halflife_seconds,
+            decimals=self.decimals,
+        )
         self.real.value_changed.connect(self.value_changed)
         self.lay.addWidget(self.real)
         self.label = QtWidgets.QLabel("+j")
@@ -553,8 +579,8 @@ class ComplexSpinBox(FloatSpinBox):
     def set_log_increment(self, *args, **kwargs):
         self.real.set_log_increment(*args, **kwargs)
         self.imag.set_log_increment(*args, **kwargs)
-        self.imag.up.setText(u'\u2192')  # right arrow unicode symbol
-        self.imag.down.setText(u'\u2190')  # left arrow unicode symbol
+        self.imag.up.setText("\u2192")  # right arrow unicode symbol
+        self.imag.down.setText("\u2190")  # left arrow unicode symbol
 
     @property
     def log_increment(self):

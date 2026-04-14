@@ -23,7 +23,7 @@ console to the directory, for example:
 
 .. code:: python
 
-    cd c:\lneuhaus\github\pyrpl
+    cd c:\pyrpl-fpga\github\pyrpl
 
 Now retry to load the module. It should really work now.
 
@@ -57,7 +57,7 @@ RedPitaya's ip address.
 If you see at least one '>' symbol, your computer has successfully
 connected to your RedPitaya via SSH. This means that your connection
 works. The message 'Server application started on port 2222' means that
-your computer has sucessfully installed and started a server application
+your computer has successfully installed and started a server application
 on your RedPitaya. Once you get 'Client started with success', your
 python session has successfully connected to that server and all things
 are in place to get started.
@@ -72,7 +72,7 @@ Basic communication with your RedPitaya
     r = p.rp
 
     #check the value of input1
-    print r.scope.voltage1
+    print(r.scope.voltage1
 
 With the last command, you have successfully retrieved a value from an
 FPGA register. This operation takes about 300 �s on my computer. So
@@ -80,7 +80,7 @@ there is enough time to repeat the reading n times.
 
 .. code:: python
 
-    #see how the adc reading fluctuates over time
+    # see how the adc reading fluctuates over time
     import time
     from matplotlib import pyplot as plt
     times, data = [],[]

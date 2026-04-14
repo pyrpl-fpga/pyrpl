@@ -2,6 +2,7 @@ from ...modules import Module
 from ...module_attributes import ModuleProperty, ModuleDictProperty
 from ..loop import Loop, PlotLoop
 
+
 class LockboxModule(Module):
     @property
     def lockbox(self):

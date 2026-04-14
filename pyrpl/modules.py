@@ -25,10 +25,8 @@ from .errors import ExpectedPyrplError
 import logging
 import string
 import numpy as np
-from six import with_metaclass
 from collections import OrderedDict
 from qtpy import QtCore
-
 
 
 class SignalLauncher(QtCore.QObject):
@@ -37,16 +35,17 @@ class SignalLauncher(QtCore.QObject):
 
     A QObject that is connected to the widgets to update their value when
     attributes of a module change. Any timers needed to implement the module
-    functionality shoud be implemented here as well.
+    functionality should be implemented here as well.
     """
+
     update_attribute_by_name = QtCore.Signal(str, list)
     # The name of the property that has changed, the list is [new_value],
     # the new_value of the attribute
-    change_options = QtCore.Signal(str, list) # name of the
+    change_options = QtCore.Signal(str, list)  # name of the
     # SelectProperty,  list of new options
-    refresh_filter_options = QtCore.Signal(str) # name of the
+    refresh_filter_options = QtCore.Signal(str)  # name of the
     # FilterProperty,  new options are contained in self.valid_frequencies()
-    change_ownership = QtCore.Signal() # The owner of the module  has
+    change_ownership = QtCore.Signal()  # The owner of the module  has
     # changed
 
     def __init__(self, module):
@@ -54,7 +53,7 @@ class SignalLauncher(QtCore.QObject):
         self.module = module
 
     def emit_signal_by_name(self, name, *args, **kwds):
-        """Emits signal "name" with the specfified args and kwds."""
+        """Emits signal "name" with the specified args and kwds."""
         signal = getattr(self, name)
         signal.emit(*args, **kwds)
 
@@ -62,26 +61,27 @@ class SignalLauncher(QtCore.QObject):
         """
         Establishes all connections between the module and the widget by name.
         """
-        #self.update_attribute_by_name.connect(widget.update_attribute_by_name)
+        # self.update_attribute_by_name.connect(widget.update_attribute_by_name)
         for key in dir(self.__class__):
             val = getattr(self, key)
 
-            try: #for qtpy > 1.9.0
+            try:  # for qtpy > 1.9.0
                 signal = QtCore.SignalInstance
-            except AttributeError: #for qtpy <= 1.9.0
+            except AttributeError:  # for qtpy <= 1.9.0
                 signal = QtCore.pyqtBoundSignal
-            if isinstance(val, signal, ) and hasattr(widget,
-                                                    key):
+            if isinstance(
+                val,
+                signal,
+            ) and hasattr(widget, key):
                 val.connect(getattr(widget, key))
 
-
     def _clear(self):
-        """ Destroys the object by disconnecting all signals and by killing all timers"""
+        """Destroys the object by disconnecting all signals and by killing all timers"""
         for key in dir(self.__class__):
             val = getattr(self, key)
-            try: #for qtpy > 1.9.0
+            try:  # for qtpy > 1.9.0
                 signal = QtCore.SignalInstance
-            except AttributeError: #for qtpy <= 1.9.0
+            except AttributeError:  # for qtpy <= 1.9.0
                 signal = QtCore.pyqtBoundSignal
             if isinstance(val, signal):
                 try:
@@ -97,7 +97,8 @@ class ModuleMetaClass(type):
     class that contains them.
     - __new__ also lists all the submodules. This info will be used when
     instantiating submodules at module instanciation time.
-    - __init__ auto-generates the function setup() and its docstring """
+    - __init__ auto-generates the function setup() and its docstring"""
+
     def __init__(self, classname, bases, classDict):
         """
         Magic to retrieve the name of the attributes in the attributes
@@ -120,7 +121,7 @@ class ModuleMetaClass(type):
         concatenating the module's _setup docstring and individual
         setup_attribute docstrings.
         """
-        if classname == 'ModuleContainer':
+        if classname == "ModuleContainer":
             pass
 
         # 0. make all attributes aware of their name in the class containing them
@@ -131,12 +132,18 @@ class ModuleMetaClass(type):
         _setup_attributes, _gui_attributes, _module_attributes = [], [], []
 
         for base in reversed(bases):  # append all base class _setup_attributes
-            try: _setup_attributes += base._setup_attributes
-            except AttributeError: pass
-            try: _gui_attributes += base._gui_attributes
-            except AttributeError: pass
-            try: _module_attributes += base._module_attributes
-            except AttributeError: pass
+            try:
+                _setup_attributes += base._setup_attributes
+            except AttributeError:
+                pass
+            try:
+                _gui_attributes += base._gui_attributes
+            except AttributeError:
+                pass
+            try:
+                _module_attributes += base._module_attributes
+            except AttributeError:
+                pass
         _setup_attributes += self._setup_attributes
         _gui_attributes += self._gui_attributes
         # 1b. make a list of _module_attributes and add _module_attributes to _setup_attributes
@@ -147,9 +154,9 @@ class ModuleMetaClass(type):
         # 1c. add _module_attributes to _setup_attributes if the submodule has _setup_attributes
         for name in self._module_attributes:
             attr = getattr(self, name)
-            if True:  #len(attr.module_cls._setup_attributes) > 0:
+            if True:  # len(attr.module_cls._setup_attributes) > 0:
                 _setup_attributes.append(name)
-        #1d. Set the unique list of _setup_attributes
+        # 1d. Set the unique list of _setup_attributes
         self._setup_attributes = unique_list(_setup_attributes)
         self._gui_attributes = unique_list(_gui_attributes)
         # 2. create setup(**kwds)
@@ -167,20 +174,23 @@ class ModuleMetaClass(type):
                         self._logger.warning(
                             "Trying to load attribute %s of module %s that "
                             "are invalid setup_attributes.",
-                            sorted(kwds.keys())[0], self.name)
-                    if hasattr(self, '_setup'):
+                            sorted(kwds.keys())[0],
+                            self.name,
+                        )
+                    if hasattr(self, "_setup"):
                         self._setup()
                 finally:
                     self._setup_ongoing = False
+
             # b. place the new setup function in the module class
             self.setup = setup
         # 3. if setup has no docstring, then make one
         self.make_setup_docstring(classDict)
         # 4. make the new class
-        #return super(ModuleMetaClass, cls).__new__(cls, classname, bases, classDict)
+        # return super(ModuleMetaClass, cls).__new__(cls, classname, bases, classDict)
         self.add_attribute_docstrings()
 
-    #@classmethod
+    # @classmethod
     def make_setup_docstring(self, classDict):
         """
         Returns a docstring for the function 'setup' that is composed of:
@@ -188,10 +198,13 @@ class ModuleMetaClass(type):
           - the list of all setup_attributes docstrings
         """
         # get initial docstring (python 2 and python 3 syntax)
-        try: doc = self._setup.__doc__ + '\n'
-        except:
-            try: doc = self._setup.__func__.__doc__ + '\n'
-            except: doc = ""
+        try:
+            doc = self._setup.__doc__ + "\n"
+        except (AttributeError, TypeError):
+            try:
+                doc = self._setup.__func__.__doc__ + "\n"
+            except (AttributeError, TypeError):
+                doc = ""
         doc += "attributes\n=========="
         for attr_name in self._setup_attributes:
             attr = getattr(self, attr_name)
@@ -201,7 +214,7 @@ class ModuleMetaClass(type):
         if hasattr(setup, "__func__"):
             setup.__func__.__doc__ = doc
         # ... python 3
-        elif hasattr(setup, '__doc__'):
+        elif hasattr(setup, "__doc__"):
             setup.__doc__ = doc
 
     def add_attribute_docstrings(self):
@@ -211,11 +224,11 @@ class ModuleMetaClass(type):
         """
         if self.__doc__ is None:
             self.__doc__ = ""
-        self.__doc__+= "\nSetup Attributes:\n\n"
+        self.__doc__ += "\nSetup Attributes:\n\n"
         for name in self._setup_attributes:
-            if name in self.__dict__: # don't document inherited attributes
+            if name in self.__dict__:  # don't document inherited attributes
                 self.__doc__ += "- " + name + ": "
-                self.__doc__ += self.__dict__[name].__doc__ + '\n'
+                self.__doc__ += self.__dict__[name].__doc__ + "\n"
 
 
 class DoSetup(object):
@@ -231,11 +244,12 @@ class DoSetup(object):
                 # now _setup_ongoing is True
                 assert self._setup_ongoing == True
                 # do stuff that might fail
-                raise BaseException()
+                raise Exception()
             # even if _setup fails, _setup_ongoing is False afterwards or in
             # the next call to _setup()
             assert self._setup_ongoing == False
     """
+
     def __init__(self, parent):
         self.parent = parent
 
@@ -245,19 +259,15 @@ class DoSetup(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.parent._setup_ongoing = False
         if exc_type is not None:
-            self.parent._logger.warning("Exception %s was raised while "
-                                        "_setup_ongoing was True: %s, %s",
-                                        exc_type, exc_val, exc_tb)
+            self.parent._logger.warning(
+                "Exception %s was raised while _setup_ongoing was True: %s, %s",
+                exc_type,
+                exc_val,
+                exc_tb,
+            )
 
 
-class Module(with_metaclass(ModuleMetaClass, object)):
-    # The Syntax for defining a metaclass changed from Python 2 to 3.
-    # with_metaclass is compatible with both versions and roughly does this:
-    # def with_metaclass(meta, *bases):
-    #     """Create a base class with a metaclass."""
-    #     return meta("NewBase", bases, {})
-    # Specifically, ModuleMetaClass ensures that attributes have automatically
-    # their internal name set properly upon module creation.
+class Module(metaclass=ModuleMetaClass):
     """
     A module is a component of pyrpl doing a specific task.
 
@@ -374,7 +384,7 @@ class Module(with_metaclass(ModuleMetaClass, object)):
         if name is not None:
             self.name = name
         self.do_setup = DoSetup(self)  # ContextManager for _setup_ongoing
-        self._flag_autosave_active = True # I would have prefered to use
+        self._flag_autosave_active = True  # I would have prefered to use
         # __autosave_active, but this gets automatically name mangled:
         # see http://stackoverflow.com/questions/1301346/what-is-the-meaning-of-a-single-and-a-double-underscore-before-an-object-name
         self._logger = logging.getLogger(name=__name__)
@@ -408,9 +418,11 @@ class Module(with_metaclass(ModuleMetaClass, object)):
         """
         To implement in child class if needed.
         """
-        self._logger.warning("Function _init_module is obsolete and will be "
-                             "removed soon. Please migrate the corresponding "
-                             "code to __init__.")
+        self._logger.warning(
+            "Function _init_module is obsolete and will be "
+            "removed soon. Please migrate the corresponding "
+            "code to __init__."
+        )
 
     @property
     def _autosave_active(self):
@@ -435,8 +447,7 @@ class Module(with_metaclass(ModuleMetaClass, object)):
 
     @property
     def _modules(self):
-        return dict([(key, getattr(self, key)) for key in
-                     self._module_attributes])
+        return dict([(key, getattr(self, key)) for key in self._module_attributes])
 
     @property
     def pyrpl(self):
@@ -445,18 +456,19 @@ class Module(with_metaclass(ModuleMetaClass, object)):
         reached.
         """
         from .pyrpl import Pyrpl
+
         parent = self.parent
         passedparents = set()
-        while (not isinstance(parent, Pyrpl)):
+        while not isinstance(parent, Pyrpl):
             # remember the parents that were tried before to avoid circles
             passedparents.add(parent)
             # go up in hierarchy
             parent = parent.parent
             # check if this parent has occured before in order to avoid an infinite loop
             if parent in passedparents:
-                raise ExpectedPyrplError("Unable to find a pyrpl instance "
-                                         "that is parent of the module %s.",
-                                         self.name)
+                raise ExpectedPyrplError(
+                    "Unable to find a pyrpl instance that is parent of the module %s." % self.name
+                )
         return parent
 
     def get_setup_attributes(self):
@@ -469,7 +481,9 @@ class Module(with_metaclass(ModuleMetaClass, object)):
         Returns:
             dict: contains setup_attributes and their current values.
         """
-        self._logger.warning("get_setup_attributes is deprecated. Use property setup_attributes instead. ")
+        self._logger.warning(
+            "get_setup_attributes is deprecated. Use property setup_attributes instead. "
+        )
         return self.setup_attributes
 
     @property
@@ -490,7 +504,9 @@ class Module(with_metaclass(ModuleMetaClass, object)):
         """
         Sets the values of the setup attributes. Without calling any callbacks
         """
-        self._logger.warning("set_setup_attributes is deprecated. Use property setup_attributes instead. ")
+        self._logger.warning(
+            "set_setup_attributes is deprecated. Use property setup_attributes instead. "
+        )
         self.setup_attributes = kwds
 
     @setup_attributes.setter
@@ -502,7 +518,7 @@ class Module(with_metaclass(ModuleMetaClass, object)):
 
     def _load_setup_attributes(self):
         """
-         Load and sets all setup attributes from config file
+        Load and sets all setup attributes from config file
         """
         # self.c = None switches off loading states (e.g. for ModuleManagers).
         # First part of the if avoids creating an empty branch in the
@@ -517,8 +533,8 @@ class Module(with_metaclass(ModuleMetaClass, object)):
     def c(self):
         """
         Returns a MemoryBranch object used for storing data in the configuration file.
-
-        The branch corresponding to the module is a subbranch of the parent module's branch with the name of the module.
+        The branch corresponding to the module is a subbranch of the parent module's branch with
+        the name of the module.
         """
         return self.parent.c._get_or_create(self.name)
 
@@ -605,9 +621,7 @@ class Module(with_metaclass(ModuleMetaClass, object)):
         :param  attributes: extra curve parameters (such as relevant module
         settings)
         """
-        curve = CurveDB.create(x_values,
-                               y_values,
-                               **attributes)
+        curve = CurveDB.create(x_values, y_values, **attributes)
         return curve
 
     def free(self):
@@ -639,23 +653,29 @@ class Module(with_metaclass(ModuleMetaClass, object)):
     #                 if not docstring.startswith('_'):
     #                     string += key + ": " + docstring + '\r\n\r\n'
     #         return string
-    def help(self, register=''):
-        return "Please refer to the docstring of the function setup() or " \
-               "to the manual for further help! "
+    def help(self, register=""):
+        return (
+            "Please refer to the docstring of the function setup() or "
+            "to the manual for further help! "
+        )
 
     def _create_widget(self):
         """
         Creates the widget specified in widget_class.
         """
         if self._widget_class is None:
-            self._logger.warning("Module %s of type %s is trying to create a widget, but no widget_class is defined!",
-                                 self.name, type(self))
+            self._logger.warning(
+                "Module %s of type %s is trying to create a widget, "
+                "but no widget_class is defined!",
+                self.name,
+                type(self),
+            )
             return None
         try:
             widget = self._widget_class(self.name, self)
         finally:
             pass
-        self._module_widget = widget # For debugging purpose only (all
+        self._module_widget = widget  # For debugging purpose only (all
         # communications to the widget should happen via signals)
         return widget
 
@@ -733,7 +753,7 @@ class HardwareModule(Module):
     parent = None  # parent will be redpitaya instance
 
     def __init__(self, parent, name=None):
-        """ Creates the prototype of a RedPitaya Module interface
+        """Creates the prototype of a RedPitaya Module interface
 
         if no name provided, will use cls.name
         """
@@ -741,7 +761,7 @@ class HardwareModule(Module):
         self._addr_base = self.addr_base
         self._rp = parent
         super(HardwareModule, self).__init__(parent, name=name)
-        #self.__doc__ = "Available registers: \r\n\r\n" + self.help()
+        # self.__doc__ = "Available registers: \r\n\r\n" + self.help()
 
     def _ownership_changed(self, old, new):
         """
@@ -762,8 +782,10 @@ class HardwareModule(Module):
         try:
             return self._rp.frequency_correction
         except AttributeError:
-            self._logger.warning("Warning: Parent of %s has no attribute "
-                                 "'frequency_correction'. ", self.name)
+            self._logger.warning(
+                "Warning: Parent of %s has no attribute 'frequency_correction'. ",
+                self.name,
+            )
             return 1.0
 
     def _reads(self, addr, length):
@@ -779,20 +801,21 @@ class HardwareModule(Module):
         self._writes(addr, [int(value)])
 
     def _to_pyint(self, v, bitlength=14):
-        v = v & (2 ** bitlength - 1)
+        v = v & (2**bitlength - 1)
         if v >> (bitlength - 1):
-            v = v - 2 ** bitlength
+            v = v - 2**bitlength
         return int(v)
 
     def _from_pyint(self, v, bitlength=14):
         v = int(v)
         if v < 0:
-            v = v + 2 ** bitlength
-        v = (v & (2 ** bitlength - 1))
+            v = v + 2**bitlength
+        v = v & (2**bitlength - 1)
         return np.uint32(v)
 
 
 class SignalModule(Module):
-    """ any module that can be passed as an input to another module"""
+    """any module that can be passed as an input to another module"""
+
     def signal(self):
         return self.name

@@ -14,6 +14,7 @@ from ..pyrpl_utils import all_subclasses
 class ModuleNotFound(ValueError):
     pass
 
+
 def get_module(name):
     """
     Returns the subclass of Module named name (if exists, otherwise None)
@@ -22,5 +23,7 @@ def get_module(name):
     for cls in subclasses:
         if cls.__name__ == name:
             return cls
-    raise ModuleNotFound("class %s not found in subclasses of Module. Did you "
-                         "forget to import a custom module?"%name)
+    raise ModuleNotFound(
+        "class %s not found in subclasses of Module. Did you "
+        "forget to import a custom module?" % name
+    )

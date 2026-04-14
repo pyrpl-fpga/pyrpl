@@ -16,12 +16,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-""" All modules are extensively discussed in the Tutorial. Please refer to
-there for more information. """
+"""All modules are extensively discussed in the Tutorial. Please refer to
+there for more information."""
 
-
-from .dsp import DspModule, DSP_INPUTS, all_inputs, all_output_directs, \
-    dsp_addr_base, InputSelectProperty, InputSelectRegister
+from .dsp import (
+    DspModule,
+    DSP_INPUTS,
+    all_inputs,
+    all_output_directs,
+    dsp_addr_base,
+    InputSelectProperty,
+    InputSelectRegister,
+)
 from .filter import FilterModule
 from .hk import HK
 from .scope import Scope

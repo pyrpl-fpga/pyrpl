@@ -13,6 +13,7 @@ class Linear(Lockbox):
     """
     A simple linear dependance of variable vs input
     """
-    #name = "Linear"
-    _units = ['m', 'deg', 'rad']
-    variable = 'x'
+
+    # name = "Linear"
+    _units = ["m", "deg", "rad"]
+    variable = "x"

@@ -17,61 +17,134 @@
 ###############################################################################
 
 
-import scipy.signal as sig
 import numpy as np
 import logging
 from ...errors import ExpectedPyrplError
 
 logger = logging.getLogger(name=__name__)
 
-# this is not strictly needed
-try:
-    import matplotlib.pyplot as plt
-except:
-    pass
 
-# this one is essentially a copy-paste from scipy 18 for being compatible with
-# lower versions of scipy
-def sos2zpk(sos):
+def freqz_numpy(*args, dt=8e-9, worN=None):
     """
-    Return zeros, poles, and gain of a series of second-order sections
+    Compute the frequency response of a system (ZPK or TF) using NumPy.
+
+    Usage:
+    --------
+    # ZPK form
+    h = freqz_numpy((zeros, poles, gain), w, dt=dt)
+
+    # TF coefficients form
+    w, h = freqz_numpy(b, a=1, worN=512)
 
     Parameters
     ----------
-    sos : array_like
-        Array of second-order filter coefficients, must have shape
-        ``(n_sections, 6)``. See `sosfilt` for the SOS filter format
-        specification.
+    args : tuple
+        - ZPK: (zeros, poles, gain), w
+        - TF: b, a=1, worN
+    dt : float
+        Sampling period for ZPK form
+    worN : int or array
+        Number of points or array of frequencies (for TF form)
+
+    Returns
+    -------
+    ZPK: h
+    TF: w, h
+    """
+    # detect form
+    if isinstance(args[0], tuple) and len(args[0]) == 3:
+        # ZPK form
+        (z, p, k), w = args
+        z = np.atleast_1d(z)
+        p = np.atleast_1d(p)
+        w = np.asarray(w, dtype=np.float64)
+        jw = np.exp(-1j * w * dt)
+
+        numerator = np.prod(1.0 - z[None, :] * jw[:, None], axis=1) if z.size else np.ones(len(jw))
+        denominator = (
+            np.prod(1.0 - p[None, :] * jw[:, None], axis=1) if p.size else np.ones(len(jw))
+        )
+
+        return k * numerator / denominator
+
+    else:
+        # TF form
+        b = np.atleast_1d(args[0])
+        a = np.atleast_1d(args[1]) if len(args) > 1 else np.array([1.0])
+        if worN is None:
+            worN = 512
+        if np.isscalar(worN):
+            w = np.linspace(0, np.pi, worN, endpoint=False)
+        else:
+            w = np.array(worN)
+
+        ejw = np.exp(-1j * w[:, None] * np.arange(max(len(b), len(a))))
+        b_poly = np.sum(b * ejw[:, : len(b)], axis=1)
+        a_poly = np.sum(a * ejw[:, : len(a)], axis=1)
+        h = b_poly / a_poly
+        return w, h
+
+
+def tf2zpk_numpy(b, a):
+    """
+    NumPy replacement for scipy.signal.tf2zpk
+
+    Parameters
+    ----------
+    b : array-like
+        Numerator coefficients
+    a : array-like
+        Denominator coefficients
 
     Returns
     -------
     z : ndarray
-        Zeros of the transfer function.
+        Zeros of the transfer function
     p : ndarray
-        Poles of the transfer function.
+        Poles of the transfer function
     k : float
-        System gain.
+        Gain (leading coefficient of numerator divided by leading coefficient of denominator)
+    """
+    b = np.atleast_1d(b)
+    a = np.atleast_1d(a)
 
-    Notes
-    -----
-    .. versionadded:: 0.16.0
+    # remove leading zeros
+    while len(b) > 0 and b[0] == 0:
+        b = b[1:]
+    while len(a) > 0 and a[0] == 0:
+        a = a[1:]
+
+    if len(b) == 0:
+        z = np.array([], dtype=np.complex128)
+        k = 0.0
+    else:
+        z = np.roots(b)
+        k = b[0] / a[0] if len(a) > 0 else b[0]
+
+    p = np.roots(a) if len(a) > 0 else np.array([], dtype=np.complex128)
+    return z, p, k
+
+
+# this one is essentially a copy-paste from scipy 18 for being compatible with
+# lower versions of scipy
+def sos2zpk_numpy(sos):
+    """
+    Return zeros, poles, and gain of a series of second-order sections
+    using only NumPy
     """
     sos = np.asarray(sos)
     n_sections = sos.shape[0]
-    z = np.empty(n_sections*2, np.complex128)
-    p = np.empty(n_sections*2, np.complex128)
-    k = 1.
+    z = []
+    p = []
+    k = 1.0
     for section in range(n_sections):
         b, a = sos[section, :3], sos[section, 3:]
-        # remove leading zeros from numerator to avoid badcoefficient warning in scipy.signal.normaize
-        while b[0] == 0:
-            b = b[1:]
-        # convert to transfer function
-        zpk = sig.tf2zpk(b, a)
-        z[2*section:2*(section+1)] = zpk[0]
-        p[2*section:2*(section+1)] = zpk[1]
-        k *= zpk[2]
-    return z, p, k
+        zz, pp, kk = tf2zpk_numpy(b, a)
+        z.extend(zz)
+        p.extend(pp)
+        k *= kk
+    return np.array(z, dtype=np.complex128), np.array(p, dtype=np.complex128), k
+
 
 # functions of general use
 def freqs(sys, w):
@@ -110,61 +183,38 @@ def freqs(sys, w):
 
 
 def freqs_rp(r, p, c, w):
-    """ same as freqs, but takes a list of residues and poles"""
+    """same as freqs, but takes a list of residues and poles"""
     h = np.full(len(w), c, dtype=np.complex128)
     for i in range(len(p)):
         h += freqs(([], [p[i]], r[i]), w)
     return h
 
 
-# this one is not tested, so probably not working satisfactorily
-def freqz_(sys, w, dt=8e-9):
-    """
-    This function computes the frequency response of a zpk system at an
-    array of frequencies.
-
-    It loosely mimicks 'scipy.signal.frequresp'.
-
-    Parameters
-    ----------
-    system: (zeros, poles, k)
-        zeros and poles both in rad/s, k is the actual coefficient, not DC gain
-    w: np.array
-        frequencies in rad/s
-    dt: sampling time
+def residues(z, p, k):
+    """this function uses the residue method (Heaviside Cover-up method)
+    to perform the partial fraction expansion of a rational function
+    defined by zeros, poles and a prefactor k. No intermediate
+    conversion into a polynome is performed, which makes this function
+    less prone to finite precision issues. In the current version,
+    no pole value may occur twice and the number of poles must be
+    strictly greater than the number of zeros.
 
     Returns
     -------
-    np.array(..., dtype=complex) with the response
-    """
-    z, p, k = sys
-    b, a = sig.zpk2tf(z, p, k)
-    _, h = sig.freqz(b, a, worN=w*dt)
-    return h
+    np.array(dtype=np.complex128) containing the numerator array a of the
+    expansion
 
-def residues(z, p, k):
-    """ this function uses the residue method (Heaviside Cover-up method)
-        to perform the partial fraction expansion of a rational function
-        defined by zeros, poles and a prefactor k. No intermediate
-        conversion into a polynome is performed, which makes this function
-        less prone to finite precision issues. In the current version,
-        no pole value may occur twice and the number of poles must be
-        strictly greater than the number of zeros.
-
-        Returns
-        -------
-        np.array(dtype=np.complex128) containing the numerator array a of the
-        expansion
-
-            product_i( s - z[i] )                 a[j]
-        k ------------------------- =  sum_j ( ---------- )
-            product_j( s - p[j] )               s - p[j]
+        product_i( s - z[i] )                 a[j]
+    k ------------------------- =  sum_j ( ---------- )
+        product_j( s - p[j] )               s - p[j]
     """
     # first we should ensure that there are no double poles
     if len(np.unique(p)) < len(p):
-        raise ValueError("residues() received a list of poles where some "
-                         "values appear twice. This cannot be implemented "
-                         "at the time being.")
+        raise ValueError(
+            "residues() received a list of poles where some "
+            "values appear twice. This cannot be implemented "
+            "at the time being."
+        )
     # next we split off a constant term if applicable
     if len(p) > len(z):  # strictly proper
         c = 0
@@ -243,7 +293,7 @@ def discrete2cont(r, p, c, dt=8e-9):
 
 
 def bodeplot(data, xlog=True):
-    """ plots a bode plot of the data x, y
+    """plots a bode plot of the data x, y
 
     parameters
     -----------------
@@ -253,15 +303,19 @@ def bodeplot(data, xlog=True):
     figure:
     """
     try:
+        import matplotlib.pyplot as plt
+
         ax1 = plt.subplot(211)
-    except:
-        raise ExpectedPyrplError("No installation of matplotlib found. "
-                                 "Please install matplotlib in order to use "
-                                 "this feature.")
+    except ImportError:
+        raise ExpectedPyrplError(
+            "No installation of matplotlib found. "
+            "Please install matplotlib in order to use "
+            "this feature."
+        )
     if len(data[0]) == 3:  # unpack the labels from data
         newdata = []
         labels = []
-        for (f, tf, label) in data:
+        for f, tf, label in data:
             newdata.append((f, tf))
             labels.append(label)
         data = newdata
@@ -272,16 +326,16 @@ def bodeplot(data, xlog=True):
             label = ""
         ax1.plot(f, np.log10(np.abs(tf)) * 20, label=label)
     if xlog:
-        ax1.set_xscale('log')
-    ax1.set_ylabel('Magnitude [dB]')
+        ax1.set_xscale("log")
+    ax1.set_ylabel("Magnitude [dB]")
     ax2 = plt.subplot(212, sharex=ax1)
     for i, (f, tf) in enumerate(data):
         ax2.plot(f, np.angle(tf, deg=True))
-    ax2.set_xlabel('Frequency [Hz]')
-    ax2.set_ylabel('Phase [deg]')
+    ax2.set_xlabel("Frequency [Hz]")
+    ax2.set_ylabel("Phase [deg]")
     plt.tight_layout()
     if len(labels) > 0:
-        leg = ax1.legend(loc='best', framealpha=0.5)
+        leg = ax1.legend(loc="best", framealpha=0.5)
         leg.set_draggable(True)
     plt.show()
 
@@ -340,21 +394,23 @@ class IirFilter(object):
     implemented design.
     """
 
-    def __init__(self,
-                 zeros,
-                 poles,
-                 gain,
-                 loops=None,
-                 dt=8e-9,
-                 minloops=4,
-                 maxloops=1023,
-                 iirstages=16,
-                 totalbits=32,
-                 shiftbits=29,
-                 tol=1e-3,
-                 frequencies=None,
-                 inputfilter=0,
-                 moduledelay=5):
+    def __init__(
+        self,
+        zeros,
+        poles,
+        gain,
+        loops=None,
+        dt=8e-9,
+        minloops=4,
+        maxloops=1023,
+        iirstages=16,
+        totalbits=32,
+        shiftbits=29,
+        tol=1e-3,
+        frequencies=None,
+        inputfilter=0,
+        moduledelay=5,
+    ):
         self._sys = zeros, poles, gain
         self.loops = loops
         self.dt = dt
@@ -382,20 +438,25 @@ class IirFilter(object):
         # it is easiest to just create a new object when the specification
         # has changed
         z, p, g = v
-        self.__init__(z, p, g,
-                      loops=self.loops,
-                      dt=self.dt,
-                      minloops=self.minloops,
-                      maxloops=self.maxloops,
-                      iirstages=self.iirstages,
-                      totalbits=self.totalbits,
-                      shiftbits=self.shiftbits,
-                      tol=self.tol,
-                      frequencies=self.frequencies,
-                      inputfilter=self.inputfilter,
-                      moduledelay=self.moduledelay)
-        logger.warning("Setter of sys will soone be deprecated. Create a new "
-                       "instance of 'IirFilter' instead! ")
+        self.__init__(
+            z,
+            p,
+            g,
+            loops=self.loops,
+            dt=self.dt,
+            minloops=self.minloops,
+            maxloops=self.maxloops,
+            iirstages=self.iirstages,
+            totalbits=self.totalbits,
+            shiftbits=self.shiftbits,
+            tol=self.tol,
+            frequencies=self.frequencies,
+            inputfilter=self.inputfilter,
+            moduledelay=self.moduledelay,
+        )
+        logger.warning(
+            "Setter of sys will soone be deprecated. Create a new instance of 'IirFilter' instead! "
+        )
 
     @property
     def coefficients(self):
@@ -451,7 +512,7 @@ class IirFilter(object):
         automatically corrected to a number of loops compatible with the
         implemented design.
         """
-        if hasattr(self, '_coefficients'):
+        if hasattr(self, "_coefficients"):
             return self._coefficients
 
         # clean the filter specification so we can work with it and find the
@@ -477,8 +538,8 @@ class IirFilter(object):
         # transform to discrete time
         rd, pd, cd = cont2discrete(r, p, c, dt=self.dt * self.loops)
         """
-        zd = np.exp(np.asarray(z, dtype=np.complex128)*self.dt*self.loops)
-        pd = np.exp(np.asarray(p, dtype=np.complex128)*self.dt*self.loops)
+        zd = np.exp(np.asarray(z, dtype=np.complex128) * self.dt * self.loops)
+        pd = np.exp(np.asarray(p, dtype=np.complex128) * self.dt * self.loops)
         rd, cd = residues(zd, pd, k)
 
         self.rp_discrete = rd, pd, cd  # 'tf_discrete'
@@ -487,7 +548,7 @@ class IirFilter(object):
         coefficients = self.rp2coefficients(rd, pd, cd, tol=self.tol)
 
         # rearrange second order sections for minimum delay
-        coefficients = self.minimize_delay(coefficients) # 'tf_implemented_perfect'
+        coefficients = self.minimize_delay(coefficients)  # 'tf_implemented_perfect'
         self._coefficients = coefficients
         _ = self.finiteprecision()  # 'tf_implemented'
         return coefficients
@@ -513,12 +574,16 @@ class IirFilter(object):
         (zeros, poles, minloops) - the corrected lists of poles/zeros and the
         number of loops that are minimally needed for implementation
         """
-        if hasattr(self, '_proper_sys'):
+        if hasattr(self, "_proper_sys"):
             return self._proper_sys
         zeros, poles, gain = self.sys
         loops = self.loops
-        minloops, maxloops, iirstages, tol = self.minloops, self.maxloops, \
-                                             self.iirstages, self.tol
+        minloops, maxloops, iirstages, tol = (
+            self.minloops,
+            self.maxloops,
+            self.iirstages,
+            self.tol,
+        )
         # part 1: make sure each complex pole/zero has a conjugate partner
         results = []
         looplist = []  # count at the same time how many biquads are needed
@@ -544,9 +609,11 @@ class IirFilter(object):
                             found = True
                             break
                     if not found:
-                        logger.debug("Pole/zero %s had no complex conjugate "
-                                     "partner. It was added automatically.",
-                                     datum)
+                        logger.debug(
+                            "Pole/zero %s had no complex conjugate "
+                            "partner. It was added automatically.",
+                            datum,
+                        )
                         gooddata.append(np.conjugate(datum))
                         # attention to an issue here: Often
                         # datum != np.conjugate(np.conjugate(datum))
@@ -566,21 +633,27 @@ class IirFilter(object):
         # each pair of poles needs one biquad
         actloops = int(np.ceil(actloops))
         if actloops > iirstages:
-            raise Exception("Error: desired filter order is too high to "
-                            "be implemented.")
+            raise Exception("Error: desired filter order is too high to be implemented.")
         if actloops < minloops:
             actloops = minloops
         # actloops now contains the necessary number of loops
         if loops is None:
             loops = actloops
         elif loops < actloops:
-            logger.warning("Cannot implement filter with %s loops. "
-                           "Minimum of %s is needed! ", loops, actloops)
+            logger.warning(
+                "Cannot implement filter with %s loops. Minimum of %s is needed! ",
+                loops,
+                actloops,
+            )
             loops = actloops
         if loops > maxloops:
-            logger.info("Maximum loops number is %s. This value "
-                           "will be tried instead of specified value "
-                           "%s.", maxloops, loops)
+            logger.info(
+                "Maximum loops number is %s. This value "
+                "will be tried instead of specified value "
+                "%s.",
+                maxloops,
+                loops,
+            )
             loops = maxloops
 
         # part 2: make sure the transfer function is strictly proper
@@ -588,9 +661,11 @@ class IirFilter(object):
         extrapole = -125e6 / loops / 2
         while len(zeros) > len(poles):
             poles.append(extrapole)
-            logger.debug("Specified IIR transfer function was not "
-                         "proper. Automatically added a pole at %s Hz.",
-                         extrapole)
+            logger.debug(
+                "Specified IIR transfer function was not "
+                "proper. Automatically added a pole at %s Hz.",
+                extrapole,
+            )
             # if more poles must be added, make sure we have no 2 poles at the
             # same frequency
             extrapole /= 2
@@ -600,9 +675,9 @@ class IirFilter(object):
 
     @property
     def rescaled_sys(self):
-        """ rescales poles and zeros with 2pi and returns the prefactor
+        """rescales poles and zeros with 2pi and returns the prefactor
         corresponding to dc-gain gain"""
-        if hasattr(self, '_rescaled_sys'):
+        if hasattr(self, "_rescaled_sys"):
             return self._rescaled_sys
         zeros, poles, gain = self.proper_sys
         zeros = [zz * 2 * np.pi for zz in zeros]
@@ -618,11 +693,11 @@ class IirFilter(object):
         return self._rescaled_sys
 
     def prewarp(self, z, p, dt=8e-9):
-        """ prewarps frequencies in order to correct warping effect in discrete
-        time conversion """
+        """prewarps frequencies in order to correct warping effect in discrete
+        time conversion"""
 
         def timedilatation(w):
-            """ accounts for effective time dilatation due to warping effect """
+            """accounts for effective time dilatation due to warping effect"""
             if np.imag(w) == 0:
                 w = np.abs(w)
                 # return 1.0  # do not prewarp real poles/zeros
@@ -633,17 +708,23 @@ class IirFilter(object):
             else:
                 correction = np.tan(w / 2 * dt) / w * 2.0 / dt
                 if correction <= 0:
-                    logger.warning("Negative correction factor %s obtained "
-                                   "during prewarp for frequency %s. "
-                                   "Setting correction factor to 1!",
-                                   correction, w / 2 / np.pi)
+                    logger.warning(
+                        "Negative correction factor %s obtained "
+                        "during prewarp for frequency %s. "
+                        "Setting correction factor to 1!",
+                        correction,
+                        w / 2 / np.pi,
+                    )
                     return 1.0
                 elif correction > 2.0:
-                    logger.warning("Correction factor %s > 2 obtained"
-                                   "during prewarp for frequency %s. "
-                                   "Setting correction factor to 1 but this "
-                                   "seems wrong!",
-                                   correction, w / 2 / np.pi)
+                    logger.warning(
+                        "Correction factor %s > 2 obtained"
+                        "during prewarp for frequency %s. "
+                        "Setting correction factor to 1 but this "
+                        "seems wrong!",
+                        correction,
+                        w / 2 / np.pi,
+                    )
                     return 1.0
                 else:
                     return correction
@@ -654,9 +735,11 @@ class IirFilter(object):
         for x in [zc, pc]:
             for i in range(len(x)):
                 correction = timedilatation(x[i])
-                logger.debug("Warp correction of %s at frequency %s "
-                             "automatically applied.",
-                             correction, x[i] / 2 / np.pi)
+                logger.debug(
+                    "Warp correction of %s at frequency %s automatically applied.",
+                    correction,
+                    x[i] / 2 / np.pi,
+                )
                 x[i] *= correction
         return zc, pc
 
@@ -678,9 +761,7 @@ class IirFilter(object):
         if c != 0:
             N += 1
         if N == 0:
-            logger.warning(
-                "Warning: No poles or zeros defined. Filter will be "
-                "turned off!")
+            logger.warning("Warning: No poles or zeros defined. Filter will be turned off!")
             coefficients = np.zeros((1, 6), dtype=np.float64)
             coefficients[0, 0] = 0
             coefficients[:, 3] = 1.0
@@ -702,7 +783,7 @@ class IirFilter(object):
         complexr = []
         realp = []
         realr = []
-        while (len(pc) > 0):
+        while len(pc) > 0:
             pp = pc.pop(0)
             rr = rc.pop(0)
             if np.imag(pp) == 0:
@@ -714,9 +795,11 @@ class IirFilter(object):
                 index = np.argmin(diff)
                 if diff[index] > tol:
                     logger.warning(
-                        "Conjugate partner for pole %s deviates from "
-                        "expected value by %s > %s",
-                        pp, diff[index], tol)
+                        "Conjugate partner for pole %s deviates from expected value by %s > %s",
+                        pp,
+                        diff[index],
+                        tol,
+                    )
                 complexp.append((pp + np.conjugate(pc.pop(index))) / 2.0)
                 complexr.append((rr + np.conjugate(rc.pop(index))) / 2.0)
         complexp = np.asarray(complexp, dtype=np.complex128)
@@ -766,11 +849,10 @@ class IirFilter(object):
         # we must invert the denominator for comatibility with scipy
         # when the coefficients are written to the FPGA, the inversion is undone
         invert = -1.0
-        coefficients[:len(complexp), 0] = 2.0 * np.real(complexr)
-        coefficients[:len(complexp), 1] = \
-            -2.0 * np.real(complexr * np.conjugate(complexp))
-        coefficients[:len(complexp), 4] = 2.0 * np.real(complexp) * invert
-        coefficients[:len(complexp), 5] = -1.0 * np.abs(complexp) ** 2 * invert
+        coefficients[: len(complexp), 0] = 2.0 * np.real(complexr)
+        coefficients[: len(complexp), 1] = -2.0 * np.real(complexr * np.conjugate(complexp))
+        coefficients[: len(complexp), 4] = 2.0 * np.real(complexp) * invert
+        coefficients[: len(complexp), 5] = -1.0 * np.abs(complexp) ** 2 * invert
         # for a pair of real poles, residues (p1, p2) and (r1, r2), we find
         #     b0 = r1 + r2
         #     b1 = - r1*p2 - r2*p1
@@ -792,10 +874,10 @@ class IirFilter(object):
         for i in range(len(realp) // 2):
             p1, p2 = realp[2 * i], realp[2 * i + 1]
             r1, r2 = realr[2 * i], realr[2 * i + 1]
-            coefficients[len(complexp)+i, 0] = r1 + r2
-            coefficients[len(complexp)+i, 1] = -r1 * p2 - r2 * p1
-            coefficients[len(complexp)+i, 4] = (p1 + p2) * invert
-            coefficients[len(complexp)+i, 5] = (-p1 * p2) * invert
+            coefficients[len(complexp) + i, 0] = r1 + r2
+            coefficients[len(complexp) + i, 1] = -r1 * p2 - r2 * p1
+            coefficients[len(complexp) + i, 4] = (p1 + p2) * invert
+            coefficients[len(complexp) + i, 5] = (-p1 * p2) * invert
         # finish the design by adding a constant term if needed
         if c != 0:
             coefficients[-1, 0] = c
@@ -822,8 +904,7 @@ class IirFilter(object):
             if (c[0:3] == 0).all():
                 ranks.append(0)
             else:
-
-                z, p, k = sos2zpk([c])
+                z, p, k = sos2zpk_numpy([c])
                 # compute something proportional to the frequency of the pole
                 ppp = [np.abs(np.log(pp)) for pp in p if pp != 0]
                 if not ppp:
@@ -831,9 +912,9 @@ class IirFilter(object):
                 else:
                     f = np.max(ppp)
                 ranks.append(f)
-        newcoefficients = [c for (rank, c) in
-                           sorted(zip(ranks, list(coefficients)),
-                                  key=lambda pair: -pair[0])]
+        newcoefficients = [
+            c for (rank, c) in sorted(zip(ranks, list(coefficients)), key=lambda pair: -pair[0])
+        ]
         return np.array(newcoefficients)
 
     def finiteprecision(self, coeff=None, totalbits=None, shiftbits=None):
@@ -844,27 +925,31 @@ class IirFilter(object):
         if shiftbits is None:
             shiftbits = self.shiftbits
         res = coeff * 0 + coeff  # weird way to make a copy of coeff
-        for x in np.nditer(res, op_flags=['readwrite']):
-            xr = np.round(x * 2 ** shiftbits)
+        for x in np.nditer(res, op_flags=["readwrite"]):
+            xr = np.round(x * 2**shiftbits)
             xmax = 2 ** (totalbits - 1)
             if xr == 0 and xr != 0:
-                logger.warning("One value was rounded off to zero: Increase "
-                               "shiftbits in fpga design if this is a "
-                               "problem!")
+                logger.warning(
+                    "One value was rounded off to zero: Increase "
+                    "shiftbits in fpga design if this is a "
+                    "problem!"
+                )
             elif xr > xmax - 1:
                 xr = xmax - 1
-                logger.warning("One value saturates positively: Increase "
-                               "totalbits or decrease gain!")
+                logger.warning(
+                    "One value saturates positively: Increase totalbits or decrease gain!"
+                )
             elif xr < -xmax:
                 xr = -xmax
-                logger.warning("One value saturates negatively: Increase "
-                               "totalbits or decrease gain!")
+                logger.warning(
+                    "One value saturates negatively: Increase totalbits or decrease gain!"
+                )
             x[...] = 2 ** (-shiftbits) * xr
         return res
 
     @property
     def coefficients_rounded(self):
-        if hasattr(self, '_fcoefficients'):
+        if hasattr(self, "_fcoefficients"):
             return self._fcoefficients
         self._fcoefficients = self.finiteprecision()
         return self._fcoefficients
@@ -880,33 +965,32 @@ class IirFilter(object):
         frequencies = np.asarray(frequencies, dtype=complex)
         try:
             len(inputfilter)
-        except:
+        except TypeError:
             inputfilter = [inputfilter]  # make it iterable
-        tf = frequencies*0 + 1.0
+        tf = frequencies * 0 + 1.0
         for f in inputfilter:
             if f > 0:  # lowpass
-                tf /= (1.0 + 1j * frequencies / f)
+                tf /= 1.0 + 1j * frequencies / f
                 moduledelay += 1
             elif f < 0:  # highpass
-                tf /= (1.0 + 1j * f / frequencies)
+                tf /= 1.0 + 1j * f / frequencies
                 moduledelay += 2
         # add delay
         delay = moduledelay * self.dt  # + extradelay
-        tf *= np.exp(-1j*delay*frequencies*2*np.pi)
+        tf *= np.exp(-1j * delay * frequencies * 2 * np.pi)
         return tf
 
     @property
     def designdata(self):
-        return [(self.frequencies, self.tf_continuous(), 'continuous'),
-                (self.frequencies, self.tf_partialfraction(),
-                 'partialfraction'),
-                (self.frequencies, self.tf_discrete(), 'discrete'),
-                (self.frequencies, self.tf_coefficients(),
-                    'coefficients'),
-                (self.frequencies, self.tf_rounded(), 'rounded'),
-                #(self.frequencies, self.tf_delay(), 'rounded+delay'),
-                (self.frequencies, self.tf_final(),
-                 'final')]
+        return [
+            (self.frequencies, self.tf_continuous(), "continuous"),
+            (self.frequencies, self.tf_partialfraction(), "partialfraction"),
+            (self.frequencies, self.tf_discrete(), "discrete"),
+            (self.frequencies, self.tf_coefficients_numpy(), "coefficients"),
+            (self.frequencies, self.tf_rounded(), "rounded"),
+            # (self.frequencies, self.tf_delay(), 'rounded+delay'),
+            (self.frequencies, self.tf_final(), "final"),
+        ]
 
     def tf_continuous(self, frequencies=None):
         """
@@ -955,7 +1039,7 @@ class IirFilter(object):
             frequencies = self.frequencies
         frequencies = np.asarray(frequencies, dtype=np.complex128)
         r, p, c = self.rp_continuous
-        h = freqs_rp(r, p, c, frequencies*2*np.pi)
+        h = freqs_rp(r, p, c, frequencies * 2 * np.pi)
         return h * self.tf_inputfilter(frequencies=frequencies)
 
     def tf_discrete(self, rp_discrete=None, frequencies=None):
@@ -998,55 +1082,53 @@ class IirFilter(object):
         h = freqs_rp(rc, pc, cc, frequencies * 2 * np.pi)
         return h * self.tf_inputfilter(frequencies=frequencies)
 
-    def tf_coefficients(self, frequencies=None, coefficients=None,
-                                delay=False):
+    def tf_coefficients_numpy(self, frequencies=None, coefficients=None, delay=False):
         """
-        computes implemented transfer function - assuming no delay and
-        infinite precision (actually floating-point precision)
-        Returns the discrete transfer function realized by coefficients at
-        frequencies.
+        Compute implemented discrete transfer function using pure NumPy.
 
         Parameters
         ----------
-        coefficients: np.array
-            coefficients as returned from iir module
-
-        frequencies: np.array
-            frequencies to compute the transfer function for
-
-        dt: float
-            discrete sampling time (seconds)
-
-        zoh: bool
-            If true, zero-order hold implementation is assumed. Otherwise,
-            the delay is expected to depend on the index of biquad.
+        coefficients : list of np.array
+            Each element is a biquad coefficient array: [b0, b1, 0, 1, a1, a2]
+        frequencies : np.array
+            Frequencies to evaluate transfer function at
+        delay : bool
+            If True, apply progressive delay per biquad
 
         Returns
         -------
-        np.array(..., dtype=complex)
+        np.array : complex frequency response
         """
         if frequencies is None:
             frequencies = self.frequencies
         frequencies = np.asarray(frequencies, dtype=np.float64)
+
         if coefficients is None:
             fcoefficients = self.coefficients
         else:
             fcoefficients = coefficients
-        # discrete frequency
+
         w = frequencies * 2 * np.pi * self.dt * self.loops
-        # the higher stages have progressively more delay to the output
+
         if delay:
             delay_per_cycle = np.exp(-1j * self.dt * frequencies * 2 * np.pi)
+
         h = np.zeros(len(w), dtype=np.complex128)
+
         for i in range(len(fcoefficients)):
             sos = np.asarray(fcoefficients[i], dtype=np.float64)
-            # later we can use sig.sosfreqz (very recent function, dont want
-            #  to update scipy now)
-            ww, hh = sig.freqz(sos[:3], sos[3:], worN=np.asarray(w,
-                                                           dtype=np.float64))
+            b = sos[:3]
+            a = sos[3:]
+
+            # evaluate directly from TF coefficients (THIS MATCHES FPGA)
+            w = frequencies * 2 * np.pi * self.dt * self.loops
+            _, hh = freqz_numpy(b, a, worN=w)
+
             if delay:
                 hh *= delay_per_cycle ** (i + 1)
+
             h += hh
+
         return h
 
     def tf_rounded(self, frequencies=None, delay=False):
@@ -1073,9 +1155,9 @@ class IirFilter(object):
         -------
         np.array(..., dtype=complex)
         """
-        return self.tf_coefficients(frequencies=frequencies,
-                                    coefficients=self.coefficients_rounded,
-                                    delay=delay)
+        return self.tf_coefficients_numpy(
+            frequencies=frequencies, coefficients=self.coefficients_rounded, delay=delay
+        )
 
     def tf_final(self, frequencies=None):
         """
@@ -1101,27 +1183,26 @@ class IirFilter(object):
         -------
         np.array(..., dtype=complex)
         """
-        return self.tf_rounded(frequencies=frequencies, delay=True) * \
-               self.tf_inputfilter(frequencies=frequencies)
+        return self.tf_rounded(frequencies=frequencies, delay=True) * self.tf_inputfilter(
+            frequencies=frequencies
+        )
 
     @property
     def sampling_rate(self):
-        return 1.0/(self.dt * self.loops)
+        return 1.0 / (self.dt * self.loops)
 
     @property
     def frequencies(self):
-        if hasattr(self, '_frequencies') and self._frequencies is not None:
+        if hasattr(self, "_frequencies") and self._frequencies is not None:
             return self._frequencies
         z, p, k = self.proper_sys
         pz = list(np.abs(z)) + list(np.abs(p))
-        start = min([self.sampling_rate/1000.0] + pz)
+        start = min([self.sampling_rate / 1000.0] + pz)
         stop = max([self.sampling_rate] + pz)
         # 1000 points / decade
-        points = int(np.ceil(np.log10(stop/start)*1000))
-        self._frequencies = np.array(np.logspace(np.log10(start),
-                                                 np.log10(stop),
-                                                 points, endpoint=True),
-                                     dtype=np.complex128)
+        points = int(np.ceil(np.log10(stop / start) * 1000))
+        self._frequencies = np.array(
+            np.logspace(np.log10(start), np.log10(stop), points, endpoint=True),
+            dtype=np.complex128,
+        )
         return self._frequencies
-
-

@@ -20,12 +20,15 @@
 import numpy as np
 import socket
 import logging
+
 try:
-    raise  # disable sound output for now
     from pysine import sine  # for debugging read/write calls
-except:
+except ImportError:
+
     def sine(frequency, duration):
         print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
+
+
 from .hardware_modules.dsp import dsp_addr_base, DSP_INPUTS
 from .pyrpl_utils import time
 
@@ -52,27 +55,28 @@ class MonitorClient(object):
         self._restartserver = restartserver
         self._hostname = hostname
         self._port = port
-        self._read_counter = 0 # For debugging and unittests
-        self._write_counter = 0 # For debugging and unittests
+        self._read_counter = 0  # For debugging and unittests
+        self._write_counter = 0  # For debugging and unittests
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # try to connect at least 5 times
         for i in range(5):
             if not self._port > 0:
                 if self._port is None:
                     # likely means that _restartserver failed.
-                    raise ValueError("Connection to hostname %s failed. "
-                                     "Please check your connection parameters!"
-                                     % (self._hostname))
+                    raise ValueError(
+                        "Connection to hostname %s failed. "
+                        "Please check your connection parameters!" % (self._hostname)
+                    )
                 else:
-                    raise ValueError("Trying to open MonitorClient for "
-                                     "hostname %s on invalid port %s. Please "
-                                     "check your connection parameters!"
-                                     % (self._hostname, self._port))
+                    raise ValueError(
+                        "Trying to open MonitorClient for "
+                        "hostname %s on invalid port %s. Please "
+                        "check your connection parameters!" % (self._hostname, self._port)
+                    )
             try:
                 self.socket.connect((self._hostname, self._port))
             except socket.error:  # mostly because port is still closed
-                self.logger.warning("Socket error during connection "
-                                    "attempt %s.", i)
+                self.logger.warning("Socket error during connection attempt %s.", i)
                 # could try a different port here by putting port=-1
                 self._port = self._restartserver()
             else:
@@ -81,39 +85,48 @@ class MonitorClient(object):
 
     def close(self):
         try:
-            self.socket.send(
-                b'c' + bytes(bytearray([0, 0, 0, 0, 0, 0, 0])))
+            self.socket.send(b"c" + bytes(bytearray([0, 0, 0, 0, 0, 0, 0])))
             self.socket.close()
         except socket.error:
             return
 
     def __del__(self):
         self.close()
-        
+
     # the public methods to use which will recover from connection problems
     def reads(self, addr, length):
-        self._read_counter+=1
-        if hasattr(self, '_sound_debug') and self._sound_debug:
+        self._read_counter += 1
+        if hasattr(self, "_sound_debug") and self._sound_debug:
             sine(440, 0.05)
         return self.try_n_times(self._reads, addr, length)
 
     def writes(self, addr, values):
         self._write_counter += 1
-        if hasattr(self, '_sound_debug') and self._sound_debug:
+        if hasattr(self, "_sound_debug") and self._sound_debug:
             sine(880, 0.05)
         return self.try_n_times(self._writes, addr, values)
-    
+
     # the actual code
     def _reads(self, addr, length):
         if length > 65535:
             length = 65535
             self.logger.warning("Maximum read-length is %d", length)
-        header = b'r' + bytes(bytearray([0,
-                                         length & 0xFF, (length >> 8) & 0xFF,
-                                         addr & 0xFF, (addr >> 8) & 0xFF, (addr >> 16) & 0xFF, (addr >> 24) & 0xFF]))
+        header = b"r" + bytes(
+            bytearray(
+                [
+                    0,
+                    length & 0xFF,
+                    (length >> 8) & 0xFF,
+                    addr & 0xFF,
+                    (addr >> 8) & 0xFF,
+                    (addr >> 16) & 0xFF,
+                    (addr >> 24) & 0xFF,
+                ]
+            )
+        )
         self.socket.send(header)
         data = self.socket.recv(length * 4 + 8)
-        while (len(data) < length * 4 + 8):
+        while len(data) < length * 4 + 8:
             data += self.socket.recv(length * 4 - len(data) + 8)
         if data[:8] == header:  # check for in-sync transmission
             return np.frombuffer(data[8:], dtype=np.uint32)
@@ -123,18 +136,23 @@ class MonitorClient(object):
             return None
 
     def _writes(self, addr, values):
-        values = values[:65535 - 2]
+        values = values[: 65535 - 2]
         length = len(values)
-        header = b'w' + bytes(bytearray([0,
-                                         length & 0xFF,
-                                         (length >> 8) & 0xFF,
-                                         addr & 0xFF,
-                                         (addr >> 8) & 0xFF,
-                                         (addr >> 16) & 0xFF,
-                                         (addr >> 24) & 0xFF]))
+        header = b"w" + bytes(
+            bytearray(
+                [
+                    0,
+                    length & 0xFF,
+                    (length >> 8) & 0xFF,
+                    addr & 0xFF,
+                    (addr >> 8) & 0xFF,
+                    (addr >> 16) & 0xFF,
+                    (addr >> 24) & 0xFF,
+                ]
+            )
+        )
         # send header+body
-        self.socket.send(header +
-                         np.array(values, dtype=np.uint32).tobytes())
+        self.socket.send(header + np.array(values, dtype=np.uint32).tobytes())
         if self.socket.recv(8) == header:  # check for in-sync transmission
             return True  # indicate successful write
         else:  # error handling
@@ -145,7 +163,7 @@ class MonitorClient(object):
     def emptybuffer(self):
         for i in range(100):
             n = len(self.socket.recv(16384))
-            if (n <= 0):
+            if n <= 0:
                 return
             self.logger.debug("Read %d bytes from socket...", n)
 
@@ -154,14 +172,11 @@ class MonitorClient(object):
             try:
                 value = function(addr, value)
             except (socket.timeout, socket.error):
-                self.logger.error("Error occured in reading attempt %s. "
-                                  "Reconnecting at addr %s to %s value %s by "
-                                  "client %s"
-                                  % (i,
-                                     hex(addr),
-                                     function.__name__,
-                                     value,
-                                     self.client_number))
+                self.logger.error(
+                    "Error occured in reading attempt %s. "
+                    "Reconnecting at addr %s to %s value %s by "
+                    "client %s" % (i, hex(addr), function.__name__, value, self.client_number)
+                )
                 if self._restartserver is not None:
                     self.restart()
             else:
@@ -171,17 +186,16 @@ class MonitorClient(object):
     def restart(self):
         self.close()
         port = self._restartserver()
-        self.__init__(
-            hostname=self._hostname,
-            port=port,
-            restartserver=self._restartserver)
+        self.__init__(hostname=self._hostname, port=port, restartserver=self._restartserver)
 
 
 class DummyClient(object):  # pragma: no cover
     """Class for unitary tests without RedPitaya hardware available"""
+
     class fpgadict(dict):
         def __missing__(self, key):
-            return 1 # 0 (1 is needed to avoid division_by_zero errors for some registers)
+            return 1  # 0 (1 is needed to avoid division_by_zero errors for some registers)
+
     fpgamemory = fpgadict({str(0x40100014): 1})  # scope decimation initial value
 
     def read_fpgamemory(self, addr):
@@ -190,11 +204,11 @@ class DummyClient(object):  # pragma: no cover
         offset = addr - 0x40100000
         # scope curve buffer
         if offset >= 0x10000 and offset < 0x30000:
-            v = int(np.random.normal(scale=2**13 - 1))//4
-            if v > 2**13-1:
-                v = 2*13-1
-            elif v < -(2**13-1):
-                v = -(2**13-1)
+            v = int(np.random.normal(scale=2**13 - 1)) // 4
+            if v > 2**13 - 1:
+                v = 2 * 13 - 1
+            elif v < -(2**13 - 1):
+                v = -(2**13 - 1)
             if v < 0:
                 v += 2**14
             return v
@@ -202,26 +216,25 @@ class DummyClient(object):  # pragma: no cover
         if offset == 0:
             return 0
         if offset == 0x15C:  # current_timestamp lv part
-            t = int(time()*125e6)
+            t = int(time() * 125e6)
             return t % (2**32)
         if offset == 0x160:  # current_timestamp mv part
             return 0
-            t = int(time()*125e6)
+            t = int(time() * 125e6)
             return t - (t % (2**32))
         if offset == 0x164:  # trigger_timestamp lv part
             return 0
         if offset == 0x168:  # trigger_timestamp mv part
             return 0
-        #DSP modules
-        all = DSP_INPUTS
+        # DSP modules
         for module in DSP_INPUTS:
             offset = addr - dsp_addr_base(module)
-            if module.startswith('pid'):
-                if offset == 0x220: # FILTERSTAGES
+            if module.startswith("pid"):
+                if offset == 0x220:  # FILTERSTAGES
                     return 4
                 elif offset == 0x228:  # MINBW
                     return 1
-            elif module.startswith('iir'):
+            elif module.startswith("iir"):
                 if offset == 0x200:  # IIRBITS
                     return 64
                 elif offset == 0x204:  # IIRSHIFT
@@ -232,7 +245,7 @@ class DummyClient(object):  # pragma: no cover
                     return 1
                 elif offset == 0x108:  # overflow
                     return 0
-            elif module.startswith('iq'):
+            elif module.startswith("iq"):
                 if offset == 0x220:  # filterstages
                     return 1
                 # rbw filter register
@@ -242,7 +255,7 @@ class DummyClient(object):  # pragma: no cover
                     return 2
                 elif offset == 0x238:  # minbw = 0x238
                     return 1
-            for filter_module in ['iq', 'pid', 'iir']:
+            for filter_module in ["iq", "pid", "iir"]:
                 if module.startswith(filter_module):
                     if offset == 0x220:  # filterstages
                         return 1
@@ -257,15 +270,15 @@ class DummyClient(object):  # pragma: no cover
     def reads(self, addr, length):
         val = []
         for i in range(length):
-            val.append(self.read_fpgamemory(addr+0x4*i))
+            val.append(self.read_fpgamemory(addr + 0x4 * i))
         return np.array(val, dtype=np.uint32)
-    
-    def writes(self, addr, values): # pragma: no-cover
+
+    def writes(self, addr, values):  # pragma: no-cover
         for i, v in enumerate(values):
-            self.fpgamemory[str(addr+0x4*i)]=v
-    
+            self.fpgamemory[str(addr + 0x4 * i)] = v
+
     def restart(self):
         pass
-    
+
     def close(self):
         pass

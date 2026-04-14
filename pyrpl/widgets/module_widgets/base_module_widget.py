@@ -39,6 +39,7 @@ for your own purposes.
              /HOME/pyrpl_user_dir/config/<string_shown_in_top_bar_of_the_gui>.yml)
              and restart PyRPL with that configuration.
 """
+
 from qtpy import QtCore, QtWidgets
 from collections import OrderedDict
 import functools
@@ -50,6 +51,7 @@ class MyMenuLabel(QtWidgets.QLabel):
     """
     A label on top of the menu widget that is able to display save or load menu.
     """
+
     def __init__(self, module_widget):
         self.module_widget = module_widget
         self.module = module_widget.module
@@ -75,7 +77,9 @@ class LoadLabel(MyMenuLabel):
     """
     "Load" label
     """
+
     text = " .:Load:. "
+
     def func(self, state):
         self.module.load_state(state)
 
@@ -84,6 +88,7 @@ class SaveLabel(MyMenuLabel):
     """
     "Save" label
     """
+
     text = " .:Save:. "
 
     def __init__(self, module_widget):
@@ -94,25 +99,29 @@ class SaveLabel(MyMenuLabel):
 
     def get_menu(self):
         menu = super(SaveLabel, self).get_menu()
-        action_new = QtWidgets.QAction('<New...>', self)
+        action_new = QtWidgets.QAction("<New...>", self)
         action_new.triggered.connect(self.new_state)
         menu.addAction(action_new)
         return menu
 
     def new_state(self):
-        state, accept = QtWidgets.QInputDialog.getText(self, "Save %s "
-                            "state"%self.module.name, "Enter new state name:")
+        state, accept = QtWidgets.QInputDialog.getText(
+            self, "Save %s state" % self.module.name, "Enter new state name:"
+        )
         state = str(state)
         if accept:
             if state in self.module.states:
-                raise ValueError( "State %s of module %s already exists!"%(
-                    state, self.module.name))
+                raise ValueError(
+                    "State %s of module %s already exists!" % (state, self.module.name)
+                )
             self.module.save_state(state)
+
 
 class EraseLabel(MyMenuLabel):
     """
     "Erase" label
     """
+
     text = " .:Erase:. "
 
     def func(self, state):
@@ -123,24 +132,24 @@ class EditLabel(MyMenuLabel):
     """
     "Edit" label
     """
+
     text = " .:Edit:. "
 
     def func(self, state):
         editor = YmlEditor(self.module, state)
-        self.module_widget.yml_editors[str(self.module.name) + '__' + str(
-            state)] = editor
+        self.module_widget.yml_editors[str(self.module.name) + "__" + str(state)] = editor
         editor.show()
 
     def get_menu(self):
         menu = super(EditLabel, self).get_menu()
-        action_current = QtWidgets.QAction('<Current>', self)
+        action_current = QtWidgets.QAction("<Current>", self)
         action_current.triggered.connect(functools.partial(self.func, None))
         others = menu.actions()
-        if len(others)>0:
+        if len(others) > 0:
             other = others[0]
             menu.insertAction(other, action_current)
         else:
-            menu.addAction(action_current) # will append the action at the end
+            menu.addAction(action_current)  # will append the action at the end
         return menu
 
 
@@ -148,10 +157,11 @@ class HideShowLabel(MyMenuLabel):
     """
     "Hide/Show" label
     """
+
     text = " .:Hide/Show:. "
 
     def get_menu(self):
-        if hasattr(self, 'hidden') and self.hidden:
+        if hasattr(self, "hidden") and self.hidden:
             self.module_widget.show_widget()
             self.hidden = False
         else:
@@ -166,6 +176,7 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
 
     In general, this is one of the DockWidget of the Pyrpl MainWindow.
     """
+
     attribute_changed = QtCore.Signal()
     title_pos = (12, 0)
 
@@ -175,15 +186,18 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
         self.module = module
         self.name = name
         self.attribute_widgets = OrderedDict()
-        self.yml_editors = dict()  # optional widgets to edit the yml code of module on a per-state basis
-        self.init_gui() # performs the automatic gui creation based on register_names
-        # self.setStyleSheet("ModuleWidget{border:0;color: transparent;}") # frames and title hidden for software_modules
-                                        # ModuleManagerWidget sets them visible for the HardwareModuleWidgets...
+        self.yml_editors = (
+            dict()
+        )  # optional widgets to edit the yml code of module on a per-state basis
+        self.init_gui()  # performs the automatic gui creation based on register_names
+        # self.setStyleSheet("ModuleWidget{border:0;color: transparent;}")
+        # frames and title hidden for software_modules
+        # ModuleManagerWidget sets them visible for the HardwareModuleWidgets...
         self.create_title_bar()
-        self.change_ownership() # also sets the title
+        self.change_ownership()  # also sets the title
         self.module._signal_launcher.connect_widget(self)
 
-    def init_main_layout(self, orientation='horizontal'):
+    def init_main_layout(self, orientation="horizontal"):
         self.root_layout = QtWidgets.QHBoxLayout()
         self.main_widget = QtWidgets.QWidget()
         self.root_layout.addWidget(self.main_widget)
@@ -195,11 +209,11 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
         self.setLayout(self.root_layout)
 
     def show_widget(self):
-        """ shows the widget after it has been hidden """
+        """shows the widget after it has been hidden"""
         self.main_widget.show()
 
     def hide_widget(self):
-        """ shows the widget after it has been hidden """
+        """shows the widget after it has been hidden"""
         self.main_widget.hide()
 
     def init_gui(self):
@@ -215,7 +229,7 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
         Automatically creates the gui properties for the register_widgets in register_names.
         :return:
         """
-        if '\n' in self.module._gui_attributes:
+        if "\n" in self.module._gui_attributes:
             self.attributes_layout = QtWidgets.QVBoxLayout()
             self.main_layout.addLayout(self.attributes_layout)
             self.attribute_layout = QtWidgets.QHBoxLayout()
@@ -224,11 +238,11 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
             self.attribute_layout = QtWidgets.QHBoxLayout()
             self.main_layout.addLayout(self.attribute_layout)
         for attr_name in self.module._gui_attributes:
-            if attr_name == '\n':
+            if attr_name == "\n":
                 self.attribute_layout = QtWidgets.QHBoxLayout()
                 self.attributes_layout.addLayout(self.attribute_layout)
             else:
-                attribute_value = getattr(self.module, attr_name)  # needed for
+                getattr(self.module, attr_name)  # needed for
                 # passing the instance to the descriptor
                 attribute = getattr(self.module.__class__, attr_name)
                 if callable(attribute):
@@ -255,7 +269,8 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
             widget = self.attribute_widgets[str(name)]
             try:  # try to propagate the change of attribute to the widget
                 widget.update_attribute_by_name(new_value_list)
-            except:  # directly set the widget value otherwise
+            except (AttributeError, KeyError, IndexError, RuntimeError, TypeError, ValueError):
+                # directly set the widget value otherwise
                 self.attribute_widgets[str(name)].widget_value = new_value_list[0]
 
     def change_options(self, select_attribute_name, new_options):
@@ -272,19 +287,18 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
         New options should be displayed for some FilterProperty.
         """
         if filter_attribute_name in self.module._gui_attributes:
-            self.attribute_widgets[str(
-                filter_attribute_name)].refresh_options(self.module)
+            self.attribute_widgets[str(filter_attribute_name)].refresh_options(self.module)
 
     def change_ownership(self):
         """
         SLOT: don't change name unless you know what you are doing
         Display the new ownership
         """
-        #name = self.module.pyrpl.name + " - " + self.module.name
+        # name = self.module.pyrpl.name + " - " + self.module.name
         name = self.module.name
         if self.module.owner is not None:
             self.setEnabled(False)
-            self.set_title(name + ' (' + self.module.owner + ')')
+            self.set_title(name + " (" + self.module.owner + ")")
         else:
             self.setEnabled(True)
             self.set_title(name)
@@ -308,38 +322,40 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
         :param  y_values: numpy array with y values
         :param  attributes: extra curve parameters (such as relevant module settings)
         """
-        c = self.curve_class.create(x_values,
-                                    y_values,
-                                    **attributes)
+        c = self.curve_class.create(x_values, y_values, **attributes)
         c.name = attributes["curve_name"]
         return c
 
 
 class ModuleWidget(ReducedModuleWidget):
     """
-    Base class for a module Widget. In general, this is one of the DockWidget of the Pyrpl MainWindow.
+    Base class for a module Widget. In general, this is one of the DockWidget of the Pyrpl
+    MainWindow.
     """
+
     def set_title(self, title):
         title = str(title)
-        if hasattr(self, "title_label"): # ModuleManagerWidgets don't have a title_label
+        if hasattr(self, "title_label"):  # ModuleManagerWidgets don't have a title_label
             self.title_label.setText(title)
             self.title_label.adjustSize()
             self.title_label.move(*self.title_pos)
-            self.load_label.move(self.title_label.width() + self.title_pos[0],
-                                 self.title_pos[1])
-            self.save_label.move(self.load_label.width() +
-                                 self.load_label.pos().x(), self.title_pos[1])
-            self.erase_label.move(self.save_label.width() +
-                                 self.save_label.pos().x(), self.title_pos[1])
-            self.edit_label.move(self.erase_label.width() +
-                                 self.erase_label.pos().x(), self.title_pos[1])
-            self.hideshow_label.move(self.edit_label.width() +
-                                     self.edit_label.pos().x(),
-                                     self.title_pos[1])
+            self.load_label.move(self.title_label.width() + self.title_pos[0], self.title_pos[1])
+            self.save_label.move(
+                self.load_label.width() + self.load_label.pos().x(), self.title_pos[1]
+            )
+            self.erase_label.move(
+                self.save_label.width() + self.save_label.pos().x(), self.title_pos[1]
+            )
+            self.edit_label.move(
+                self.erase_label.width() + self.erase_label.pos().x(), self.title_pos[1]
+            )
+            self.hideshow_label.move(
+                self.edit_label.width() + self.edit_label.pos().x(), self.title_pos[1]
+            )
 
     def create_title_bar(self):
         self.title_label = QtWidgets.QLabel("yo", parent=self)
-         # title should be at the top-left corner of the widget
+        # title should be at the top-left corner of the widget
         self.load_label = LoadLabel(self)
         self.load_label.adjustSize()
 
@@ -356,6 +372,8 @@ class ModuleWidget(ReducedModuleWidget):
         self.hideshow_label.adjustSize()
 
         # self.setStyleSheet("ModuleWidget{border: 1px dashed gray;color: black;}")
-        self.setStyleSheet("ModuleWidget{margin: 0.1em; margin-top:0.6em; border: 1 dotted gray;border-radius:5}")
+        self.setStyleSheet(
+            "ModuleWidget{margin: 0.1em; margin-top:0.6em; border: 1 dotted gray;border-radius:5}"
+        )
         # margin-top large enough for border to be in the middle of title
         self.layout().setContentsMargins(0, 5, 0, 0)

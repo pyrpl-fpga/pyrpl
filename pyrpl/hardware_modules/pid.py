@@ -4,7 +4,7 @@ PID modules available: pid0 to pid2.
 
 .. code:: python
 
-    print r.pid0.help()
+    print(r.pid0.help())
 
 Proportional and integral gain
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -140,7 +140,13 @@ do what they are supposed to.
 
 import numpy as np
 from qtpy import QtCore
-from ..attributes import FloatProperty, BoolRegister, FloatRegister, GainRegister, SelectRegister
+from ..attributes import (
+    FloatProperty,
+    BoolRegister,
+    FloatRegister,
+    GainRegister,
+    SelectRegister,
+)
 from .dsp import PauseRegister
 from ..modules import SignalLauncher
 from . import FilterModule
@@ -152,21 +158,21 @@ class IValAttribute(FloatProperty):
     """
     Attribute for integrator value
     """
+
     def get_value(self, obj):
-        return float(obj._to_pyint(obj._read(0x100), bitlength=16))\
-               / 2 ** 13
+        return float(obj._to_pyint(obj._read(0x100), bitlength=16)) / 2**13
         # bitlength used to be 32 until 16/7/2016
         # still, FPGA has an asymmetric representation for reading and writing
         # from/to this register
 
     def set_value(self, obj, value):
         """set the value of the register holding the integrator's sum [volts]"""
-        return obj._write(0x100, obj._from_pyint(
-            int(round(value * 2 ** 13)), bitlength=16))
+        return obj._write(0x100, obj._from_pyint(int(round(value * 2**13)), bitlength=16))
 
 
 class SignalLauncherPid(SignalLauncher):
     update_ival = QtCore.Signal()
+
     # the widget decides at the other hand if it has to be done or not
     # depending on the visibility
     def __init__(self, module):
@@ -222,6 +228,7 @@ class Pid(FilterModule):
         >>> print(pid.ival)
         0.763324
     """
+
     _widget_class = PidWidget
     _signal_launcher = SignalLauncherPid
     _setup_attributes = ["input",
@@ -277,33 +284,28 @@ class Pid(FilterModule):
                      norm=2**_DSR / (2.0 * np.pi * 8e-9),
                      doc="pid derivative unity-gain frequency [Hz]. Off when 0")
 
-    pause_gains = SelectRegister(0x12C,
-                                 options=sorted_dict(
-                                       off=0,
-                                       i=1,
-                                       p=2,
-                                       pi=3,
-                                       d=4,
-                                       id=5,
-                                       pd=6,
-                                       pid=7),
-                                 bitmask=0b111,
-                                 doc="Selects which gains are frozen during pausing/synchronization."
-                                 )
+    pause_gains = SelectRegister(
+        0x12C,
+        options=sorted_dict(off=0, i=1, p=2, pi=3, d=4, id=5, pd=6, pid=7),
+        bitmask=0b111,
+        doc="Selects which gains are frozen during pausing/synchronization.",
+    )
 
-    differential_mode_enabled = BoolRegister(0x12C,
-                                             bit=3,
-                                             doc="If True, the differential mode is enabled. "
-                                                 "In this mode, the setpoint is given by the "
-                                                 "input signal of another pid module. "
-                                                 "Only pid0 and pid1 can be paired in "
-                                                 "differential mode. "
-                                             )
+    differential_mode_enabled = BoolRegister(
+        0x12C,
+        bit=3,
+        doc="If True, the differential mode is enabled. "
+        "In this mode, the setpoint is given by the "
+        "input signal of another pid module. "
+        "Only pid0 and pid1 can be paired in "
+        "differential mode. ",
+    )
 
-    paused = PauseRegister(0xC,
-                           invert=True,
-                           doc="While True, the gains selected with `pause` are "
-                               "temporarily set to zero ")
+    paused = PauseRegister(
+        0xC,
+        invert=True,
+        doc="While True, the gains selected with `pause` are temporarily set to zero ",
+    )
 
     @property
     def proportional(self):
@@ -384,14 +386,16 @@ class Pid(FilterModule):
         tf: np.array(..., dtype=complex)
             The complex open loop transfer function of the module.
         """
-        return Pid._transfer_function(frequencies,
-                                      p=self.p,
-                                      i=self.i,
-                                      d=0,  # d is currently not available
-                                      filter_values=self.inputfilter,
-                                      extradelay_s=extradelay,
-                                      module_delay_cycle=self._delay,
-                                      frequency_correction=self._frequency_correction)
+        return Pid._transfer_function(
+            frequencies,
+            p=self.p,
+            i=self.i,
+            d=0,  # d is currently not available
+            filter_values=self.inputfilter,
+            extradelay_s=extradelay,
+            module_delay_cycle=self._delay,
+            frequency_correction=self._frequency_correction,
+        )
 
     @classmethod
     def _transfer_function(cls,
@@ -443,11 +447,13 @@ class Pid(FilterModule):
         return tf
 
     @classmethod
-    def _delay_transfer_function(cls,
-                                 frequencies,
-                                 module_delay_cycle=_delay,
-                                 extradelay_s=0,
-                                 frequency_correction=1.0):
+    def _delay_transfer_function(
+        cls,
+        frequencies,
+        module_delay_cycle=_delay,
+        extradelay_s=0,
+        frequency_correction=1.0,
+    ):
         """
         Transfer function of the eventual extradelay of a pid module
         """
@@ -460,9 +466,7 @@ class Pid(FilterModule):
         return tf
 
     @classmethod
-    def _filter_transfer_function(cls,
-                                  frequencies, filter_values,
-                                  frequency_correction=1.):
+    def _filter_transfer_function(cls, frequencies, filter_values, frequency_correction=1.0):
         """
         Transfer function of the inputfilter part of a pid module
         """
@@ -476,10 +480,10 @@ class Pid(FilterModule):
             if f == 0:
                 continue
             elif f > 0:  # lowpass
-                tf /= (1.0 + 1j * frequencies / f)
+                tf /= 1.0 + 1j * frequencies / f
                 module_delay += 2  # two cycles extra delay per lowpass
             elif f < 0:  # highpass
-                tf /= (1.0 + 1j * f / frequencies)
+                tf /= 1.0 + 1j * f / frequencies
                 # plus is correct here since f already has a minus sign
                 module_delay += 1  # one cycle extra delay per highpass
         delay = module_delay * 8e-9 / frequency_correction

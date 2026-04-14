@@ -45,17 +45,22 @@ sinusoidal signal and a white noise originating from an asg
     # let's use a module manager for the asg
     with p.asgs.pop('user') as asg:
         # setup a sine at 100 kHz
-        asg.setup(frequency=1e5, waveform='sin', trigger_source='immediately', amplitude=1., offset=0)
+        asg.setup(frequency=1e5,
+                  waveform='sin',
+                  trigger_source='immediately',
+                  amplitude=1.,
+                  offset=0)
 
         # setup the spectrumanalyzer in baseband mode
         p.spectrumanalyzer.setup(input1_baseband=asg, #note that input1_baseband!=input)
                                  baseband=True, # only mod eavailable right now
                                  span=1e6, # span of the analysis (/2 in iq mode)
-                                 window=blackman # filter window)
+                                 window='blackman' # filter window
+                                 )
 
         # the return format is (spectrum for channel 1, spectrum for channel 2,
         # real part of cross spectrum, imaginary part of cross spectrum):
-        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.curve()
+        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.single()
 
     # plot the spectrum
     import matplotlib.pyplot as plt
@@ -74,14 +79,18 @@ of noise spectral density, a utility function is provided: data_to_unit()
     # let's use a module manager for the asg
     with p.asgs.pop('user') as asg:
         # setup a white noise of variance 0.1 V
-        asg.setup(frequency=1e5, waveform='noise', trigger_source='immediately', amplitude=0.1, offset=0)
+        asg.setup(frequency=1e5,
+                  waveform='noise',
+                  trigger_source='immediately',
+                  amplitude=0.1,
+                  offset=0)
 
         # setup the spectrumanalyzer in baseband mode and full span
         p.spectrumanalyzer.setup(input1_baseband=asg, baseband=True, span=125e6)
 
         # the return format is (spectrum for channel 1, spectrum for channel 2,
         # real part of cross spectrum, imaginary part of cross spectrum):
-        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.curve()
+        ch1, ch2, cross_re, cross_im = p.spectrumanalyzer.single()
 
     # convert to Vrms^2/Hz
     data = p.spectrumanalyzer.data_to_unit(ch1, 'Vrms^2/Hz', p.spectrumanalyzer.rbw)
@@ -102,26 +111,66 @@ refer to the section :ref:`How a spectrum is computed in PyRPL`.
 """
 
 import logging
-logger = logging.getLogger(name=__name__)
-
 from ..module_attributes import *
 from ..hardware_modules import Scope
 from ..hardware_modules.dsp import all_inputs, InputSelectProperty
 from ..acquisition_module import AcquisitionModule
 from ..widgets.module_widgets import SpecAnWidget
-
 import sys
-import scipy.signal as sig
-import scipy.fftpack as fft
+# import scipy.signal as sig
+# import scipy.fftpack as fft
+
+logger = logging.getLogger(name=__name__)
+
+
+def get_window_numpy(name, N, fftbins=False):  # Remove heavy scipy module
+    if isinstance(name, tuple):
+        window_type, param = name
+        window_type = window_type.lower()
+    else:
+        window_type = name.lower()
+
+        param = None
+
+    if window_type == "blackman":
+        return np.blackman(N)
+    elif window_type in ["boxcar", "rect"]:
+        return np.ones(N)
+    elif window_type == "hamming":
+        return np.hamming(N)
+    elif window_type == "flattop":
+        # Approximation of flat-top window (like scipy.signal.windows.flattop)
+        a0, a1, a2, a3, a4 = 1, 1.93, 1.29, 0.388, 0.032
+        n = np.arange(N)
+        w = (
+            a0
+            - a1 * np.cos(2 * np.pi * n / (N - 1))
+            + a2 * np.cos(4 * np.pi * n / (N - 1))
+            - a3 * np.cos(6 * np.pi * n / (N - 1))
+            + a4 * np.cos(8 * np.pi * n / (N - 1))
+        )
+        return w
+    elif window_type == "gaussian":
+        if param is None:
+            std = N / 10  # default
+        else:
+            std = float(param)
+        n = np.arange(0, N) - (N - 1) / 2
+        w = np.exp(-0.5 * (n / std) ** 2)
+        return w
+    else:
+        raise ValueError(f"Window {name} not implemented without scipy.")
 
 
 # Some initial remarks about spectrum estimation:
 # Main source: Oppenheim + Schaefer, Digital Signal Processing, 1975
 
+
 class DisplayUnitProperty(SelectProperty):
     def set_value(self, obj, value):
         super(DisplayUnitProperty, self).set_value(obj, value)
-        obj._emit_signal_by_name('unit_changed')
+        obj._emit_signal_by_name("unit_changed")
+
 
 class CenterAttribute(FrequencyProperty):
     def get_value(self, instance):
@@ -146,25 +195,27 @@ class CenterAttribute(FrequencyProperty):
 
 class SpecAnAcBandwidth(FilterProperty):
     def valid_frequencies(self, module):
-        return [freq for freq in
-                module.iq.__class__.inputfilter.valid_frequencies(module.iq)
-                if freq >= 0]
+        return [
+            freq
+            for freq in module.iq.__class__.inputfilter.valid_frequencies(module.iq)
+            if freq >= 0
+        ]
 
 
 class RbwProperty(FilterProperty):
     def valid_frequencies(self, module):
-        sample_rates = [1./st for st in Scope.sampling_times]
-        return [module.equivalent_noise_bandwidth()*sr for sr in sample_rates]
+        sample_rates = [1.0 / st for st in Scope.sampling_times]
+        return [module.equivalent_noise_bandwidth() * sr for sr in sample_rates]
 
     def get_value(self, obj):
-        sampling_rate = 1./(8e-9*obj.decimation)
-        return obj.equivalent_noise_bandwidth()*sampling_rate
+        sampling_rate = 1.0 / (8e-9 * obj.decimation)
+        return obj.equivalent_noise_bandwidth() * sampling_rate
 
     def set_value(self, obj, value):
         if np.iterable(value):
             value = value[0]
-        sample_rate = value/obj.equivalent_noise_bandwidth()
-        obj.decimation = int(round(1./(sample_rate*8e-9)))
+        sample_rate = value / obj.equivalent_noise_bandwidth()
+        obj.decimation = int(round(1.0 / (sample_rate * 8e-9)))
 
 
 class SpanFilterProperty(FilterProperty):
@@ -172,19 +223,19 @@ class SpanFilterProperty(FilterProperty):
         return instance.spans
 
     def get_value(self, obj):
-        #val = super(SpanFilterProperty, self).get_value(obj)
-        #if np.iterable(val):
+        # val = super(SpanFilterProperty, self).get_value(obj)
+        # if np.iterable(val):
         #    return val[0] # maybe this should be the default behavior for
-            # FilterAttributes... or make another Attribute type
-        #else:
+        # FilterAttributes... or make another Attribute type
+        # else:
         #    return val
-        return 1./(8e-9*obj.decimation)
+        return 1.0 / (8e-9 * obj.decimation)
 
     def set_value(self, obj, value):
         if np.iterable(value):
             value = value[0]
-        sampling_time = 1./value
-        obj.decimation = int(round(sampling_time/8e-9))
+        sampling_time = 1.0 / value
+        obj.decimation = int(round(sampling_time / 8e-9))
 
 
 class DecimationProperty(SelectProperty):
@@ -206,10 +257,10 @@ class WindowProperty(SelectProperty):
     """
     Changing the filter window requires to recalculate the bandwidth
     """
+
     def set_value(self, obj, value):
         super(WindowProperty, self).set_value(obj, value)
         obj.__class__.rbw.refresh_options(obj)
-
 
 
 class SpectrumAnalyzer(AcquisitionModule):
@@ -217,64 +268,72 @@ class SpectrumAnalyzer(AcquisitionModule):
     A spectrum analyzer is composed of an IQ demodulator, followed by a scope.
     The spectrum analyzer connections are made upon calling the function setup.
     """
+
     _widget_class = SpecAnWidget
-    _gui_attributes = ["input",
-                       "center",
-                       "baseband",
-                       "span",
-                       "rbw",
-                       #"points",
-                       "window",
-                       "acbandwidth",
-                       "display_unit",
-                       "display_input1_baseband",
-                       "display_input2_baseband",
-                       "input1_baseband",
-                       "input2_baseband",
-                       "display_cross_amplitude",
-                       ]#"display_cross_phase"]
-    _setup_attributes =["input",
-                       "center",
-                       "baseband",
-                        # better to set baseband after center,
-                        # otherwise, asking for baseband explicitly would be
-                        # overwritten by non-zero center
-                       "span",
-                       #"rbw",
-                       #"points",
-                       "window",
-                       "acbandwidth",
-                       "display_unit",
-                       "curve_unit",
-                       "display_input1_baseband",
-                       "display_input2_baseband",
-                       "input1_baseband",
-                       "input2_baseband",
-                       "display_cross_amplitude",]
-                       #"display_cross_phase"]
+    _gui_attributes = [
+        "input",
+        "center",
+        "baseband",
+        "span",
+        "rbw",
+        # "points",
+        "window",
+        "acbandwidth",
+        "display_unit",
+        "display_input1_baseband",
+        "display_input2_baseband",
+        "input1_baseband",
+        "input2_baseband",
+        "display_cross_amplitude",
+    ]  # "display_cross_phase"]
+    _setup_attributes = [
+        "input",
+        "center",
+        "baseband",
+        # better to set baseband after center,
+        # otherwise, asking for baseband explicitly would be
+        # overwritten by non-zero center
+        "span",
+        # "rbw",
+        # "points",
+        "window",
+        "acbandwidth",
+        "display_unit",
+        "curve_unit",
+        "display_input1_baseband",
+        "display_input2_baseband",
+        "input1_baseband",
+        "input2_baseband",
+        "display_cross_amplitude",
+    ]
+    # "display_cross_phase"]
     PADDING_FACTOR = 16
     # numerical values
     nyquist_margin = 1.0
     if_filter_bandwidth_per_span = 1.0
-    _enb_cached = dict() # Equivalent noise bandwidth for filter windows
+    _enb_cached = dict()  # Equivalent noise bandwidth for filter windows
 
-    quadrature_factor = 1.# 0.1*1024
+    quadrature_factor = 1.0  # 0.1*1024
 
     # unit Vpk is such that the level of a peak in the spectrum indicates the
     # correct voltage amplitude of a coherent signal (linear scale)
     # more units can be added as needed, but need to guarantee that conversion
     # is done as well (see implementation in lockbox for example)
-    display_unit = DisplayUnitProperty(default="dB(Vpk^2)",
-                          options=["Vpk^2",
-                                   "dB(Vpk^2)",
-                                   "Vpk",
-                                   "Vrms^2",
-                                   "dB(Vrms^2)",
-                                   "Vrms",
-                                   "Vrms^2/Hz",
-                                   "dB(Vrms^2/Hz)",
-                                   "Vrms/sqrt(Hz)"],
-                          ignore_errors=True)
+    display_unit = DisplayUnitProperty(
+        default="dB(Vpk^2)",
+        options=[
+            "Vpk^2",
+            "dB(Vpk^2)",
+            "Vpk",
+            "Vrms^2",
+            "dB(Vrms^2)",
+            "Vrms",
+            "Vrms^2/Hz",
+            "dB(Vrms^2/Hz)",
+            "Vrms/sqrt(Hz)",
+        ],
+        ignore_errors=True,
+    )
 
     # curve_unit is only used to have a parameter 'curve_unit' in saved curves.
     # If >1 options are implemented, you should ensure that _get_curve takes it
@@ -285,11 +344,12 @@ class SpectrumAnalyzer(AcquisitionModule):
     def spans(nyquist_margin):
         # see http://stackoverflow.com/questions/13905741/
         # [int(np.ceil(1. / nyquist_margin / s_time))
-        return [1./s_time \
-             for s_time in Scope.sampling_times]
+        return [1.0 / s_time for s_time in Scope.sampling_times]
+
     spans = spans(nyquist_margin)
 
-    windows = ['blackman', 'flattop', 'boxcar', 'hamming', 'gaussian']  # more
+    windows = ["blackman", "flattop", "boxcar", "hamming", "gaussian"]  # more
+
     # can be
     # added here (see http://docs.scipy.org/doc/scipy/reference/generated
     # /scipy.signal.get_window.html#scipy.signal.get_window)
@@ -299,50 +359,54 @@ class SpectrumAnalyzer(AcquisitionModule):
 
     # attributes
     baseband = BoolProperty(default=True, call_setup=True)
-    span = SpanFilterProperty(doc="""
+    span = SpanFilterProperty(
+        doc="""
         Span can only be given by 1./sampling_time where sampling
         time is a valid scope sampling time.
         """,
-        call_setup=True)
+        call_setup=True,
+    )
     center = CenterAttribute(call_setup=True)
     # points = IntProperty(default=16384, call_setup=True)
     window = WindowProperty(options=windows, call_setup=True)
-    input = InputSelectProperty(options=all_inputs,
-                                default='in1',
-                                call_setup=True,
-                                ignore_errors=True)
-    input1_baseband = InputSelectProperty(options=all_inputs,
-                                          default='in1',
-                                          call_setup=True,
-                                          ignore_errors=True,
-                                          doc="input1 for baseband mode")
-    input2_baseband = InputSelectProperty(options=all_inputs,
-                                          default='in2',
-                                          call_setup=True,
-                                          ignore_errors=True,
-                                          doc="input2 for baseband mode")
-    display_input1_baseband = BoolProperty(default=True,
-                                           doc="should input1 spectrum be "
-                                               "displayed in "
-                                               "baseband-mode?")
-    display_input2_baseband = BoolProperty(default=True,
-                                           doc="should input2 spectrum be "
-                                               "displayed in "
-                                               "baseband-mode?")
-    display_cross_amplitude = BoolProperty(default=True,
-                                           doc="should cross-spectrum "
-                                               "amplitude be displayed "
-                                               "in baseband-mode?")
-    display_cross_phase = BoolProperty(default=False,
-                                       doc="should cross-spectrum amplitude"
-                                              " be displayed in "
-                                              "baseband-mode?")
-    rbw = RbwProperty(doc="Residual Bandwidth, this is a readonly "
-                            "attribute, only span can be changed.")
+    input = InputSelectProperty(
+        options=all_inputs, default="in1", call_setup=True, ignore_errors=True
+    )
+    input1_baseband = InputSelectProperty(
+        options=all_inputs,
+        default="in1",
+        call_setup=True,
+        ignore_errors=True,
+        doc="input1 for baseband mode",
+    )
+    input2_baseband = InputSelectProperty(
+        options=all_inputs,
+        default="in2",
+        call_setup=True,
+        ignore_errors=True,
+        doc="input2 for baseband mode",
+    )
+    display_input1_baseband = BoolProperty(
+        default=True, doc="should input1 spectrum be displayed in baseband-mode?"
+    )
+    display_input2_baseband = BoolProperty(
+        default=True, doc="should input2 spectrum be displayed in baseband-mode?"
+    )
+    display_cross_amplitude = BoolProperty(
+        default=True,
+        doc="should cross-spectrum amplitude be displayed in baseband-mode?",
+    )
+    display_cross_phase = BoolProperty(
+        default=False,
+        doc="should cross-spectrum amplitude be displayed in baseband-mode?",
+    )
+    rbw = RbwProperty(
+        doc="Residual Bandwidth, this is a readonly attribute, only span can be changed."
+    )
 
-    decimation = DecimationProperty(options=Scope.decimations,
-                                    doc="Decimation setting for the "
-                                            "scope.")
+    decimation = DecimationProperty(
+        options=Scope.decimations, doc="Decimation setting for the scope."
+    )
 
     acbandwidth = SpecAnAcBandwidth(call_setup=True)
 
@@ -352,13 +416,13 @@ class SpectrumAnalyzer(AcquisitionModule):
 
     @property
     def iq(self):
-        if not hasattr(self, '_iq'):
+        if not hasattr(self, "_iq"):
             self._iq = self.pyrpl.rp.iq2  # can't use the normal pop
             # mechanism because we specifically want the customized iq2
             self._iq.owner = self.name
         return self._iq
 
-    iq_quadraturesignal = 'iq2_2'
+    iq_quadraturesignal = "iq2_2"
 
     def _remaining_duration(self):
         """
@@ -369,11 +433,11 @@ class SpectrumAnalyzer(AcquisitionModule):
     @property
     def data_length(self):
         return self.scope.data_length
-        #return int(self.points)  # *self.nyquist_margin)
+        # return int(self.points)  # *self.nyquist_margin)
 
     @property
     def sampling_time(self):
-        return 1. / self.nyquist_margin / self.span
+        return 1.0 / self.nyquist_margin / self.span
 
     def _remaining_duration(self):
         return self.scope._remaining_duration()
@@ -393,14 +457,14 @@ class SpectrumAnalyzer(AcquisitionModule):
         """
         :return: filter window
         """
-        if self.window=='gaussian':
-            #  a tuple with the std is needed for Gaussian window
-            window_name = ('gaussian', self.data_length/10)
+        if self.window == "gaussian":
+            # a tuple with the std is needed for Gaussian window
+            window_name = ("gaussian", self.data_length / 10)
         else:
             window_name = self.window
-        window = sig.get_window(window_name, self.data_length, fftbins=False)
+        window = get_window_numpy(window_name, self.data_length, fftbins=False)
         # empirical value for scaling flattop to sqrt(W)/V
-        window/=(np.sum(window)/2)
+        window /= np.sum(window) / 2
         return window
 
     def _get_iq_data(self):
@@ -410,18 +474,18 @@ class SpectrumAnalyzer(AcquisitionModule):
         res = self.scope._get_trace()
 
         if self.baseband:
-            return res[0][:self.data_length] + 1j*res[1][:self.data_length]
+            return res[0][: self.data_length] + 1j * res[1][: self.data_length]
         else:
-            return (res[0] + 1j*res[1])[:self.data_length]
-#            res += 1j*self.scope.curve(2, timeout=None)
-#        return res[:self.data_length]
+            return (res[0] + 1j * res[1])[: self.data_length]
+
+    #            res += 1j*self.scope.curve(2, timeout=None)
+    #        return res[:self.data_length]
 
     def _get_filtered_iq_data(self):
         """
         :return: the product between the complex iq data and the filter_window
         """
-        return self._get_iq_data() * np.asarray(self.filter_window(),
-                                            dtype=complex)
+        return self._get_iq_data() * np.asarray(self.filter_window(), dtype=complex)
 
     def useful_index_obsolete(self):
         """
@@ -431,12 +495,12 @@ class SpectrumAnalyzer(AcquisitionModule):
         middle = int(self.data_length / 2)
         length = self.points  # self.data_length/self.nyquist_margin
         if self.baseband:
-            return slice(middle-1, middle + length/2 + 1)#slice(middle,
+            return slice(middle - 1, middle + length / 2 + 1)  # slice(middle,
             # int(middle + length /
             #  2 +
             #  1))
         else:
-            return slice(int(middle - length/2), int(middle + length/2 + 1))
+            return slice(int(middle - length / 2), int(middle + length / 2 + 1))
 
     @property
     def _real_points(self):
@@ -445,7 +509,7 @@ class SpectrumAnalyzer(AcquisitionModule):
         :return: the real number of points that will eventually be returned
         """
         points = int(self.data_length * self.PADDING_FACTOR)
-        return points//2 + 1 if self.baseband else points
+        return points // 2 + 1 if self.baseband else points
 
     @property
     def frequencies(self):
@@ -453,14 +517,13 @@ class SpectrumAnalyzer(AcquisitionModule):
         :return: frequency array
         """
         if self.baseband:
-            return np.fft.rfftfreq(self.data_length*self.PADDING_FACTOR,
-                                   self.sampling_time)
+            return np.fft.rfftfreq(self.data_length * self.PADDING_FACTOR, self.sampling_time)
         else:
-            return self.center + fft.fftshift( fft.fftfreq(
-                                  self.data_length*self.PADDING_FACTOR,
-                                  self.sampling_time)) #[self.useful_index()]
+            return self.center + np.fft.fftshift(
+                np.fft.fftfreq(self.data_length * self.PADDING_FACTOR, self.sampling_time)
+            )  # [self.useful_index()]
 
-    def data_to_dBm(self, data): # will become obsolete
+    def data_to_dBm(self, data):  # will become obsolete
         # replace values whose log doesnt exist
         data[data <= 0] = 1e-100
         # conversion to dBm scale
@@ -475,28 +538,28 @@ class SpectrumAnalyzer(AcquisitionModule):
         argument of the function.
         """
         data = abs(data)
-        if unit == 'Vpk^2':
+        if unit == "Vpk^2":
             return data
-        if unit == 'dB(Vpk^2)':
+        if unit == "dB(Vpk^2)":
             # need to add epsilon to avoid divergence of logarithm
             return 10 * np.log10(data + sys.float_info.epsilon)
-        if unit == 'Vpk':
+        if unit == "Vpk":
             return np.sqrt(data)
 
-        if unit == 'Vrms^2':
+        if unit == "Vrms^2":
             return data / 2
-        if unit == 'dB(Vrms^2)':
+        if unit == "dB(Vrms^2)":
             # need to add epsilon to avoid divergence of logarithm
             return 10 * np.log10(data / 2 + sys.float_info.epsilon)
-        if unit == 'Vrms':
+        if unit == "Vrms":
             return np.sqrt(data) / np.sqrt(2)
 
-        if unit == 'Vrms^2/Hz':
+        if unit == "Vrms^2/Hz":
             return data / 2 / rbw
-        if unit == 'dB(Vrms^2/Hz)':
+        if unit == "dB(Vrms^2/Hz)":
             # need to add epsilon to avoid divergence of logarithm
             return 10 * np.log10(data / 2 / rbw + sys.float_info.epsilon)
-        if unit == 'Vrms/sqrt(Hz)':
+        if unit == "Vrms/sqrt(Hz)":
             return np.sqrt(data) / np.sqrt(2) / rbw
 
     def data_to_display_unit(self, data, rbw):
@@ -518,12 +581,10 @@ class SpectrumAnalyzer(AcquisitionModule):
                 if f == 0:
                     continue
                 elif f > 0:  # lowpass
-                    tf_iq *= 1.0 / (
-                        1.0 + 1j * displaced_freqs / f)
+                    tf_iq *= 1.0 / (1.0 + 1j * displaced_freqs / f)
                     # quadrature_delay += 2
                 elif f < 0:  # highpass
-                    tf_iq *= 1.0 / (
-                        1.0 + 1j * f / displaced_freqs)
+                    tf_iq *= 1.0 / (1.0 + 1j * f / displaced_freqs)
                     # quadrature_delay += 1  # one cycle extra delay per
                     # highpass
         return tf_iq
@@ -534,8 +595,8 @@ class SpectrumAnalyzer(AcquisitionModule):
             displaced_freqs = frequencies - self.center
         else:
             displaced_freqs = frequencies
-        if self._scope_decimation()>1:
-            norm_freq = self._scope_decimation()*displaced_freqs/125e6
+        if self._scope_decimation() > 1:
+            norm_freq = self._scope_decimation() * displaced_freqs / 125e6
             return np.sinc(norm_freq)
         else:
             return np.ones(len(displaced_freqs))
@@ -547,16 +608,14 @@ class SpectrumAnalyzer(AcquisitionModule):
         taken into account (and the phase response is not guaranteed to be
         exact.
         """
-        return self.transfer_function_iq(frequencies) * \
-               self.transfer_function_scope(frequencies)
-
+        return self.transfer_function_iq(frequencies) * self.transfer_function_scope(frequencies)
 
     # Concrete implementation of AcquisitionModule methods
     # ----------------------------------------------------
 
     def _get_run_attributes(self):
         params = super(SpectrumAnalyzer, self)._get_run_attributes()
-        params['rbw'] = self.rbw
+        params["rbw"] = self.rbw
         return params
 
     def _free_up_resources(self):
@@ -576,9 +635,9 @@ class SpectrumAnalyzer(AcquisitionModule):
         No transfer_function correction
         :return:
         """
-        iq_data = self._get_filtered_iq_data() # get iq data (from scope)
-        if not self.running_state in ["running_single", "running_continuous"]:
-            self.pyrpl.scopes.free(self.scope) # free scope if not continuous
+        iq_data = self._get_filtered_iq_data()  # get iq data (from scope)
+        if self.running_state not in ["running_single", "running_continuous"]:
+            self.pyrpl.scopes.free(self.scope)  # free scope if not continuous
         if self.baseband:
             # In baseband, where the 2 real inputs are stored in the real and
             # imaginary part of iq_data, we need to make 2 different FFTs. Of
@@ -596,29 +655,29 @@ class SpectrumAnalyzer(AcquisitionModule):
             # --> In fact, we will use numpy.rfft insead of
             # scipy.fft.rfft because the output
             # format is directly a complex array, and thus, easier to handle.
-            fft1 = np.fft.rfft(np.real(iq_data),
-                                       self.data_length*self.PADDING_FACTOR)
-            fft2 = np.fft.rfft(np.imag(iq_data),
-                                       self.data_length*self.PADDING_FACTOR)
-            cross_spectrum = np.conjugate(fft1)*fft2
+            fft1 = np.fft.rfft(np.real(iq_data), self.data_length * self.PADDING_FACTOR)
+            fft2 = np.fft.rfft(np.imag(iq_data), self.data_length * self.PADDING_FACTOR)
+            cross_spectrum = np.conjugate(fft1) * fft2
 
-            res = np.array([abs(fft1)**2,
-                            abs(fft2)**2,
-                            np.real(cross_spectrum),
-                            np.imag(cross_spectrum)])
+            res = np.array(
+                [
+                    abs(fft1) ** 2,
+                    abs(fft2) ** 2,
+                    np.real(cross_spectrum),
+                    np.imag(cross_spectrum),
+                ]
+            )
             # at some point, we need to cache the tf for performance
-            self._last_curve_raw = res # for debugging purpose
-            return res/abs(self.transfer_function(self.frequencies))**2
+            self._last_curve_raw = res  # for debugging purpose
+            return res / abs(self.transfer_function(self.frequencies)) ** 2
         else:
             # Realize the complex fft of iq data
-            res = fft.fftshift(fft.fft(iq_data,
-                                        self.data_length*self.PADDING_FACTOR))
+            res = np.fft.fftshift(np.fft.fft(iq_data, self.data_length * self.PADDING_FACTOR))
             # at some point we need to cache the tf for performance
-            self._last_curve_raw = np.abs(res)**2 # for debugging purpose
-            return self._last_curve_raw/abs(self.transfer_function(
-                self.frequencies))**2
-            #/ abs(self.transfer_function(
-                #self.frequencies))**2
+            self._last_curve_raw = np.abs(res) ** 2  # for debugging purpose
+            return self._last_curve_raw / abs(self.transfer_function(self.frequencies)) ** 2
+            # / abs(self.transfer_function(
+            # self.frequencies))**2
             # [self.useful_index()]
 
     def _remaining_time(self):
@@ -635,33 +694,33 @@ class SpectrumAnalyzer(AcquisitionModule):
 
     def _iq_bandwidth(self):
         return self.iq.__class__.bandwidth.validate_and_normalize(
-            self.iq,
-            [self.span*self.if_filter_bandwidth_per_span]*4)
+            self.iq, [self.span * self.if_filter_bandwidth_per_span] * 4
+        )
 
     def _scope_decimation(self):
         return self.scope.__class__.decimation.validate_and_normalize(
-                    self.scope,
-                    int(round(self.sampling_time/8e-9)))
+            self.scope, int(round(self.sampling_time / 8e-9))
+        )
 
     def _scope_duration(self):
-        return self._scope_decimation()*8e-9*self.data_length
+        return self._scope_decimation() * 8e-9 * self.data_length
 
     def _start_trace_acquisition(self):
-        autosave_backup = self._autosave_active
         # setup iq module
         if not self.baseband:
-            #raise NotImplementedError("iq mode is not supported in the "
+            # raise NotImplementedError("iq mode is not supported in the "
             #                          "current release of Pyrpl.")
             self.iq.setup(
-                input = self.input,
+                input=self.input,
                 bandwidth=self._iq_bandwidth(),
                 gain=0,
                 phase=0,
                 acbandwidth=self.acbandwidth,
                 amplitude=0,
-                output_direct='off',
-                output_signal='quadrature',
-                quadrature_factor=self.quadrature_factor)
+                output_direct="off",
+                output_signal="quadrature",
+                quadrature_factor=self.quadrature_factor,
+            )
         # change scope ownership in order not to mess up the scope
         # configuration
         if self.scope.owner != self.name:
@@ -673,14 +732,16 @@ class SpectrumAnalyzer(AcquisitionModule):
         else:
             input1 = self.iq
             input2 = self.iq_quadraturesignal
-        self.scope.setup(input1=input1,
-                         input2=input2,
-                         average=True,
-                         duration=self.scope.data_length*self._scope_decimation()*8e-9,
-                         trigger_source="immediately",
-                         ch1_active=True,
-                         ch2_active=True,
-                         rolling_mode=False)
+        self.scope.setup(
+            input1=input1,
+            input2=input2,
+            average=True,
+            duration=self.scope.data_length * self._scope_decimation() * 8e-9,
+            trigger_source="immediately",
+            ch1_active=True,
+            ch2_active=True,
+            rolling_mode=False,
+        )
         self.scope.stop()
         return self.scope._start_trace_acquisition()
 
@@ -694,28 +755,25 @@ class SpectrumAnalyzer(AcquisitionModule):
         the db_system. Also, returns the list [curve_ch1, curve_ch2]...
         """
         if not self.baseband:
-            return super(SpectrumAnalyzer, self)._save_curve(self.data_x,
-                                                  self.data_avg,
-                                                  **self.setup_attributes)
+            return super(SpectrumAnalyzer, self)._save_curve(
+                self.data_x, self.data_avg, **self.setup_attributes
+            )
         else:
             d = self.setup_attributes
             curves = [None, None]
             sp1, sp2, cross_real, cross_imag = self.data_avg
-            for ch, active in [(0, self.display_input1_baseband),
-                               (1, self.display_input2_baseband)]:
+            for ch, active in [
+                (0, self.display_input1_baseband),
+                (1, self.display_input2_baseband),
+            ]:
                 if active:
-                    d.update({'ch': ch,
-                              'name': self.curve_name + ' ch' + str(ch + 1)})
-                    curves[ch] = self._save_curve(self.data_x,
-                                                  self.data_avg[ch],
-                                                  **d)
+                    d.update({"ch": ch, "name": self.curve_name + " ch" + str(ch + 1)})
+                    curves[ch] = self._save_curve(self.data_x, self.data_avg[ch], **d)
             if self.display_cross_amplitude:
-                d.update({'ch': 'cross',
-                          'name': self.curve_name + ' cross'})
-                curves.append(self._save_curve(self.data_x,
-                                              self.data_avg[2] +
-                                               1j*self.data_avg[3],
-                                              **d))
+                d.update({"ch": "cross", "name": self.curve_name + " cross"})
+                curves.append(
+                    self._save_curve(self.data_x, self.data_avg[2] + 1j * self.data_avg[3], **d)
+                )
             return curves
 
     def equivalent_noise_bandwidth(self):
@@ -723,9 +781,8 @@ class SpectrumAnalyzer(AcquisitionModule):
         get the residual bandwidth, this number has to be multiplied by the
         sample rate."""
 
-        if not self.window in self._enb_cached:
+        if self.window not in self._enb_cached:
             filter_window = self.filter_window()
-            self._enb_cached[self.window] = (sum(filter_window ** 2)) / \
-                                            (sum(filter_window) ** 2)
+            self._enb_cached[self.window] = (sum(filter_window**2)) / (sum(filter_window) ** 2)
 
         return self._enb_cached[self.window]

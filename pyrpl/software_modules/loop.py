@@ -1,20 +1,28 @@
 """
 Defines a number of Loop modules to be used to perform periodically a task
 """
+
 import numpy as np
 import pyqtgraph as pg
 from ..modules import Module
-from ..async_utils import sleep_async, wait, ensure_future #MainThreadTimer
 from ..pyrpl_utils import time
 from qtpy import QtCore
 
 
 class Loop(Module):
     timer = QtCore.QTimer()
-    def __init__(self, parent, name='loop', interval=1.0,
-                 autostart=True,
-                 loop_function=None, setup_function=None,
-                 teardown_function=None, **kwargs):
+
+    def __init__(
+        self,
+        parent,
+        name="loop",
+        interval=1.0,
+        autostart=True,
+        loop_function=None,
+        setup_function=None,
+        teardown_function=None,
+        **kwargs,
+    ):
         # parent is parent pyrpl module
         # name is important for the right config file section name
         # optionally, init_function, loop_function, and clear_function can be passed
@@ -28,7 +36,7 @@ class Loop(Module):
         if teardown_function is not None:
             self.teardown_loop = teardown_function
         self._ended = False  # becomes True when loop is ended
-        #self.timer = MainThreadTimer(interval=0)
+        # self.timer = MainThreadTimer(interval=0)
         # interval in seconds
         self.interval = interval
 
@@ -46,7 +54,7 @@ class Loop(Module):
 
     @property
     def time(self):
-        """ time since start of the loop """
+        """time since start of the loop"""
         try:
             return time() - self.loop_start_time
         except AttributeError:
@@ -55,11 +63,11 @@ class Loop(Module):
 
     @property
     def interval(self):
-        return float(self.timer.interval())/1000.0
+        return float(self.timer.interval()) / 1000.0
 
     @interval.setter
     def interval(self, val):
-        self.timer.setInterval(val*1000.0)
+        self.timer.setInterval(int(val * 1000))
 
     def _clear(self):
         self._ended = True
@@ -81,7 +89,7 @@ class Loop(Module):
                     self.loop(self.parent, self)
                 except TypeError:
                     self.loop(self.parent)
-        except BaseException as e:
+        except Exception as e:
             # we do not want the loop to stop launching the next cycle (code
             # below this) if there is an exception raised by the loop function)
             self._logger.error("Error in main_loop of %s: %s", self.name, e)
@@ -91,7 +99,7 @@ class Loop(Module):
             self.timer.start()
 
     def setup_loop(self):
-        """ put your initialization routine here"""
+        """put your initialization routine here"""
         pass
 
     def pause_loop(self):
@@ -106,33 +114,36 @@ class Loop(Module):
         pass
 
     def teardown_loop(self):
-        """ put your destruction routine here"""
+        """put your destruction routine here"""
         pass
 
     # useful helpers for precise timing, e.g. of the trigger module
     @property
     def fpga_time(self):
-        """ current FPGA time in s since startup """
-        return 8e-9 * self.pyrpl.rp.trig.current_timestamp / \
-               self.pyrpl.rp.frequency_correction \
-               - self.loop_start_time
+        """current FPGA time in s since startup"""
+        return (
+            8e-9 * self.pyrpl.rp.trig.current_timestamp / self.pyrpl.rp.frequency_correction
+            - self.loop_start_time
+        )
 
     @property
     def trigger_time(self):
-        """ FPGA time in s when trigger even occured (same frame of reference
+        """FPGA time in s when trigger even occured (same frame of reference
         as self.time())"""
-        return 8e-9 * self.pyrpl.rp.trig.trigger_timestamp / \
-               self.pyrpl.rp.frequency_correction \
-               - self.loop_start_time
+        return (
+            8e-9 * self.pyrpl.rp.trig.trigger_timestamp / self.pyrpl.rp.frequency_correction
+            - self.loop_start_time
+        )
 
 
 class PlotWindow(object):
-    """ makes a plot window where the x-axis is time since startup.
+    """makes a plot window where the x-axis is time since startup.
 
     append(color=value) adds new data to the plot for
     color in (red, green).
 
     close() closes the plot"""
+
     def __init__(self, title="plotwindow"):
         self.win = pg.GraphicsLayoutWidget(title=title)
         self.pw = self.win.addPlot()
@@ -140,7 +151,7 @@ class PlotWindow(object):
         self.win.show()
         self.plot_start_time = time()
 
-    _defaultcolors = ['g', 'r', 'b', 'y', 'c', 'm', 'o', 'w']
+    _defaultcolors = ["g", "r", "b", "y", "c", "m", "o", "w"]
 
     def append(self, *args, **kwargs):
         """
@@ -152,15 +163,15 @@ class PlotWindow(object):
         for k in kwargs.keys():
             v = kwargs.pop(k)
             kwargs[k[0]] = v
-        i=0
+        i = 0
         for value in args:
             while self._defaultcolors[i] in kwargs:
                 i += 1
             kwargs[self._defaultcolors[i]] = value
-        t = time()-self.plot_start_time
+        t = time() - self.plot_start_time
         for color, value in kwargs.items():
             if value is not None:
-                if not color in self.curves:
+                if color not in self.curves:
                     self.curves[color] = self.pw.plot(pen=color)
                 curve = self.curves[color]
                 x, y = curve.getData()
@@ -195,11 +206,10 @@ class PlotLoop(Loop):
             else:
                 try:
                     self.plot.append(**kwargs)
-                except BaseException as e:
-                    self._logger.error("Error occured during plotting in Loop %s: %s",
-                                       self.name, e)
+                except Exception as e:
+                    self._logger.error("Error occured during plotting in Loop %s: %s", self.name, e)
 
     def _clear(self):
         super(PlotLoop, self)._clear()
-        if hasattr(self, 'plot') and hasattr(self.plot, 'close'):
+        if hasattr(self, "plot") and hasattr(self.plot, "close"):
             self.plot.close()

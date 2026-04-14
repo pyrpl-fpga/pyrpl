@@ -14,273 +14,296 @@
 
 import sys
 import os
-import sphinx_bootstrap_theme
+# import sphinx_bootstrap_theme
 
 
-# http://read-the-docs.readthedocs.org/en/latest/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
-if os.environ.get('READTHEDOCS') == 'True':
-    try:
-        from mock import MagicMock, Mock
-    except:  # python > 3.3
-        from unittest.mock import MagicMock, Mock
-
-    # must mock PyQt in order to get autodoc import running
-    MOCK_MODULES = ['numpy', 'scipy', 'qtpy', 'pyqtgraph', 'pandas',
-                    'asyncio', 'quamash', 'scipy.signal', 'scipy.fftpack',
-                    'paramiko', 'scp']
-    sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
-
-    # the following code fixes various errors with mocked objects
-    from qtpy import QtWidgets, QtCore
-    import asyncio
-    mod_cls_list = [(QtWidgets, 'QWidget'),
-                    (QtWidgets, 'QLabel'),
-                    (QtWidgets, 'QGroupBox'),
-                    (QtWidgets, 'QLabel'),
-                    (QtCore, 'QObject'),
-                    (asyncio, 'Future')]
-    for module, cls_name in mod_cls_list:
-        # set the problematic class to a dummy class
-        setattr(module, cls_name, type(cls_name, (object,), {}))
-        # make sure the class appears to be in the containing module
-        setattr(getattr(module, cls_name), '__module__', module)
-    import numpy
-    numpy.pi = 3.141
-
+# ReadTheDocs: avoid importing heavy/GUI dependencies
+if os.environ.get("READTHEDOCS") == "True":
+    autodoc_mock_imports = [
+        "numpy",
+        "qtpy",
+        "pyqtgraph",
+        "asyncio",
+        "qasync",
+        "paramiko",
+        "scp",
+    ]
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../..'))
+#
+# docs/source/conf.py -> ../../ points to the repository root containing the
+# actual `pyrpl` package directory. Using ../../.. would point to the parent of
+# the repository and can make Python resolve `pyrpl` as a namespace package.
+sys.path.insert(0, os.path.abspath("../.."))
 
-exclude_patterns = ["*.test.rst",]
+exclude_patterns = [
+    "*.test.rst",
+    "indices_and_tables/*",
+]
 
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+# needs_sphinx = '1.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon',  # supports google- or numpy-style dosctrings
+    "sphinx.ext.autodoc",
+    "sphinx.ext.napoleon",  # supports google- or numpy-style dosctrings
     #'sphinx.ext.imgmath',  # imgmath is not working on my local Ubuntu (LN)
-    'sphinx.ext.mathjax',  # supports things like :math:`a^2 + b^2 = c^2`
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
-    'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.graphviz'
+    "sphinx.ext.mathjax",  # supports things like :math:`a^2 + b^2 = c^2`
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.graphviz",
 ]
 
+autodoc_member_order = "bysource"
+autodoc_typehints = "description"
+
+# `dot` is not always present in minimal dev environments.
+# suppress_warnings = ['graphviz.dot']
+
 # Include todo directives.
-todo_include_todos = False
+todo_include_todos = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {
+    ".rst": "restructuredtext",
+}
 
 # The encoding of source files.
-#source_encoding = 'utf-8-sig'
+# source_encoding = 'utf-8-sig'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 # General information about the project.
-project = u'pyrpl'
-copyright = u'2014-2017, Leonhard Neuhaus, Samuel Deléglise'
+project = "pyrpl"
+copyright = "2014-2025, Leonhard Neuhaus, Samuel Deléglise, Michaël Croquette "
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The short X.Y version.
-from pyrpl import __version__
-version = __version__
+
+
+def get_version():
+    """Get version without importing pyrpl module."""
+    try:
+        # Try to import normally first (works locally)
+        from pyrpl import __version__
+
+        return __version__
+    except ImportError:
+        # Fall back to reading version file directly (works in CI)
+        import os
+
+        version_file = os.path.join(os.path.dirname(__file__), "..", "..", "pyrpl", "_version.py")
+        if os.path.exists(version_file):
+            version_vars = {}
+            with open(version_file, "r") as f:
+                exec(f.read(), version_vars)
+            return version_vars["__version__"]
+        else:
+            return "unknown"
+
+
+version = get_version()
 # The full version, including alpha/beta/rc tags.
 release = version
 
+
 # The language for content autogenerated by Sphinx. Refer to documentation
 # for a list of supported languages.
-#language = None
+# language = None
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
-#today = ''
+# today = ''
 # Else, today_fmt is used as the format for a strftime call.
-#today_fmt = '%B %d, %Y'
+# today_fmt = '%B %d, %Y'
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = []
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
-#default_role = None
+# default_role = None
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+# add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-#show_authors = False
+# show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'  # 'friendly'
+pygments_style = "sphinx"  # 'friendly'
 
 # A list of ignored prefixes for module index sorting.
-#modindex_common_prefix = []
+# modindex_common_prefix = []
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
-#keep_warnings = False
+# keep_warnings = False
 
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#html_theme = 'default' # 'nature'
-html_theme = 'bootstrap'
+# html_theme = 'default' # 'nature'
+# html_theme = 'bootstrap'
+html_theme = "furo"
+
+html_theme_options = {
+    "navigation_with_keys": True,
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-html_theme_options = {
-    # Navigation bar title. (Default: ``project`` value)
-    'navbar_title': "PyRPL",
+# html_theme_options = {
+#     # Navigation bar title. (Default: ``project`` value)
+#     'navbar_title': "PyRPL",
 
-    # Tab name for entire site. (Default: "Site")
-    'navbar_site_name': "Navigation",
+#     # Tab name for entire site. (Default: "Site")
+#     'navbar_site_name': "Navigation",
 
-    # A list of tuples containing pages or urls to link to.
-    # Valid tuples should be in the following forms:
-    #    (name, page)                 # a link to a page
-    #    (name, "/aa/bb", 1)          # a link to an arbitrary relative url
-    #    (name, "http://example.com", True) # arbitrary absolute url
-    # Note the "1" or "True" value above as the third argument to indicate
-    # an arbitrary url.
-    'navbar_links': [
-        ("Home", "index"),
-        #("Gallery", "gallery/index"),
-        ("Installation", "installation"),
-        ("Graphical user interface", "gui"),
-        ("API", "api"),
-        ("How PyRPL works", "basics"),
-        ("Infos for Developers", "developer_guide/index"),
-    ],
+#     # A list of tuples containing pages or urls to link to.
+#     # Valid tuples should be in the following forms:
+#     #    (name, page)                 # a link to a page
+#     #    (name, "/aa/bb", 1)          # a link to an arbitrary relative url
+#     #    (name, "http://example.com", True) # arbitrary absolute url
+#     # Note the "1" or "True" value above as the third argument to indicate
+#     # an arbitrary url.
+#     'navbar_links': [
+#         ("Home", "index"),
+#         #("Gallery", "gallery/index"),
+#         ("Installation", "installation"),
+#         ("Graphical user interface", "gui"),
+#         ("API", "api"),
+#         ("How PyRPL works", "basics"),
+#         ("Infos for Developers", "developer_guide/index"),
+#     ],
 
-    # Render the next and previous page links in navbar. (Default: true)
-    'navbar_sidebarrel': False,
+#     # Render the next and previous page links in navbar. (Default: true)
+#     'navbar_sidebarrel': False,
 
-    # Render the current pages TOC in the navbar. (Default: true)
-    'navbar_pagenav': False,
+#     # Render the current pages TOC in the navbar. (Default: true)
+#     'navbar_pagenav': False,
 
-    # Tab name for the current pages TOC. (Default: "Page")
-    'navbar_pagenav_name': "Page sections",
+#     # Tab name for the current pages TOC. (Default: "Page")
+#     'navbar_pagenav_name': "Page sections",
 
-    # Global TOC depth for "site" navbar tab. (Default: 1)
-    # Switching to -1 shows all levels.
-    'globaltoc_depth': 2,
+#     # Global TOC depth for "site" navbar tab. (Default: 1)
+#     # Switching to -1 shows all levels.
+#     'globaltoc_depth': 2,
 
-    # Include hidden TOCs in Site navbar?
-    #
-    # Note: If this is "false", you cannot have mixed ``:hidden:`` and
-    # non-hidden ``toctree`` directives in the same page, or else the build
-    # will break.
-    #
-    # Values: "true" (default) or "false"
-    'globaltoc_includehidden': "true",
+#     # Include hidden TOCs in Site navbar?
+#     #
+#     # Note: If this is "false", you cannot have mixed ``:hidden:`` and
+#     # non-hidden ``toctree`` directives in the same page, or else the build
+#     # will break.
+#     #
+#     # Values: "true" (default) or "false"
+#     'globaltoc_includehidden': "true",
 
-    # HTML navbar class (Default: "navbar") to attach to <div> element.
-    # For black navbar, do "navbar navbar-inverse"
-    'navbar_class': "navbar navbar-inverse",
+#     # HTML navbar class (Default: "navbar") to attach to <div> element.
+#     # For black navbar, do "navbar navbar-inverse"
+#     'navbar_class': "navbar navbar-inverse",
 
-    # Fix navigation bar to top of page?
-    # Values: "true" (default) or "false"
-    'navbar_fixed_top': "true",
+#     # Fix navigation bar to top of page?
+#     # Values: "true" (default) or "false"
+#     'navbar_fixed_top': "true",
 
-    # Location of link to source.
-    # Options are "nav" (default), "footer" or anything else to exclude.
-    'source_link_position': "footer",
+#     # Location of link to source.
+#     # Options are "nav" (default), "footer" or anything else to exclude.
+#     'source_link_position': "footer",
 
-    # Bootswatch (http://bootswatch.com/) theme.
-    #
-    # Options are nothing (default) or the name of a valid theme
-    # such as "cosmo" or "sandstone". "united",
-    #'bootswatch_theme': "united", #
+#     # Bootswatch (http://bootswatch.com/) theme.
+#     #
+#     # Options are nothing (default) or the name of a valid theme
+#     # such as "cosmo" or "sandstone". "united",
+#     #'bootswatch_theme': "united", #
 
-    # Choose Bootstrap version.
-    # Values: "3" (default) or "2" (in quotes)
-    'bootstrap_version': "3",
-}
+#     # Choose Bootstrap version.
+#     # Values: "3" (default) or "2" (in quotes)
+#     'bootstrap_version': "3",
+# }
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
+# html_theme_path = sphinx_bootstrap_theme.get_html_theme_path()
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+# html_title = None
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+# html_short_title = None
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-html_logo = 'logo.png'
+html_logo = "logo.png"
 full_logo = True
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
 # pixels large.
-html_favicon = 'icon.ico'
+html_favicon = "icon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []  #['_static']
+html_static_path = ["_static"]
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
 # directly to the root of the documentation.
-#html_extra_path = []
+# html_extra_path = []
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-#html_last_updated_fmt = '%b %d, %Y'
+# html_last_updated_fmt = '%b %d, %Y'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
-#html_use_smartypants = True
+# html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
-html_sidebars = {'**': ['localtoc.html']}
+# html_sidebars = {}
+# html_sidebars = {'**': ['localtoc.html']}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
-#html_additional_pages = {}
+# html_additional_pages = {}
 
 # If false, no module index is generated.
-#html_domain_indices = True
+# html_domain_indices = True
 
 # If false, no index is generated.
-#html_use_index = True
+# html_use_index = True
 
 # If true, the index is split into individual pages for each letter.
-#html_split_index = False
+# html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-#html_show_sourcelink = True
+# html_show_sourcelink = True
 
 # If true, "Created using Sphinx" is shown in the HTML footer. Default is True.
-#html_show_sphinx = True
+# html_show_sphinx = True
 
 # If true, "(C) Copyright ..." is shown in the HTML footer. Default is True.
 html_show_copyright = True
@@ -288,34 +311,31 @@ html_show_copyright = True
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the
 # base URL from which the finished HTML is served.
-#html_use_opensearch = ''
+# html_use_opensearch = ''
 
 # This is the file name suffix for HTML files (e.g. ".xhtml").
-#html_file_suffix = None
+# html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pyrpldoc'
+htmlhelp_basename = "pyrpldoc"
 
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
-# The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
-
-# The font size ('10pt', '11pt' or '12pt').
-#'pointsize': '10pt',
-
-# Additional stuff for the LaTeX preamble.
-#'preamble': '',
+    # The paper size ('letterpaper' or 'a4paper').
+    #'papersize': 'letterpaper',
+    # The font size ('10pt', '11pt' or '12pt').
+    #'pointsize': '10pt',
+    # Additional stuff for the LaTeX preamble.
+    #'preamble': '',
 }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'pyrpl.tex', u'pyrpl Documentation',
-   u'Leonhard Neuhaus', 'manual'),
+    ("index", "pyrpl.tex", "pyrpl Documentation", "Leonhard Neuhaus", "manual"),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -324,32 +344,29 @@ latex_logo = html_logo
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
-#latex_use_parts = False
+# latex_use_parts = False
 
 # If true, show page references after internal links.
-#latex_show_pagerefs = False
+# latex_show_pagerefs = False
 
 # If true, show URL addresses after external links.
-#latex_show_urls = False
+# latex_show_urls = False
 
 # Documents to append as an appendix to all manuals.
-#latex_appendices = []
+# latex_appendices = []
 
 # If false, no module index is generated.
-#latex_domain_indices = True
+# latex_domain_indices = True
 
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    ('index', 'pyrpl', u'pyrpl Documentation',
-     [u'Leonhard Neuhaus'], 1)
-]
+man_pages = [("index", "pyrpl", "pyrpl Documentation", ["Leonhard Neuhaus"], 1)]
 
 # If true, show URL addresses after external links.
-#man_show_urls = False
+# man_show_urls = False
 
 
 # -- Options for Texinfo output -------------------------------------------
@@ -358,19 +375,25 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'pyrpl', u'pyrpl Documentation',
-   u'Leonhard Neuhaus', 'pyrpl', 'One line description of project.',
-   'Miscellaneous'),
+    (
+        "index",
+        "pyrpl",
+        "pyrpl Documentation",
+        "Leonhard Neuhaus",
+        "pyrpl",
+        "One line description of project.",
+        "Miscellaneous",
+    ),
 ]
 
 # Documents to append as an appendix to all manuals.
-#texinfo_appendices = []
+# texinfo_appendices = []
 
 # If false, no module index is generated.
-#texinfo_domain_indices = True
+# texinfo_domain_indices = True
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
-#texinfo_show_urls = 'footnote'
+# texinfo_show_urls = 'footnote'
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
-#texinfo_no_detailmenu = False
+# texinfo_no_detailmenu = False

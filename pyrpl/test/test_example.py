@@ -1,13 +1,16 @@
 import logging
-logger = logging.getLogger(name=__name__)
 from .test_base import TestPyrpl
+import pytest
+
+logger = logging.getLogger(name=__name__)
 
 
 class TestExample(TestPyrpl):
-    def setup(self):
+    @pytest.fixture(autouse=True)
+    def setup_asg(self):
         self.asg = self.pyrpl.rp.asg0
 
-    #you are welcome to change the following silly tests to something useful
+    # you are welcome to change the following silly tests to something useful
     def test_example(self):
         if 1 > 2:
             assert False

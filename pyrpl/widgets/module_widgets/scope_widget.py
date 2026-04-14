@@ -21,7 +21,8 @@ attributes specific to the :class:`~pyrpl.hardware_modules.scope.Scope`:
   two successive points of the trace. If disabled, only a sample of the
   full-rate signal is shown as the trace. The averaging mode corresponds to a
   moving-average filter with a cutoff frequency of
-  :attr:`~.pyrpl.hardware_modules.scope.Scope.sampling_time` :math:`^{-1} = 2^{14}/\\mathrm{duration}`
+  :attr:`~.pyrpl.hardware_modules.scope.Scope.sampling_time`
+  :math:`^{-1} = 2^{14}/\\mathrm{duration}`
   in units of Hz.
 * :attr:`~.Scope.xy_mode`: If selected, channel 2 is plotted as a function of
   channel 1 (instead of channels 1 and 2 as a function of time).
@@ -33,11 +34,11 @@ attributes specific to the :class:`~pyrpl.hardware_modules.scope.Scope`:
     area from right to left in real-time. The rolling mode does not allow for
     trace averaging nor durations below 0.1 s.
 """
+
 import pyqtgraph as pg
-from qtpy import QtCore, QtGui, QtWidgets
+from qtpy import QtGui, QtWidgets
 import numpy as np
 from ...errors import NotReadyError
-from .base_module_widget import ModuleWidget
 from .acquisition_module_widget import AcquisitionModuleWidget
 
 
@@ -45,16 +46,21 @@ class ScopeWidget(AcquisitionModuleWidget):
     """
     Widget for scope
     """
+
     def init_gui(self):
         """
         sets up all the gui for the scope.
         """
         self.datas = [None, None]
         self.times = None
-        self.ch_color = ('green', 'red', 'blue')
-        self.ch_transparency = (255, 255, 255)  # 0 is transparent, 255 is not  # deactivated transparency for speed reasons
-        #self.module.__dict__['curve_name'] = 'scope'
-        #self.main_layout = QtWidgets.QVBoxLayout()
+        self.ch_color = ("green", "red", "blue")
+        self.ch_transparency = (
+            255,
+            255,
+            255,
+        )  # 0 is transparent, 255 is not  # deactivated transparency for speed reasons
+        # self.module.__dict__['curve_name'] = 'scope'
+        # self.main_layout = QtWidgets.QVBoxLayout()
         self.init_main_layout(orientation="vertical")
         self.init_attribute_layout()
         aws = self.attribute_widgets
@@ -67,47 +73,47 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.layout_channels.addLayout(self.layout_ch2)
         self.layout_channels.addLayout(self.layout_math)
 
-        self.attribute_layout.removeWidget(aws['xy_mode'])
+        self.attribute_layout.removeWidget(aws["xy_mode"])
 
-        self.attribute_layout.removeWidget(aws['ch1_active'])
-        self.attribute_layout.removeWidget(aws['input1'])
-        self.attribute_layout.removeWidget(aws['threshold'])
+        self.attribute_layout.removeWidget(aws["ch1_active"])
+        self.attribute_layout.removeWidget(aws["input1"])
+        self.attribute_layout.removeWidget(aws["threshold"])
 
-        self.layout_ch1.addWidget(aws['ch1_active'])
-        self.layout_ch1.addWidget(aws['input1'])
-        self.layout_ch1.addWidget(aws['threshold'])
-        aws['ch1_active'].setStyleSheet("color: %s" % self.ch_color[0])
+        self.layout_ch1.addWidget(aws["ch1_active"])
+        self.layout_ch1.addWidget(aws["input1"])
+        self.layout_ch1.addWidget(aws["threshold"])
+        aws["ch1_active"].setStyleSheet("color: %s" % self.ch_color[0])
 
-        self.attribute_layout.removeWidget(aws['ch2_active'])
-        self.attribute_layout.removeWidget(aws['input2'])
-        self.attribute_layout.removeWidget(aws['hysteresis'])
-        aws['ch2_active'].setStyleSheet("color: %s" % self.ch_color[1])
+        self.attribute_layout.removeWidget(aws["ch2_active"])
+        self.attribute_layout.removeWidget(aws["input2"])
+        self.attribute_layout.removeWidget(aws["hysteresis"])
+        aws["ch2_active"].setStyleSheet("color: %s" % self.ch_color[1])
 
-        self.layout_ch2.addWidget(aws['ch2_active'])
-        self.layout_ch2.addWidget(aws['input2'])
-        self.layout_ch2.addWidget(aws['hysteresis'])
+        self.layout_ch2.addWidget(aws["ch2_active"])
+        self.layout_ch2.addWidget(aws["input2"])
+        self.layout_ch2.addWidget(aws["hysteresis"])
 
-        self.layout_math.addWidget(aws['ch_math_active'])
-        aws['ch_math_active'].setStyleSheet("color: %s" % self.ch_color[2])
-        self.layout_math.addWidget(aws['math_formula'])
+        self.layout_math.addWidget(aws["ch_math_active"])
+        aws["ch_math_active"].setStyleSheet("color: %s" % self.ch_color[2])
+        self.layout_math.addWidget(aws["math_formula"])
 
         self.attribute_layout.addLayout(self.layout_channels)
 
-        self.attribute_layout.removeWidget(aws['duration'])
-        self.attribute_layout.removeWidget(aws['trigger_delay'])
+        self.attribute_layout.removeWidget(aws["duration"])
+        self.attribute_layout.removeWidget(aws["trigger_delay"])
         self.layout_duration = QtWidgets.QVBoxLayout()
-        self.layout_duration.addWidget(aws['duration'])
-        self.layout_duration.addWidget(aws['trigger_delay'])
+        self.layout_duration.addWidget(aws["duration"])
+        self.layout_duration.addWidget(aws["trigger_delay"])
         self.attribute_layout.addLayout(self.layout_duration)
 
-        self.attribute_layout.removeWidget(aws['trigger_source'])
-        self.attribute_layout.removeWidget(aws['average'])
+        self.attribute_layout.removeWidget(aws["trigger_source"])
+        self.attribute_layout.removeWidget(aws["average"])
         self.layout_misc = QtWidgets.QVBoxLayout()
-        self.layout_misc.addWidget(aws['trigger_source'])
-        self.layout_misc.addWidget(aws['average'])
+        self.layout_misc.addWidget(aws["trigger_source"])
+        self.layout_misc.addWidget(aws["average"])
         self.attribute_layout.addLayout(self.layout_misc)
 
-        #self.attribute_layout.removeWidget(aws['curve_name'])
+        # self.attribute_layout.removeWidget(aws['curve_name'])
 
         self.button_layout = QtWidgets.QHBoxLayout()
 
@@ -118,38 +124,39 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.button_layout.addWidget(aws["trace_average"])
         self.button_layout.addWidget(aws["curve_name"])
 
-
-        #self.setLayout(self.main_layout)
+        # self.setLayout(self.main_layout)
         self.setWindowTitle("Scope")
         self.win = pg.GraphicsLayoutWidget(title="Scope")
         self.plot_item = self.win.addPlot(title="Scope")
-        self.plot_item.showGrid(y=True, alpha=1.)
+        self.plot_item.showGrid(y=True, alpha=1.0)
 
+        # self.button_single = QtWidgets.QPushButton("Run single")
+        # self.button_continuous = QtWidgets.QPushButton("Run continuous")
+        # self.button_save = QtWidgets.QPushButton("Save curve")
 
-        #self.button_single = QtWidgets.QPushButton("Run single")
-        #self.button_continuous = QtWidgets.QPushButton("Run continuous")
-        #self.button_save = QtWidgets.QPushButton("Save curve")
-
-        self.curves = [self.plot_item.plot(pen=(QtGui.QColor(color).red(),
-                                                QtGui.QColor(color).green(),
-                                                QtGui.QColor(color).blue()
-                                                ))
-                                                #,trans)) \
-                       for color, trans in zip(self.ch_color,
-                                               self.ch_transparency)]
+        self.curves = [
+            self.plot_item.plot(
+                pen=(
+                    QtGui.QColor(color).red(),
+                    QtGui.QColor(color).green(),
+                    QtGui.QColor(color).blue(),
+                )
+            )
+            # ,trans)) \
+            for color, trans in zip(self.ch_color, self.ch_transparency)
+        ]
         self.main_layout.addWidget(self.win, stretch=10)
 
+        # self.button_layout.addWidget(self.button_single)
+        # self.button_layout.addWidget(self.button_continuous)
+        # self.button_layout.addWidget(self.button_save)
+        # self.button_layout.addWidget(aws['curve_name'])
+        # aws['curve_name'].setMaximumWidth(250)
+        # self.main_layout.addLayout(self.button_layout)
 
-        #self.button_layout.addWidget(self.button_single)
-        #self.button_layout.addWidget(self.button_continuous)
-        #self.button_layout.addWidget(self.button_save)
-        #self.button_layout.addWidget(aws['curve_name'])
-        #aws['curve_name'].setMaximumWidth(250)
-        self.main_layout.addLayout(self.button_layout)
-
-        #self.button_single.clicked.connect(self.run_single_clicked)
-        #self.button_continuous.clicked.connect(self.run_continuous_clicked)
-        #self.button_save.clicked.connect(self.save_clicked)
+        # self.button_single.clicked.connect(self.run_single_clicked)
+        # self.button_continuous.clicked.connect(self.run_continuous_clicked)
+        # self.button_save.clicked.connect(self.save_clicked)
 
         self.rolling_group = QtWidgets.QGroupBox("Trigger mode")
         self.checkbox_normal = QtWidgets.QRadioButton("Normal")
@@ -161,12 +168,14 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.rolling_group.setLayout(self.lay_radio)
         self.attribute_layout.insertWidget(
             list(self.attribute_widgets.keys()).index("trigger_source"),
-            self.rolling_group)
+            self.rolling_group,
+        )
         self.checkbox_normal.clicked.connect(self.rolling_mode_toggled)
         self.checkbox_untrigged.clicked.connect(self.rolling_mode_toggled)
-        #self.update_rolling_mode_visibility()
-        self.attribute_widgets['duration'].value_changed.connect(
-            self.update_rolling_mode_visibility)
+        # self.update_rolling_mode_visibility()
+        self.attribute_widgets["duration"].value_changed.connect(
+            self.update_rolling_mode_visibility
+        )
 
         super(ScopeWidget, self).init_gui()
         # since trigger_mode radiobuttons is not a regular attribute_widget,
@@ -177,19 +186,21 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.attribute_layout.addStretch(1)
         # Not sure why the stretch factors in button_layout are not good by
         # default...
-        #self.button_layout.setStretchFactor(self.button_single, 1)
-        #self.button_layout.setStretchFactor(self.button_continuous, 1)
-        #self.button_layout.setStretchFactor(self.button_save, 1)
+        # self.button_layout.setStretchFactor(self.button_single, 1)
+        # self.button_layout.setStretchFactor(self.button_continuous, 1)
+        # self.button_layout.setStretchFactor(self.button_save, 1)
 
     def update_attribute_by_name(self, name, new_value_list):
         """
         Updates all attributes on the gui when their values have changed.
         """
         super(ScopeWidget, self).update_attribute_by_name(name, new_value_list)
-        if name in ['rolling_mode', 'duration']:
+        if name in ["rolling_mode", "duration"]:
             self.rolling_mode = self.module.rolling_mode
             self.update_rolling_mode_visibility()
-        if name in ['_running_state',]:
+        if name in [
+            "_running_state",
+        ]:
             self.update_running_buttons()
 
     def display_channel_obsolete(self, ch):
@@ -198,10 +209,9 @@ class ScopeWidget(AcquisitionModuleWidget):
         :param ch:
         """
         try:
-                self.datas[ch-1] = self.module.trace(ch)
-                self.times = self.module.times
-                self.curves[ch-1].setData(self.times,
-                                          self.datas[ch-1])
+            self.datas[ch - 1] = self.module.trace(ch)
+            self.times = self.module.times
+            self.curves[ch - 1].setData(self.times, self.datas[ch - 1])
         except NotReadyError:
             pass
 
@@ -234,11 +244,13 @@ class ScopeWidget(AcquisitionModuleWidget):
                 # catch numpy warnings instead of printing them
                 # https://stackoverflow.com/questions/15933741/how-do-i-catch-a-numpy-warning-like-its-an-exception-not-just-for-testing
                 backup_np_err = np.geterr()
-                np.seterr(all='ignore')
+                np.seterr(all="ignore")
                 try:
-                    math_data = eval(self.module.math_formula,
-                       dict(ch1=ch1, ch2=ch2, np=np, times=times))
-                except:
+                    math_data = eval(
+                        self.module.math_formula,
+                        dict(ch1=ch1, ch2=ch2, np=np, times=times),
+                    )
+                except Exception:
                     pass
                 else:
                     self.curves[2].setData(times, math_data)
@@ -246,7 +258,7 @@ class ScopeWidget(AcquisitionModuleWidget):
                 self.curves[2].setVisible(True)
             else:
                 self.curves[2].setVisible(False)
-        self.update_current_average() # to update the number of averages
+        self.update_current_average()  # to update the number of averages
 
     def set_rolling_mode(self):
         """
@@ -260,7 +272,7 @@ class ScopeWidget(AcquisitionModuleWidget):
 
     @property
     def rolling_mode(self):
-        return ((self.checkbox_untrigged.isChecked()) and self.rolling_group.isEnabled())
+        return (self.checkbox_untrigged.isChecked()) and self.rolling_group.isEnabled()
 
     @rolling_mode.setter
     def rolling_mode(self, val):
@@ -275,14 +287,12 @@ class ScopeWidget(AcquisitionModuleWidget):
         Hide rolling mode checkbox for duration < 100 ms
         """
         self.rolling_group.setEnabled(self.module._rolling_mode_allowed())
-        self.attribute_widgets['trigger_source'].widget.setEnabled(
-            not self.rolling_mode)
-        self.attribute_widgets['threshold'].widget.setEnabled(
-            not self.rolling_mode)
-        self.attribute_widgets['hysteresis'].widget.setEnabled(
-            not self.rolling_mode)
-        single_enabled = (not self.module._is_rolling_mode_active()) and \
-                            self.module.running_state!="running_continuous"
+        self.attribute_widgets["trigger_source"].widget.setEnabled(not self.rolling_mode)
+        self.attribute_widgets["threshold"].widget.setEnabled(not self.rolling_mode)
+        self.attribute_widgets["hysteresis"].widget.setEnabled(not self.rolling_mode)
+        single_enabled = (
+            not self.module._is_rolling_mode_active()
+        ) and self.module.running_state != "running_continuous"
         self.button_single.setEnabled(single_enabled)
 
     def update_running_buttons(self):
@@ -301,7 +311,7 @@ class ScopeWidget(AcquisitionModuleWidget):
             mini = min(self.module.times)
             maxi = max(self.module.times)
         self.plot_item.setRange(xRange=[mini, maxi])
-        self.plot_item.setRange(yRange=[-1,1])
+        self.plot_item.setRange(yRange=[-1, 1])
         # self.plot_item.autoRange()
 
     def save_clicked(self):

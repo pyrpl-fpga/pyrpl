@@ -4,17 +4,16 @@ A widget for pid modules.
 
 from .base_module_widget import ModuleWidget
 
-from qtpy import QtCore, QtWidgets
-
 
 class PidWidget(ModuleWidget):
     """
     Widget for a single PID.
     """
+
     def init_gui(self):
         self.init_main_layout(orientation="vertical")
-        #self.main_layout = QtWidgets.QVBoxLayout()
-        #self.setLayout(self.main_layout)
+        # self.main_layout = QtWidgets.QVBoxLayout()
+        # self.setLayout(self.main_layout)
         self.init_attribute_layout()
         input_filter_widget = self.attribute_widgets["inputfilter"]
         self.attribute_layout.removeWidget(input_filter_widget)
@@ -29,6 +28,6 @@ class PidWidget(ModuleWidget):
         # self.timer_ival.start()
 
     def update_ival(self):
-        widget = self.attribute_widgets['ival']
+        widget = self.attribute_widgets["ival"]
         if self.isVisible() and not widget.editing():
             widget.write_attribute_value_to_widget()

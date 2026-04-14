@@ -1,21 +1,27 @@
 import logging
-logger = logging.getLogger(name=__name__)
 from qtpy.QtTest import QTest
 from qtpy.QtCore import Qt
 import os
-from ..widgets.attribute_widgets import SelectAttributeWidget, BoolAttributeWidget, NumberAttributeWidget
+from ..widgets.attribute_widgets import (
+    SelectAttributeWidget,
+    BoolAttributeWidget,
+    NumberAttributeWidget,
+)
 from ..attributes import BoolProperty, NumberProperty, SelectProperty
 from .test_base import TestPyrpl
+import pytest
+
+logger = logging.getLogger(name=__name__)
 
 
 class TestModuleWidgets(TestPyrpl):
-    @classmethod
-    def setup(self):
+    @pytest.fixture(autouse=True)
+    def setup_do_gui_tests(self):
         ## these tests currently do not run on travis.
         ## our workaround is this: detect from environment variable
         ## if tests are executed on travis and refuse the gui tests
         try:
-            skip = os.environ["REDPITAYA_SKIPGUITEST"]
+            os.environ["REDPITAYA_SKIPGUITEST"]
         except KeyError:
             self.do_gui_tests = True
         else:
@@ -34,17 +40,20 @@ class TestModuleWidgets(TestPyrpl):
                     to_set = attr.widget.findText(str(option))
                     # it would be a pain to select an element with a QTest
                     attr.widget.setCurrentIndex(to_set)
-                    assert (getattr(self.pyrpl.rp.scope, attr.attribute_name) == option)
+                    assert getattr(self.pyrpl.rp.scope, attr.attribute_name) == option
             elif isinstance(attr, BoolAttributeWidget):
                 for i in range(2):
                     QTest.mouseClick(attr.widget, Qt.LeftButton)
-                    assert (getattr(self.pyrpl.rp.scope, attr.attribute_name) ==
-                        (attr.widget.checkState() == 2))
+                    assert getattr(self.pyrpl.rp.scope, attr.attribute_name) == (
+                        attr.widget.checkState() == 2
+                    )
             elif isinstance(attr, NumberAttributeWidget):
                 for i in range(3):
                     attr.widget.stepUp()
-                    assert(abs(getattr(self.pyrpl.rp.scope, attr.attribute_name) -
-                               attr.widget.value()) < 0.0001)
+                    assert (
+                        abs(getattr(self.pyrpl.rp.scope, attr.attribute_name) - attr.widget.value())
+                        < 0.0001
+                    )
 
     def test_asg_gui(self):
         if self.pyrpl is None:
@@ -52,7 +61,7 @@ class TestModuleWidgets(TestPyrpl):
         for asg in [mod for mod in self.pyrpl.asgs.all_modules]:
             self.try_gui_module(asg._create_widget())
 
-    def try_gui_module(self, module_widget): # name should not start with test
+    def try_gui_module(self, module_widget):  # name should not start with test
         if not self.do_gui_tests:
             return
         module = module_widget.module
@@ -61,16 +70,15 @@ class TestModuleWidgets(TestPyrpl):
                 for option in attr.options(module):
                     to_set = attr.widget.findText(str(option))
                     attr.widget.setCurrentIndex(to_set)
-                    assert (getattr(module, attr.name) == option)
+                    assert getattr(module, attr.name) == option
             elif isinstance(attr, BoolProperty):
                 for i in range(2):
                     QTest.mouseClick(attr.widget, Qt.LeftButton)
-                    assert (getattr(module, attr.name)
-                            == (attr.widget.checkState() == 2))
+                    assert getattr(module, attr.name) == (attr.widget.checkState() == 2)
             elif isinstance(attr, NumberProperty):
                 for i in range(3):
                     attr.widget.stepUp()
                     val = getattr(module, attr.name)
                     wid_val = attr.widget.value()
-                    err = abs((val - wid_val)/max(val, 1.))
-                    assert(err < 0.001)
+                    err = abs((val - wid_val) / max(val, 1.0))
+                    assert err < 0.001

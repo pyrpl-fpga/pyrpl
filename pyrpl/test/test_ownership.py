@@ -1,8 +1,8 @@
 import logging
-logger = logging.getLogger(name=__name__)
-from qtpy import QtWidgets
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl.software_modules.module_managers import ModuleManager
+
+logger = logging.getLogger(name=__name__)
 
 
 class TestOwnership(TestPyrpl):
@@ -14,8 +14,11 @@ class TestOwnership(TestPyrpl):
         self.pyrpl.networkanalyzer.iq.free()
         # otherwise not a single iq is left for test
 
+        self.r.asg0.free()
+        # otherwise not a single asg is left for test
+
         for module in self.pyrpl.modules:
             if isinstance(module, ModuleManager):
                 with module.pop("foo") as mod:
-                    assert(mod.owner=='foo')
-                assert(mod.owner==None)
+                    assert mod.owner == "foo"
+                assert mod.owner is None

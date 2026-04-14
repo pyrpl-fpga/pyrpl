@@ -1,1 +1,9 @@
-.
+# Install core dependencies from pyproject.toml
+# Use: pip install .
+# Or for editable install: pip install -e .
+
+# This file exists for compatibility but all dependencies are defined in pyproject.toml
+# Install with optional dependencies using:
+#   pip install -e .[test]     # for testing
+#   pip install -e .[ipython]  # for IPython/Jupyter
+#   pip install -e .[dev]      # for development (all dependencies)

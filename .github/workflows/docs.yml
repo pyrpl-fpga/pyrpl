@@ -1,0 +1,70 @@
+name: docs build and upload
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y pandoc xvfb
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[docs]
+
+    - name: Build documentation
+      run: |
+        cd docs
+        xvfb-run -a make html
+      env:
+        READTHEDOCS: "True"
+        QT_QPA_PLATFORM: "offscreen"
+        DISPLAY: ":99"
+
+    - name: Upload docs artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: documentation
+        path: docs/build/html/
+
+  deploy:
+    # Only deploy if docs build succeeded and on main or release
+    # if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') || github.event_name == 'release'
+    needs: docs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Download built documentation
+        uses: actions/download-artifact@v4
+        with:
+          name: documentation
+          path: ./docs_html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs_html
+          publish_branch: gh-pages
+          force_orphan: true
