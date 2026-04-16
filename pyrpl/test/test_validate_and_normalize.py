@@ -49,13 +49,13 @@ class TestValidateAndNormalize(TestPyrpl):
 
         def check_fpga_value_equals_signal_value(attr_name, list_value):
             print(
-                "check_fpga_value_equals_signal_value(%s.%s, %s) was called!"
-                % (mod.name, attr_name, list_value)
+                "check_fpga_value_equals_signal_value("
+                f"{mod.name}.{attr_name}, {list_value}) was called!"
             )
             # add an entry to results
             self.results.append(
                 (
-                    "%s.%s" % (mod.name, attr_name),
+                    f"{mod.name}.{attr_name}",
                     list_value[0],
                     getattr(mod, attr_name),
                 )
@@ -68,15 +68,14 @@ class TestValidateAndNormalize(TestPyrpl):
             check_fpga_value_equals_signal_value
         )
         # check that enough results have been received
-        assert len(attr_names) <= len(self.results), "%d attr_names > %d results" % (
-            len(attr_names),
-            len(self.results),
+        assert len(attr_names) <= len(self.results), (
+            f"{len(attr_names):d} attr_names > {len(self.results):d} results"
         )
         # check that all values that were modified have returned at least one result
         resultnames = [name for (name, _, __) in self.results]
         for attr_name in attr_names:
-            fullname = "%s.%s" % (mod.name, attr_name)
-            assert fullname in resultnames, "%s not in resultnames" % fullname
+            fullname = f"{mod.name}.{attr_name}"
+            assert fullname in resultnames, f"{fullname} not in resultnames"
         # check that the returned values are in agreement with our expectation
         exceptions = [
             "scope._reset_writestate_machine",  # always False

@@ -78,15 +78,16 @@ class TestPyqtgraph(TestRedpitaya):
             # this is needed such that the test GUI actually plots something
             sleep(0.01)
         if self.cycle < self.cycles:
-            assert False, "Must complete %d cycles before testing for speed!" % self.cycles
+            assert False, f"Must complete {self.cycles:d} cycles before testing for speed!"
         else:
             # time per frame
             dt = (self.endtime - self.starttime) / self.cycles
-            print("Frame rate: %f Hz" % (1.0 / dt))
+            print(f"Frame rate: {1.0 / dt:f} Hz")
             dt *= 1e3
-            print("Update period: %f ms" % (dt))
+            print(f"Update period: {dt:f} ms")
             # require at least 20 fps
             assert dt < 50.0, (
-                "Frame update time of %f ms with%s redpitaya scope is above specification of 50 ms!"
-                % ("out" if self.REDPITAYA else "", dt)
+                f"Frame update time of {dt:f} ms with "
+                f"{'out' if self.REDPITAYA else ''} redpitaya scope is above "
+                "specification of 50 ms!"
             )

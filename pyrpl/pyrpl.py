@@ -193,8 +193,8 @@ default_pyrpl_config = {
     ],
 }
 
-help_message = """
-PyRPL version %s command-line help
+help_message = f"""
+PyRPL version {__version__} command-line help
 ==================================
 
 Syntax for launching PyRPL
@@ -225,7 +225,7 @@ port     port for redpitaya_client, default is 2222
 
 gui      one of [True, False], to en- or disable GUI
 loglevel logging level, one of [debug, info, warning, error]
-""" % (__version__)
+"""
 
 
 class Pyrpl:
@@ -277,7 +277,7 @@ class Pyrpl:
                 configfiles = [name[:-4] if name.endswith(".yml") else name for name in configfiles]
                 print("Existing config files are:")
                 for name in configfiles:
-                    print("    %s" % name)
+                    print(f"    {name}")
                 config = raw_input("\nEnter an existing or new config file name: ")
         if config is None or config == "" or config.endswith("/.yml"):
             config = None

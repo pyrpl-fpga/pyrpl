@@ -170,10 +170,10 @@ except (ImportError, AttributeError, KeyError, TypeError):
             parent = self.parent
             childs = self.childs
             if isinstance(childs, list) and len(childs) > 0:
-                self.logger.debug("Deleting all childs of curve %d" % delpk)
+                self.logger.debug(f"Deleting all childs of curve {delpk:d}")
                 for child in childs:
                     child.delete()
-            self.logger.debug("Deleting curve %d" % delpk)
+            self.logger.debug(f"Deleting curve {delpk:d}")
             try:
                 filename = os.path.join(self._dirname, str(self.pk) + self.file_extension)
                 os.remove(filename)

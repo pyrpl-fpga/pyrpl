@@ -100,7 +100,7 @@ class AnalogTfDialog(QtWidgets.QDialog):
         super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
-        self.setWindowTitle("Analog transfer function for output %s" % self.module.name)
+        self.setWindowTitle(f"Analog transfer function for output {self.module.name}")
         self.lay_v = QtWidgets.QVBoxLayout(self)
         self.lay_h = QtWidgets.QHBoxLayout()
         self.ok = QtWidgets.QPushButton("Ok")
@@ -612,7 +612,7 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
     def update_gain_color(self, output, p_or_i, color):
         output_widget = self.get_output_widget_by_name(output.name)
         button = getattr(output_widget.pid_props.manual_widget, p_or_i)
-        button.widget.setStyleSheet("background-color:%s" % color)
+        button.widget.setStyleSheet(f"background-color:{color}")
 
     def tab_changed(self, index):
         if index == self.count() - 1:  # tab "+" clicked
@@ -1113,14 +1113,14 @@ class LockboxWidget(ModuleWidget):
         if self.button_green is not None:
             self.button_green.setStyleSheet("")
         if button is not None:
-            button.setStyleSheet("background-color:%s" % color)
+            button.setStyleSheet(f"background-color:{color}")
         self.button_green = button
 
     def update_lockstatus(self, islockedlist=[None]):
         islocked = islockedlist[0]
         # color = self.module._is_locked_display_color
         color = self._is_locked_display_color(islocked=islocked)
-        self.button_is_locked.setStyleSheet("background-color: %s; color:white" % color)
+        self.button_is_locked.setStyleSheet(f"background-color: {color}; color:white")
 
     def _is_locked_display_color(self, islocked=None):
         """function that returns the color of the LED indicating

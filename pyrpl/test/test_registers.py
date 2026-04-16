@@ -57,7 +57,7 @@ class TestRegisters(TestRedpitaya):
             value = module.__getattribute__(regkey)
             # make sure Register represents an int
             if not isinstance(value, int):
-                assert False, "wrong type: int != %s" % str(type(value))
+                assert False, f"wrong type: int != {str(type(value))}"
             # write back to it to test setter
             module.__setattr__(regkey, value)
             newvalue = module.__getattribute__(regkey)
@@ -69,7 +69,7 @@ class TestRegisters(TestRedpitaya):
             value = module.__getattribute__(regkey)
             # make sure Register represents an int
             if not isinstance(value, int):
-                assert False, "wrong type: int != %s" % str(type(value))
+                assert False, f"wrong type: int != {str(type(value))}"
             # write back to it to test setter
             module.__setattr__(regkey, value)
             newvalue = module.__getattribute__(regkey)

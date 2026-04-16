@@ -169,9 +169,9 @@ class SpecAnWidget(AcquisitionModuleWidget):
 
         aws = self.attribute_widgets
 
-        aws["display_input1_baseband"].setStyleSheet("color: %s" % self.ch_col[0])
-        aws["display_input2_baseband"].setStyleSheet("color: %s" % self.ch_col[1])
-        aws["display_cross_amplitude"].setStyleSheet("color: %s" % self.ch_col[2])
+        aws["display_input1_baseband"].setStyleSheet(f"color: {self.ch_col[0]}")
+        aws["display_input2_baseband"].setStyleSheet(f"color: {self.ch_col[1]}")
+        aws["display_cross_amplitude"].setStyleSheet(f"color: {self.ch_col[2]}")
         # Not sure why the stretch factors in button_layout are not good by
         # default...
 

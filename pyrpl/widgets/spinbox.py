@@ -254,15 +254,15 @@ class NumberSpinBox(QtWidgets.QWidget):
         """
         The tooltip uses the values of min/max/increment...
         """
-        string = "Increment is %.5e\nmin value: %.1e\nmax value: %.1e\n" % (
-            self.singleStep,
-            self.minimum,
-            self.maximum,
+        string = (
+            f"Increment is {self.singleStep:.5e}\n"
+            f"min value: {self.minimum:.1e}\n"
+            f"max value: {self.maximum:.1e}\n"
         )
         if self.log_increment:
-            string += "Tuning speed (1/halflife): %.1e Hz.\n" % (1.0 / self.halflife_seconds)
+            string += f"Tuning speed (1/halflife): {1.0 / self.halflife_seconds:.1e} Hz.\n"
         else:
-            string += "Tuning speed (linear): %.1e Hz.\n" % self.per_second
+            string += f"Tuning speed (linear): {self.per_second:.1e} Hz.\n"
         string += "Press up/down to tune.\nPress Page up/Page down to modify tuning speed."
         self.setToolTip(string)
 
@@ -387,7 +387,7 @@ class IntSpinBox(NumberSpinBox):
 
     @val.setter
     def val(self, new_val):
-        self.line.setText(("%.i") % round(new_val))
+        self.line.setText(f"{int(round(new_val)):d}")
         self.value_changed.emit()
         return new_val
 

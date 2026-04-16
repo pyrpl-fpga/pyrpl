@@ -213,7 +213,7 @@ class NaWidget(AcquisitionModuleWidget):
         rate = self.module.measured_time_per_point
         if not np.isnan(rate) and self._last_benchmark_value != rate:
             theory = self.module.time_per_point
-            self.set_benchmark_text("ms/pt: %.1f (theory: %.1f)" % (rate * 1000, theory * 1000))
+            self.set_benchmark_text(f"ms/pt: {rate * 1000:.1f} (theory: {theory * 1000:.1f})")
 
         if force or (time() - self.last_updated_time > self.update_period):
             # if last update time was a long time ago,

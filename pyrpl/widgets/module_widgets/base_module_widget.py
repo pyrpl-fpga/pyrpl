@@ -106,13 +106,13 @@ class SaveLabel(MyMenuLabel):
 
     def new_state(self):
         state, accept = QtWidgets.QInputDialog.getText(
-            self, "Save %s state" % self.module.name, "Enter new state name:"
+            self, f"Save {self.module.name} state", "Enter new state name:"
         )
         state = str(state)
         if accept:
             if state in self.module.states:
                 raise ValueError(
-                    "State %s of module %s already exists!" % (state, self.module.name)
+                    f"State {state} of module {self.module.name} already exists!"
                 )
             self.module.save_state(state)
 

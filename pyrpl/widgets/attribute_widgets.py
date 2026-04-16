@@ -642,7 +642,7 @@ class LedAttributeWidget(BaseAttributeWidget):
         else:
             color = "red"
             text = "start"
-        self.widget.setStyleSheet("background-color:%s" % color)
+        self.widget.setStyleSheet(f"background-color:{color}")
         self.widget.setText(text)
 
     def button_clicked(self):
@@ -787,7 +787,7 @@ class PlotAttributeWidget(BaseAttributeWidget):
         """
         self.widget = pg.GraphicsLayoutWidget(title="Plot")
         legend = getattr(self.module.__class__, self.attribute_name).legend
-        self.pw = self.widget.addPlot(title="%s vs. time (s)" % legend)
+        self.pw = self.widget.addPlot(title=f"{legend} vs. time (s)")
         self.plot_start_time = self.time()
         self.curves = {}
         setattr(self.module.__class__, "_" + self.attribute_name + "_pw", self.pw)

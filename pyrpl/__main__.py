@@ -40,6 +40,6 @@ if __name__ == "__main__":
     if "--help" in kwargs:
         print(help_message)
     else:
-        print("Calling Pyrpl(**%s)" % str(kwargs))
+        print(f"Calling Pyrpl(**{str(kwargs)})")
         PYRPL = Pyrpl(**kwargs)
         APP.exec_()

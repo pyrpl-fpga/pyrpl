@@ -14,15 +14,14 @@ if __name__ == "__main__":
     for filename in sys.argv[1:]:
         for destpath in [
             "/home/frs/project/pyrpl/",
-            "/home/frs/project/pyrpl/%s/" % __version__,
+            f"/home/frs/project/pyrpl/{__version__}/",
         ]:
-            print("Uploading file '%s' to '%s' on sourceforge..." % (filename, destpath))
+            print(f"Uploading file '{filename}' to '{destpath}' on sourceforge...")
             try:
                 ssh.scp.put(filename, destpath)
             except BaseException as e:
                 print(
-                    "Upload of file '%s' to '%s' to sourceforge failed: %s!"
-                    % (filename, destpath, e)
+                    f"Upload of file '{filename}' to '{destpath}' to sourceforge failed: {e}!"
                 )
                 ssh = sshshell.SshShell(
                     hostname="frs.sourceforge.net",
@@ -31,4 +30,4 @@ if __name__ == "__main__":
                     shell=False,
                 )
             else:
-                print("Finished upload of file '%s' to '%s' on sourceforge!" % (filename, destpath))
+                print(f"Finished upload of file '{filename}' to '{destpath}' on sourceforge!")

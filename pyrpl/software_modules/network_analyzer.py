@@ -390,8 +390,8 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
                 # if True:  # above if-statement does not work correctly on travis,
                 # e.g. stops printing after laspointnumber 66
                 print(
-                    "Acquiring new NA point #%d at frequency %.1f Hz after "
-                    "delay of %f" % (self._lastpointnumber, frequency, delay)
+                    f"Acquiring new NA point #{self._lastpointnumber:d} "
+                    f"at frequency {frequency:.1f} Hz after delay of {delay:f}"
                 )
                 self._lastprinttime = self._time_last_point
 

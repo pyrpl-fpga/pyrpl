@@ -221,7 +221,7 @@ class PyrplWidget(QtWidgets.QMainWindow):
             timer.stop()
 
     def add_dock_widget(self, create_widget, name):
-        dock_widget = MyDockWidget(create_widget, name + " (%s)" % self.parent.name)
+        dock_widget = MyDockWidget(create_widget, name + f" ({self.parent.name})")
         self.dock_widgets[name] = dock_widget
         self.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock_widget)
         if self.last_docked is not None:
@@ -354,4 +354,4 @@ class PyrplWidget(QtWidgets.QMainWindow):
                 pass
             else:
                 color = "#" + color
-            widget.setStyleSheet("background-color:%s" % color)
+            widget.setStyleSheet(f"background-color:{color}")

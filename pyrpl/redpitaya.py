@@ -241,7 +241,7 @@ class RedPitaya:
         if self.parameters["autostart"]:  # start client
             self.start()
         self.logger.info(
-            "Successfully connected to Redpitaya with hostname %s." % self.ssh.hostname
+            f"Successfully connected to Redpitaya with hostname {self.ssh.hostname}."
         )
         self.parent = self
 
@@ -337,15 +337,14 @@ class RedPitaya:
                     raise ExpectedPyrplError(
                         "\nCould not connect to the Red Pitaya device with "
                         "the following parameters: \n\n"
-                        "\thostname: %s\n"
-                        "\tssh port: %s\n"
-                        "\tusername: %s\n"
+                        "\thostname: {}\n"
+                        "\tssh port: {}\n"
+                        "\tusername: {}\n"
                         "\tpassword: ****\n\n"
                         "Please confirm that the device is reachable by typing "
                         "its hostname/ip address into a web browser and "
                         "checking that a page is displayed. \n\n"
-                        "Error message: %s"
-                        % (
+                        "Error message: {}".format(
                             self.parameters["hostname"],
                             self.parameters["sshport"],
                             self.parameters["user"],

@@ -315,7 +315,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         if self.countdown_cancelled:
             return
         self.countdown_remaining -= 1
-        self.ok_button.setText("OK (auto-clicked in %d s)" % self.countdown_remaining)
+        self.ok_button.setText(f"OK (auto-clicked in {self.countdown_remaining} s)")
         if self.countdown_remaining >= 0:
             self.countown_timer = QtCore.QTimer.singleShot(1000, self.countdown_iteration)
         else:

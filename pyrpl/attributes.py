@@ -1290,12 +1290,12 @@ class SelectProperty(BaseProperty):
         options = self.options(obj)
         if value not in options:
             msg = (
-                "Value '%s' is not an option for SelectAttribute %s of "
-                "module %s with options %s" % (value, self.name, obj.name, options)
+                f"Value '{value}' is not an option for SelectAttribute {self.name} of "
+                f"module {obj.name} with options {options}"
             )
             if self.ignore_errors:
                 value = self.get_default(obj)
-                logger.warning(msg + ". Picking an arbitrary value %s instead." % str(value))
+                logger.warning(msg + f". Picking an arbitrary value {str(value)} instead.")
             else:
                 logger.error(msg)
                 raise ValueError(msg)

@@ -66,7 +66,7 @@ class OverflowProperty(StringProperty):
         elif bool(value & 0b0111111):
             text = "internal saturation"
         else:
-            text = "unknown overflow %d" % value
+            text = f"unknown overflow {value:d}"
         return text
 
     def validate_and_normalize(self, obj, value):
@@ -303,7 +303,7 @@ class IIR(FilterModule):
 
     loops = IntRegister(
         0x100,
-        doc="Decimation factor of IIR w.r.t. 125 MHz. Must be at least %d. " % _minloops,
+        doc=f"Decimation factor of IIR w.r.t. 125 MHz. Must be at least {_minloops:d}. ",
         default=_minloops,
         min=_minloops,
         max=_maxloops,

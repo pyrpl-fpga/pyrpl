@@ -151,7 +151,7 @@ def get_config_file(filename=None, source=None):
         source = _get_filename(source)
         if os.path.isfile(source):  # success - copy the source
             logger.debug(
-                "File " + filename + " not found. New file created from source '%s'. " % source
+                "File " + filename + f" not found. New file created from source '{source}'. "
             )
             copyfile(source, filename)
             return filename

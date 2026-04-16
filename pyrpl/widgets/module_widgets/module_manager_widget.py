@@ -39,7 +39,7 @@ class ModuleManagerWidget(ModuleWidget):
         for widget in self.module_widgets:
             if widget.geometry().contains(event.pos()):
                 if widget.module.owner is not None:
-                    act = QtWidgets.QAction("Free %s" % widget.module.name, self)
+                    act = QtWidgets.QAction(f"Free {widget.module.name}", self)
                     act.triggered.connect(widget.module.free)
                     menu = QtWidgets.QMenu()
                     menu.addAction(act)

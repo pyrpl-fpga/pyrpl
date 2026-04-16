@@ -86,7 +86,7 @@ try:
         if module == "__init__.py" or module[-3:] != ".py":
             continue
         usermodels.append(__import__(module[:-3], locals(), globals(), [], 0))
-        logger.debug("Custom user models from %s were successfully imported!" % module)
+        logger.debug(f"Custom user models from {module} were successfully imported!")
 except KeyError:
     logger.warning(
         "An error occured during the import of user model files! "

@@ -52,8 +52,8 @@ def get_module(name):
         if cls.__name__ == name:
             return cls
     raise ModuleNotFound(
-        "class %s not found in subclasses of Module. Did you "
-        "forget to import a custom module?" % name
+        f"class {name} not found in subclasses of Module. Did you "
+        "forget to import a custom module?"
     )
 
 

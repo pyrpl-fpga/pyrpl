@@ -39,7 +39,7 @@ class TestPyrpl:
                 # Safeguard against empty widgets list
                 if hasattr(self.pyrpl, "widgets") and len(self.pyrpl.widgets) > 0:
                     for name, dock_widget in self.pyrpl.widgets[0].dock_widgets.items():
-                        print("Showing widget %s..." % name)
+                        print(f"Showing widget {name}...")
                         dock_widget.setVisible(True)
                     sleep(3.0)  # give some time for startup
                     self.pyrpl._widgets_opened = True

@@ -26,7 +26,7 @@ try:
 except ImportError:
 
     def sine(frequency, duration):
-        print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
+        print(f"Called sine(frequency={frequency:f}, duration={duration:f})")
 
 
 from .hardware_modules.dsp import dsp_addr_base, DSP_INPUTS
@@ -64,14 +64,14 @@ class MonitorClient:
                 if self._port is None:
                     # likely means that _restartserver failed.
                     raise ValueError(
-                        "Connection to hostname %s failed. "
-                        "Please check your connection parameters!" % (self._hostname)
+                        f"Connection to hostname {self._hostname} failed. "
+                        "Please check your connection parameters!"
                     )
                 else:
                     raise ValueError(
                         "Trying to open MonitorClient for "
-                        "hostname %s on invalid port %s. Please "
-                        "check your connection parameters!" % (self._hostname, self._port)
+                        f"hostname {self._hostname} on invalid port {self._port}. Please "
+                        "check your connection parameters!"
                     )
             try:
                 self.socket.connect((self._hostname, self._port))
@@ -173,9 +173,9 @@ class MonitorClient:
                 value = function(addr, value)
             except (OSError, socket.timeout):
                 self.logger.error(
-                    "Error occured in reading attempt %s. "
-                    "Reconnecting at addr %s to %s value %s by "
-                    "client %s" % (i, hex(addr), function.__name__, value, self.client_number)
+                    f"Error occured in reading attempt {i}. "
+                    f"Reconnecting at addr {hex(addr)} to {function.__name__} value {value} by "
+                    f"client {self.client_number}"
                 )
                 if self._restartserver is not None:
                     self.restart()

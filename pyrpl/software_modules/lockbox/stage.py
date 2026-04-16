@@ -70,10 +70,10 @@ class Stage(LockboxModule):
             self.outputs[output.name] = StageOutput
         self._signal_launcher.stage_created.emit([self])
         self.parent._signal_launcher.stage_created.emit([self])
-        self.lockbox._logger.debug("Stage %s initialized" % self.name)
+        self.lockbox._logger.debug(f"Stage {self.name} initialized")
 
     def _clear(self):
-        self.lockbox._logger.debug("Deleting stage %s" % self.name)
+        self.lockbox._logger.debug(f"Deleting stage {self.name}")
         self._signal_launcher.stage_deleted.emit([self])
         self.parent._signal_launcher.stage_deleted.emit([self])
         super()._clear()

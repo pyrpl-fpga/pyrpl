@@ -42,7 +42,7 @@ class TestAttributeWidgets(TestPyrpl):
     _TEST_SPINBOX_BUTTON_DOWN_TIME = 0.05
 
     def assert_spin_box(self, mod, widget, name, aw):
-        print("Testing spinbox widget for %s.%s..." % (mod.name, name))
+        print(f"Testing spinbox widget for {mod.name}.{name}...")
         # make sure the module is not reserved by some other module
         # (as this would disable the key press response)
         mod.free()
@@ -60,11 +60,11 @@ class TestAttributeWidgets(TestPyrpl):
         assert abs(w_value - m_value) / norm < 0.001, (w_value, m_value, mod.name, name)
 
         # some widgets are disabled by default and must be skipped
-        fullname = "%s.%s" % (mod.name, name)
+        fullname = f"{mod.name}.{name}"
         exclude = ["spectrumanalyzer.center"]
         if fullname in exclude:
             # skip test for those
-            print("Widget %s.%s was not enabled and cannot be tested..." % (mod.name, name))
+            print(f"Widget {mod.name}.{name} was not enabled and cannot be tested...")
             return
 
         # go up

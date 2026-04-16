@@ -148,7 +148,7 @@ class TestClass(TestPyrpl):
         for freq in np.linspace(
             10 * self.iq.bandwidth[0], self.sa.span / 2 - 10 * self.iq.bandwidth[0], 5
         ):
-            print("Trying frequency %f..." % freq)
+            print(f"Trying frequency {freq:f}...")
             self.iq.frequency = freq  # set the bandpass filter
             in1, in2, cre, cim = self.sa.single()
             # average neighbouring points

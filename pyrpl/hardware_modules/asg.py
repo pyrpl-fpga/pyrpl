@@ -85,7 +85,7 @@ class WaveformAttribute(SelectProperty):
             else:
                 y = instance.data
                 instance._logger.error(
-                    "Waveform name %s not recognized. Specify waveform manually" % waveform
+                    f"Waveform name {waveform} not recognized. Specify waveform manually"
                 )
             instance.data = y
             instance._waveform = waveform

@@ -164,7 +164,7 @@ class OutputSignal(Signal):
             pwm.input = self.pid
         else:
             raise NotImplementedError(
-                "Selected output_channel '%s' is not implemented" % self.output_channel
+                f"Selected output_channel '{self.output_channel}' is not implemented"
             )
 
     def _clear(self):

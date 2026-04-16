@@ -141,7 +141,7 @@ def hardware_session():
         rp_obj.hk.led = 0
     write_time = (time() - t0) / float(N)
 
-    print("Est. Read/Write: %.1f ms / %.1f ms" % (read_time * 1000.0, write_time * 1000.0))
+    print(f"Est. Read/Write: {read_time * 1000.0:.1f} ms / {write_time * 1000.0:.1f} ms")
 
     # Yield the container
     yield HardwareSession(rp=rp_obj, pyrpl=pyrpl_obj, read_time=read_time, write_time=write_time)

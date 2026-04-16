@@ -15,7 +15,7 @@ try:
 except ImportError:
 
     def sine(frequency, duration):
-        print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
+        print(f"Called sine(frequency={frequency:f}, duration={duration:f})")
 
 
 @pytest.fixture(autouse=True, scope="class")
@@ -108,10 +108,10 @@ class TestNA(TestPyrpl):
         self.na.single()
         duration = (time.time() - tic) / self.na.points
         assert duration < maxduration, (
-            "Na w/o gui should take at most %.1f ms per point, but actually "
-            "needs %.1f ms. This won't compromise functionality but it is "
+            f"Na w/o gui should take at most {maxduration * 1000.0:.1f} ms per point, but actually "
+            f"needs {duration * 1000.0:.1f} ms. This won't compromise functionality but it is "
             "recommended that you establish a better ethernet connection "
-            "to your Red Pitaya module" % (maxduration * 1000.0, duration * 1000.0)
+            "to your Red Pitaya module"
         )
 
     def test_benchmark_gui(self, setup_na):
@@ -158,16 +158,14 @@ class TestNA(TestPyrpl):
         sine(1600, 0.5)
         max_rw_points = self.na.points
         sleep(0.1)
-        print("Reads: %d %d %d. " % (self.pyrpl.rp.client._read_counter, old_read, max_rw_points))
+        print(f"Reads: {self.pyrpl.rp.client._read_counter:d} {old_read:d} {max_rw_points:d}. ")
         assert self.pyrpl.rp.client._read_counter - old_read <= 2 * max_rw_points, (
             self.pyrpl.rp.client._read_counter,
             old_read,
             max_rw_points,
         )
         # twice because now we also read the# amplitude from the iq module
-        print(
-            "Writes: %d %d %d. " % (self.pyrpl.rp.client._write_counter, old_write, max_rw_points)
-        )
+        print(f"Writes: {self.pyrpl.rp.client._write_counter:d} {old_write:d} {max_rw_points:d}. ")
         assert self.pyrpl.rp.client._write_counter - old_write <= max_rw_points, (
             self.pyrpl.rp.client._write_counter,
             old_write,
@@ -180,10 +178,10 @@ class TestNA(TestPyrpl):
         # Allow twice as long with gui
         maxduration *= 2
         assert duration < maxduration, (
-            "Na gui should take at most %.1f ms per point, but actually "
-            "needs %.1f ms. This won't compromise functionality but it is "
+            f"Na gui should take at most {maxduration * 1000.0:.1f} ms per point, but actually "
+            f"needs {duration * 1000.0:.1f} ms. This won't compromise functionality but it is "
             "recommended that you establish a better ethernet connection"
-            "to your Red Pitaya module" % (maxduration * 1000.0, duration * 1000.0)
+            "to your Red Pitaya module"
         )
         # 2 s for 200 points with gui display
         # This is much slower in nosetests than in real life (I get <3 s).
@@ -208,7 +206,7 @@ class TestNA(TestPyrpl):
         while self.count < self.total:
             sleep(0.05)
         duration = time.time() - tic
-        print("1000 timer events took %.1f s" % duration)
+        print(f"1000 timer events took {duration:.1f} s")
         # Warning if > 3s
         if duration > 3.0:
             logger.warning(f"Timer test slow: duration = {duration:.3f} s (> 3 s)")

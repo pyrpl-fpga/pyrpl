@@ -36,9 +36,9 @@ class MyExecutePreprocessor(ExecutePreprocessor):
             for key in ["hostname", "user", "password"]:
                 # if defaultparameters[key] is not None:
                 #    cell.source += '\n%s = "%s"'%(key.upper(), defaultparameters[key])
-                envvarname = "REDPITAYA_%s" % (key.upper())
+                envvarname = f"REDPITAYA_{key.upper()}"
                 if envvarname in os.environ:
-                    cell.source += '\n%s = "%s"' % (key.upper(), os.environ[envvarname])
+                    cell.source += f'\n{key.upper()} = "{os.environ[envvarname]}"'
         return super().preprocess_cell(cell, resources, cell_index)
 
 
@@ -47,7 +47,7 @@ def _notebook_run(path):
     Execute a notebook via nbconvert and collect output.
     :returns (parsed nb object, execution errors)
     """
-    kernel_name = "python%d" % sys.version_info[0]
+    kernel_name = f"python{sys.version_info[0]:d}"
     errors = []
 
     with open(path) as f:
@@ -91,5 +91,5 @@ if sys.version > "3.8":
         assert errors == []
         # Make sure the kernel is running the current python version...
         # assert nb['cells'][0]['outputs'][0]['text'].rstrip('\n')==sys.version
-        print("Finished testing notebook: %s" % notebook)
+        print(f"Finished testing notebook: {notebook}")
         sys.stdout.flush()

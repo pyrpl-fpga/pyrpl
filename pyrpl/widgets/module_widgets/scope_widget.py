@@ -82,19 +82,19 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.layout_ch1.addWidget(aws["ch1_active"])
         self.layout_ch1.addWidget(aws["input1"])
         self.layout_ch1.addWidget(aws["threshold"])
-        aws["ch1_active"].setStyleSheet("color: %s" % self.ch_color[0])
+        aws["ch1_active"].setStyleSheet(f"color: {self.ch_color[0]}")
 
         self.attribute_layout.removeWidget(aws["ch2_active"])
         self.attribute_layout.removeWidget(aws["input2"])
         self.attribute_layout.removeWidget(aws["hysteresis"])
-        aws["ch2_active"].setStyleSheet("color: %s" % self.ch_color[1])
+        aws["ch2_active"].setStyleSheet(f"color: {self.ch_color[1]}")
 
         self.layout_ch2.addWidget(aws["ch2_active"])
         self.layout_ch2.addWidget(aws["input2"])
         self.layout_ch2.addWidget(aws["hysteresis"])
 
         self.layout_math.addWidget(aws["ch_math_active"])
-        aws["ch_math_active"].setStyleSheet("color: %s" % self.ch_color[2])
+        aws["ch_math_active"].setStyleSheet(f"color: {self.ch_color[2]}")
         self.layout_math.addWidget(aws["math_formula"])
 
         self.attribute_layout.addLayout(self.layout_channels)

@@ -304,7 +304,7 @@ class TestIir(TestPyrpl):
 
         # config na and iir and launch the na assertions
         for param in params[2:3]:
-            print("\nComplex Iir test with the following params: %s\n" % str(params))
+            print(f"\nComplex Iir test with the following params: {str(params)}\n")
             z, p, g, loops, naset, name, maxerror, kinds = param
             self.pyrpl.na.setup(**naset)
             iir.setup(zeros=z, poles=p, gain=g, loops=loops, input=na.iq, output_direct="off")
