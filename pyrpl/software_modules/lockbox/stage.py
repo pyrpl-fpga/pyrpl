@@ -1,7 +1,8 @@
-from __future__ import division
 from . import LockboxModule
-from ...attributes import FloatProperty, BoolProperty, StringProperty
-from ...module_attributes import *
+from ...attributes import FloatProperty, BoolProperty, StringProperty, BoolIgnoreProperty
+from ...module_attributes import ModuleDictProperty
+from ...pyrpl_utils import recursive_getattr
+from ...modules import SignalLauncher
 from ...hardware_modules import InputSelectProperty
 from ...widgets.module_widgets import LockboxStageWidget, StageOutputWidget
 from qtpy import QtCore
@@ -64,7 +65,7 @@ class Stage(LockboxModule):
     outputs = ModuleDictProperty(module_cls=LockboxModule)
 
     def __init__(self, parent, name=None):
-        super(Stage, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         for output in self.lockbox.outputs:
             self.outputs[output.name] = StageOutput
         self._signal_launcher.stage_created.emit([self])
@@ -75,7 +76,7 @@ class Stage(LockboxModule):
         self.lockbox._logger.debug("Deleting stage %s" % self.name)
         self._signal_launcher.stage_deleted.emit([self])
         self.parent._signal_launcher.stage_deleted.emit([self])
-        super(Stage, self)._clear()
+        super()._clear()
 
     @property
     def _states(self):

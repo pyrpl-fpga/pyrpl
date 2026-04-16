@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # pyrpl documentation build configuration file, created by
 # sphinx-quickstart on Fri Jul 08 23:10:33 2016.
@@ -110,7 +109,7 @@ def get_version():
         version_file = os.path.join(os.path.dirname(__file__), "..", "..", "pyrpl", "_version.py")
         if os.path.exists(version_file):
             version_vars = {}
-            with open(version_file, "r") as f:
+            with open(version_file) as f:
                 exec(f.read(), version_vars)
             return version_vars["__version__"]
         else:

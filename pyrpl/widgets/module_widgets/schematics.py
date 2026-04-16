@@ -15,7 +15,7 @@ class MyLabelSignal(QtWidgets.QLabel):
 
 class MyItem(QtWidgets.QWidget):
     def __init__(self, widget_name, y, label, parent, x_offset=0):
-        super(MyItem, self).__init__()
+        super().__init__()
         self.lay = QtWidgets.QVBoxLayout()
         self.setLayout(self.lay)
         self.item = QtWidgets.QLabel(label)
@@ -59,7 +59,7 @@ class MyLabel(MyItem):
 
 class MyImage(MyItem):
     def __init__(self, widget_name, y, filename, label, parent, x_offset=0):
-        super(MyImage, self).__init__(widget_name, y, label, parent, x_offset)
+        super().__init__(widget_name, y, label, parent, x_offset)
         self.pixmap = QtGui.QPixmap(osp.join(IMAGE_PATH, filename))
         self.item.setPixmap(self.pixmap)
         self.item.setFixedSize(self.pixmap.size())
@@ -70,7 +70,7 @@ class MyImage(MyItem):
         # self.setText(self.widget_name)
 
 
-class Connection(object):
+class Connection:
     arrow_height = 10
     arrow_width = 15
     margin = 15
@@ -151,7 +151,7 @@ class Connection(object):
 
 class MyFrame(QtWidgets.QFrame):
     def __init__(self, parent):
-        super(MyFrame, self).__init__(parent)
+        super().__init__(parent)
         self.setStyleSheet("background-color: white;")
         self.parent = parent
         self.lower()
@@ -159,7 +159,7 @@ class MyFrame(QtWidgets.QFrame):
 
 class MyFrameDrawing(QtWidgets.QFrame):
     def __init__(self, parent):
-        super(MyFrameDrawing, self).__init__()
+        super().__init__()
         self.setStyleSheet("background-color: white;")
         self.parent = parent
         self.lower()

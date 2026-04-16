@@ -1,5 +1,5 @@
 import logging
-from pyrpl.attributes import *
+import numpy as np
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl.async_utils import sleep

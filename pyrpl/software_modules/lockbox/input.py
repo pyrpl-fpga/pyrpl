@@ -1,4 +1,3 @@
-from __future__ import division
 import numpy as np
 import logging
 from ...attributes import (
@@ -261,7 +260,7 @@ class InputSignal(Signal):
     def __init__(self, parent, name=None):
         # self.parameters = dict()
         self._lasttime = -1e10
-        super(InputSignal, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
 
     def _input_signal_dsp_module(self):
         """returns the dsp signal corresponding to input_signal"""
@@ -489,7 +488,7 @@ class InputSignal(Signal):
     #         return None
 
     def _create_widget(self):
-        widget = super(InputSignal, self)._create_widget()
+        widget = super()._create_widget()
         try:
             self.update_graph()
         except (AttributeError, RuntimeError, TypeError, ValueError):
@@ -579,7 +578,7 @@ class IqFilterProperty(FilterProperty):
         except TypeError:
             val = [val, val]  # preferentially choose second order filter
         instance.iq.bandwidth = val
-        super(IqFilterProperty, self).set_value(instance, self.get_value(instance))
+        super().set_value(instance, self.get_value(instance))
         return val
 
     def get_value(self, instance):
@@ -639,7 +638,7 @@ class InputIq(InputSignal):
     def _clear(self):
         self.pyrpl.iqs.free(self.iq)
         self._iq = None
-        super(InputIq, self)._clear()
+        super()._clear()
 
     def _setup(self):
         """

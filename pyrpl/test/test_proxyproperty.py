@@ -1,7 +1,7 @@
 import logging
 from pyrpl.modules import Module
 from pyrpl.attributes import FloatProperty, SelectProperty, ProxyProperty
-from pyrpl.module_attributes import *
+from pyrpl.module_attributes import ModuleProperty
 from pyrpl.memory import MemoryTree
 from pyrpl.async_utils import sleep
 
@@ -23,7 +23,7 @@ class MyModule(Module):
         self.setup_called = True
 
 
-class SignalReceiver(object):
+class SignalReceiver:
     """
     slots for signals to ensure that signals are properly emitted
     """
@@ -38,7 +38,7 @@ class SignalReceiver(object):
         self.arrived_signal = True
 
 
-class TestProxyProperty(object):
+class TestProxyProperty:
     def test_proxy(self):
         self.pyrpl = None
         self.parent = self.pyrpl

@@ -1,4 +1,6 @@
-from .. import *
+from .. import InputDirect, LockboxModuleDictProperty, PiezoOutput, Lockbox, InputIq
+from ....attributes import FloatProperty, SelectProperty
+import numpy as np
 
 
 class InterferometerPort1(InputDirect):
@@ -24,7 +26,7 @@ class InterferometerPort1(InputDirect):
 
 class InterferometerPort2(InterferometerPort1):
     def expected_signal(self, phase):
-        return super(InterferometerPort2, self).expected_signal(-phase)
+        return super().expected_signal(-phase)
 
 
 class Interferometer(Lockbox):

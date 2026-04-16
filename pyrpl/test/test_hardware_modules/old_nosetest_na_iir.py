@@ -1,7 +1,7 @@
 import logging
-from pyrpl.attributes import *
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
+import numpy as np
 
 logger = logging.getLogger(name=__name__)
 

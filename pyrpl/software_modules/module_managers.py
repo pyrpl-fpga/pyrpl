@@ -108,7 +108,7 @@ class ModuleManager(Module):
         ]
 
     def __init__(self, parent, name=None):
-        super(ModuleManager, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         self.all_modules = [getattr(self.pyrpl.rp, name) for name in self.hardware_module_names]
 
     def pop(self, owner=None):

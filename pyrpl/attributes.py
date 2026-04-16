@@ -14,7 +14,6 @@ time the attribute value is changed. The necessary mechanisms are happening
 behind the scene, and they are coded in this file.
 """
 
-from __future__ import division
 from .pyrpl_utils import recursive_getattr, recursive_setattr
 from .widgets.attribute_widgets import (
     BoolAttributeWidget,
@@ -47,7 +46,7 @@ logger = logging.getLogger(name=__name__)
 epsilon = sys.float_info.epsilon
 
 
-class BaseAttribute(object):
+class BaseAttribute:
     """base class for attribute - only used as a placeholder"""
 
 
@@ -271,7 +270,7 @@ class LedProperty(BoolProperty):
         """
         self.true_function = true_function or self.true_function
         self.false_function = false_function or self.false_function
-        super(LedProperty, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def set_value(self, obj, val):
         try:
@@ -288,7 +287,7 @@ class LedProperty(BoolProperty):
                 e,
             )
         else:
-            super(LedProperty, self).set_value(obj, val)
+            super().set_value(obj, val)
 
 
 class BoolRegister(BaseRegister, BoolProperty):
@@ -423,7 +422,7 @@ class IntProperty(NumberProperty):
         log_increment=False,  # if True, the widget has log increment
         **kwargs,
     ):
-        super(IntProperty, self).__init__(
+        super().__init__(
             min=min, max=max, increment=increment, log_increment=log_increment, **kwargs
         )
 
@@ -468,7 +467,7 @@ class ConstantIntRegister(IntRegister):
         try:
             return getattr(obj, "_" + self.name)
         except AttributeError:
-            value = super(ConstantIntRegister, self).get_value(obj)
+            value = super().get_value(obj)
             setattr(obj, "_" + self.name, value)
             return value
 
@@ -479,7 +478,7 @@ class LongRegister(IntRegister):
 
     def get_value(self, obj):
         values = obj._reads(self.address, self.size)
-        value = int(0)
+        value = 0
         for i in range(self.size):
             value += int(values[i]) << (32 * i)
         if self.bitmask is None:
@@ -521,8 +520,8 @@ class ComplexProperty(FloatProperty):
 
     def validate_and_normalize(self, obj, val):
         val = complex(val)
-        re = super(ComplexProperty, self).validate_and_normalize(obj, val.real)
-        im = super(ComplexProperty, self).validate_and_normalize(obj, val.imag)
+        re = super().validate_and_normalize(obj, val.real)
+        im = super().validate_and_normalize(obj, val.imag)
         return complex(re, im)
 
 
@@ -949,14 +948,14 @@ class AttributeList(list):
     def __init__(self, parent, module, *args, **kwargs):
         self._parent = parent
         self._module = module
-        super(AttributeList, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     # insert, __setitem__, and __delitem__ completely describe the behavior
     def insert(self, index, new=None):
         if new is None:
             new = self._parent.default_element or self._parent.element_cls.default
         new = self._parent.validate_and_normalize_element(self._module, new)
-        super(AttributeList, self).insert(index, new)
+        super().insert(index, new)
         self._parent.list_changed(self._module, "insert", index, new)
         self.selected = index
 
@@ -964,7 +963,7 @@ class AttributeList(list):
         # rely on parent's validate_and_normalize function
         value = self._parent.validate_and_normalize_element(self._module, value)
         # set value
-        super(AttributeList, self).__setitem__(index, value)
+        super().__setitem__(index, value)
         self._parent.list_changed(self._module, "setitem", index, value)
         self.selected = index
 
@@ -973,7 +972,7 @@ class AttributeList(list):
         if self.selected == self._get_unique_index(index):
             self.selected = None
         # remove and send message
-        super(AttributeList, self).pop(index)
+        super().pop(index)
         self._parent.list_changed(self._module, "delitem", index)
 
     @property
@@ -1054,12 +1053,12 @@ class BasePropertyListProperty(BaseProperty):
         default_element: default new element
         """
         self.default_element = kwargs.pop("default_element", None)
-        super(BasePropertyListProperty, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     @property
     def element_cls(self):
         """the class of the elements of the list"""
-        return super(BasePropertyListProperty, self)
+        return super()
 
     def validate_and_normalize(self, obj, value):
         """
@@ -1446,7 +1445,7 @@ class ProxyProperty(BaseProperty):
             )
         except (AttributeError, TypeError):
             targetdescr = ""
-        return super(ProxyProperty, self).__repr__() + targetdescr
+        return super().__repr__() + targetdescr
 
     def connect_signals(self, instance):
         """function that takes care of forwarding signals from target to
@@ -1586,7 +1585,7 @@ class Plotter(BaseProperty):
 
     def __init__(self, legend="value"):
         self.legend = legend
-        super(Plotter, self).__init__()
+        super().__init__()
 
 
 class DataProperty(BaseProperty):

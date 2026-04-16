@@ -17,7 +17,7 @@ class CurveViewerWidget(ReducedModuleWidget):
         self.init_attribute_layout()
 
     def init_attribute_layout(self):
-        super(CurveViewerWidget, self).init_attribute_layout()
+        super().init_attribute_layout()
         self.textbox = QtWidgets.QHBoxLayout()
         self.bottom_layout.addLayout(self.textbox)
         self.attribute_widgets["curve"]

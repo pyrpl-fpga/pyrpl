@@ -135,7 +135,7 @@ class InputSelectProperty(SelectProperty):
                             oldvalue,
                             options,
                         )
-        return super(InputSelectProperty, self).validate_and_normalize(obj, value)
+        return super().validate_and_normalize(obj, value)
 
 
 class InputSelectRegister(InputSelectProperty, SelectRegister):
@@ -216,7 +216,7 @@ class DspModule(HardwareModule, SignalModule):
     def __init__(self, rp, name):
         self._number = DSP_INPUTS[name]
         self.addr_base = dsp_addr_base(name)
-        super(DspModule, self).__init__(rp, name)
+        super().__init__(rp, name)
 
     _delay = 0  # delay of the module from input to output_signal (in cycles)
 

@@ -72,7 +72,7 @@ class NumberSpinBox(QtWidgets.QWidget):
         :param halflife_seconds: when button is in log, how long to change the value by a factor 2.
         :param per_second: when button is in lin, how long to change the value by 1 unit.
         """
-        super(NumberSpinBox, self).__init__(None)
+        super().__init__(None)
         self._logger = logging.getLogger(name=__name__)
         self._val = 0  # internal storage for value with best-possible accuracy
         self.labeltext = label
@@ -164,7 +164,7 @@ class NumberSpinBox(QtWidgets.QWidget):
                     self._logger.info("Spinbox tuning rate changed to %.2e Hz.", self.per_second)
                 self.update_tooltip()
             else:
-                return super(NumberSpinBox, self).keyPressEvent(event)
+                return super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
         if not event.isAutoRepeat():
@@ -175,7 +175,7 @@ class NumberSpinBox(QtWidgets.QWidget):
                 self._button_down_down = False
                 self.finish_step()
             else:
-                return super(NumberSpinBox, self).keyReleaseEvent(event)
+                return super().keyReleaseEvent(event)
 
     def mousePressEvent(self, event):
         if event.button() == QtCore.Qt.RightButton:
@@ -190,7 +190,7 @@ class NumberSpinBox(QtWidgets.QWidget):
             # if okPressed:
             #    self.module._logger.warning("Number: %d", res)
         # else:
-        return super(NumberSpinBox, self).mousePressEvent(event)
+        return super().mousePressEvent(event)
 
     @property
     def is_increasing(self):
@@ -372,7 +372,7 @@ class IntSpinBox(NumberSpinBox):
     """
 
     def __init__(self, label, min=-(2**13), max=2**13, increment=1, per_second=10, **kwargs):
-        super(IntSpinBox, self).__init__(
+        super().__init__(
             label=label,
             min=min,
             max=max,
@@ -397,12 +397,12 @@ class IntSpinBox(NumberSpinBox):
         Maximum number of letters in line
         """
         if np.isinf(self.maximum):
-            return super(IntSpinBox, self).max_num_letter
+            return super().max_num_letter
         else:
             return int(np.log10(np.abs(self.maximum)) + 1)
 
     def setMaximum(self, val):  # imitates original QSpinBox API
-        super(IntSpinBox, self).setMaximum(val)
+        super().setMaximum(val)
         self.set_min_size()  # changes with maximum
 
 
@@ -413,7 +413,7 @@ class FloatSpinBox(NumberSpinBox):
 
     def __init__(self, label, decimals=4, min=-1, max=1, increment=2.0 ** (-13), **kwargs):
         self.decimals = decimals
-        super(FloatSpinBox, self).__init__(
+        super().__init__(
             label=label, min=min, max=max, increment=increment, **kwargs
         )
 
@@ -471,7 +471,7 @@ class ComplexSpinBox(FloatSpinBox):
         return func_wrapper
 
     def __init__(self, *args, **kwargs):
-        super(ComplexSpinBox, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def make_layout(self):
         self.lay = QtWidgets.QHBoxLayout()
@@ -519,7 +519,7 @@ class ComplexSpinBox(FloatSpinBox):
         elif event.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down]:
             return self.real.keyPressEvent(event)
         else:
-            return super(ComplexSpinBox, self).keyPressEvent(event)
+            return super().keyPressEvent(event)
 
     def keyReleaseEvent(self, event):
         if event.key() in [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left]:
@@ -527,7 +527,7 @@ class ComplexSpinBox(FloatSpinBox):
         elif event.key() in [QtCore.Qt.Key_Up, QtCore.Qt.Key_Down]:
             return self.real.keyReleaseEvent(event)
         else:
-            return super(ComplexSpinBox, self).keyReleaseEvent(event)
+            return super().keyReleaseEvent(event)
 
     def wheelEvent(self, event):
         return self.imag.wheelEvent(event)

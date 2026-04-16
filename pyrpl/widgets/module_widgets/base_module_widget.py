@@ -55,7 +55,7 @@ class MyMenuLabel(QtWidgets.QLabel):
     def __init__(self, module_widget):
         self.module_widget = module_widget
         self.module = module_widget.module
-        super(MyMenuLabel, self).__init__(self.text, module_widget)
+        super().__init__(self.text, module_widget)
 
     def get_menu(self):
         menu = QtWidgets.QMenu(self)
@@ -92,13 +92,13 @@ class SaveLabel(MyMenuLabel):
     text = " .:Save:. "
 
     def __init__(self, module_widget):
-        super(SaveLabel, self).__init__(module_widget)
+        super().__init__(module_widget)
 
     def func(self, state):
         self.module.save_state(state)
 
     def get_menu(self):
-        menu = super(SaveLabel, self).get_menu()
+        menu = super().get_menu()
         action_new = QtWidgets.QAction("<New...>", self)
         action_new.triggered.connect(self.new_state)
         menu.addAction(action_new)
@@ -141,7 +141,7 @@ class EditLabel(MyMenuLabel):
         editor.show()
 
     def get_menu(self):
-        menu = super(EditLabel, self).get_menu()
+        menu = super().get_menu()
         action_current = QtWidgets.QAction("<Current>", self)
         action_current.triggered.connect(functools.partial(self.func, None))
         others = menu.actions()
@@ -181,7 +181,7 @@ class ReducedModuleWidget(QtWidgets.QGroupBox):
     title_pos = (12, 0)
 
     def __init__(self, name, module, parent=None):
-        super(ReducedModuleWidget, self).__init__(parent)
+        super().__init__(parent)
         self._logger = logging.getLogger(__name__)
         self.module = module
         self.name = name

@@ -1,5 +1,15 @@
-from .. import *
-from pyrpl.attributes import *
+from .. import (
+    InputDirect,
+    InputSignal,
+    InputIq,
+    Lockbox,
+    LockboxModuleDictProperty,
+    PiezoOutput,
+    InsufficientResourceError,
+    IqQuadratureFactorProperty,
+    IqFilterProperty,
+)
+from pyrpl.attributes import FrequencyProperty, FrequencyRegister, FloatProperty, SelectProperty
 
 
 class PllInput(InputDirect):
@@ -218,7 +228,7 @@ class FilteredSignal(PfdErrorSignal):
 
 class SlowOutputProperty(FloatProperty):
     def __init__(self, **kwds):
-        super(SlowOutputProperty, self).__init__(**kwds)
+        super().__init__(**kwds)
 
     def get_value(self, obj):
         if obj is None:

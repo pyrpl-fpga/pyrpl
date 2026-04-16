@@ -17,7 +17,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         self.items = []
         self.ips_and_macs = []
         self._logger = logging.getLogger(__name__)
-        super(HostnameSelectorWidget, self).__init__()
+        super().__init__()
         self.setWindowTitle("Red Pitaya connection - find a valid hostname")
         self.layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.layout)
@@ -96,7 +96,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
                 getattr(textbox, signalname).connect(self.countdown_cancel)
 
     def showEvent(self, QShowEvent):
-        ret = super(HostnameSelectorWidget, self).showEvent(QShowEvent)
+        ret = super().showEvent(QShowEvent)
         if not self.ips_and_macs:
             # launch autoscan at first startup with 10 ms delay
             # self._aux_timer = QtCore.QTimer.singleShot(10, self.scan)

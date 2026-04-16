@@ -23,7 +23,7 @@ from scp import SCPClient
 import logging
 
 
-class SshShell(object):
+class SshShell:
     """This is a wrapper around paramiko.SSHClient and scp.SCPClient
     It provides an ssh connection with the ability to transfer files over it"""
 

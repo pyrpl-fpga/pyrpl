@@ -1,6 +1,16 @@
 import logging
+import numpy as np
 from pyrpl.modules import Module
-from pyrpl.attributes import *
+from pyrpl.attributes import (
+    BaseRegister,
+    LongRegister,
+    BoolRegister,
+    IORegister,
+    FloatRegister,
+    PhaseRegister,
+    FrequencyRegister,
+    SelectRegister,
+)
 from .test_redpitaya import TestRedpitaya
 
 logger = logging.getLogger(name=__name__)
@@ -58,8 +68,8 @@ class TestRegisters(TestRedpitaya):
             # try to read
             value = module.__getattribute__(regkey)
             # make sure Register represents an int
-            if not isinstance(value, int) and not isinstance(value, long):
-                assert False, "wrong type: int/long != %s" % str(type(value))
+            if not isinstance(value, int):
+                assert False, "wrong type: int != %s" % str(type(value))
             # write back to it to test setter
             module.__setattr__(regkey, value)
             newvalue = module.__getattribute__(regkey)

@@ -39,7 +39,7 @@ class MyExecutePreprocessor(ExecutePreprocessor):
                 envvarname = "REDPITAYA_%s" % (key.upper())
                 if envvarname in os.environ:
                     cell.source += '\n%s = "%s"' % (key.upper(), os.environ[envvarname])
-        return super(MyExecutePreprocessor, self).preprocess_cell(cell, resources, cell_index)
+        return super().preprocess_cell(cell, resources, cell_index)
 
 
 def _notebook_run(path):

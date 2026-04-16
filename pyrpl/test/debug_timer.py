@@ -10,7 +10,7 @@ if False:
     pyrpl = Pyrpl(config="nosetests_source.yml", source="nosetests_config.yml")
     sleep(0.5)
 
-    class ToPasteInNotebook(object):
+    class ToPasteInNotebook:
         def coucou(self):
             self.count += 1
             if self.count < 1000:

@@ -1,13 +1,12 @@
 import logging
 import os
 from ..memory import MemoryTree, MemoryBranch
-from .. import *
 from ..async_utils import sleep
 
 logger = logging.getLogger(name=__name__)
 
 
-class TestMemory(object):
+class TestMemory:
     def test_load(self):
         mt = MemoryTree(filename="test", source="nosetests_source")
         assert mt is not None

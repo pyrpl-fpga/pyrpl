@@ -1,4 +1,3 @@
-from __future__ import division
 
 import numpy as np
 
@@ -174,7 +173,7 @@ class OutputSignal(Signal):
         """
         self.pyrpl.pids.free(self.pid)
         self._pid = None
-        super(OutputSignal, self)._clear()
+        super()._clear()
 
     def unlock(self, reset_offset=False):
         self.pid.p = 0

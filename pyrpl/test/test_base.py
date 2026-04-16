@@ -11,7 +11,7 @@ logger_quamash = logging.getLogger(name="quamash")
 logger_quamash.setLevel(logging.INFO)
 
 
-class TestPyrpl(object):
+class TestPyrpl:
     """Base class for all pyrpl tests."""
 
     # names of the configfiles to use

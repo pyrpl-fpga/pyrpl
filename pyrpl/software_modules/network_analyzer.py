@@ -67,7 +67,7 @@ class RbwAttribute(FilterProperty):
 
 class LogScaleProperty(BoolProperty):
     def set_value(self, module, val):
-        super(LogScaleProperty, self).set_value(module, val)
+        super().set_value(module, val)
         module._signal_launcher.x_log_toggled.emit()
 
 
@@ -184,10 +184,10 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         self.measured_time_per_point = np.nan
         self.amplitude_list = None
         # self._data_x = None
-        super(NetworkAnalyzer, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
 
     def _load_setup_attributes(self):
-        super(NetworkAnalyzer, self)._load_setup_attributes()
+        super()._load_setup_attributes()
         if self.running_state in ["running_continuous", "running_single"]:
             self._logger.warning(
                 "Network analyzer is currently in the "
@@ -619,7 +619,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         return time_per_point - (timeit.default_timer() - self._time_last_point)
 
     def _prepare_averaging(self):
-        super(NetworkAnalyzer, self)._prepare_averaging()
+        super()._prepare_averaging()
         self._last_time_benchmark = None
         self.current_point = 0
         self.data_x = (
@@ -634,7 +634,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
     def _setup(self):
         # self._update_data_x()  # precalculate frequency values
         self._frequencies = None  # forget precalculated frequencies
-        super(NetworkAnalyzer, self)._setup()
+        super()._setup()
 
     # overwrite default behavior to return only valid points
 

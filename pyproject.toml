@@ -133,7 +133,7 @@ extend-exclude = ["*.ipynb", "docs/example-notebooks"]
 
 [tool.ruff.lint]
 select = ["E","F"]  # start minimal: errors + pyflakes
-ignore = ["E731", "F403", "F405"]
+ignore = []
 
 [tool.ruff.lint.per-file-ignores]
 "pyrpl/__init__.py" = ["E402", "F401"]

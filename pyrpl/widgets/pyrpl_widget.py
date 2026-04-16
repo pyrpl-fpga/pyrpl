@@ -11,7 +11,7 @@ class ExceptionLauncher(QtCore.QObject):
     show_log = QtCore.Signal(list)
 
     def __init__(self):
-        super(ExceptionLauncher, self).__init__()
+        super().__init__()
 
     def display_exception(self, etype, evalue, tb):
         # self.etype = etype
@@ -83,7 +83,7 @@ class MyDockWidget(QtWidgets.QDockWidget):
         """
         create_widget_func is a function to create the widget.
         """
-        super(MyDockWidget, self).__init__(name)
+        super().__init__(name)
         self.setObjectName(name)
         self.setFeatures(
             QtWidgets.QDockWidget.DockWidgetFloatable
@@ -104,7 +104,7 @@ class MyDockWidget(QtWidgets.QDockWidget):
                 self.setWidget(self.scrollarea)
             else:
                 self.setWidget(self.widget)
-        super(MyDockWidget, self).showEvent(event)
+        super().showEvent(event)
 
     def event(self, event):
         event.type()
@@ -136,7 +136,7 @@ class PyrplWidget(QtWidgets.QMainWindow):
         self.handler = LogHandler()
         self.logger.addHandler(self.handler)
 
-        super(PyrplWidget, self).__init__()
+        super().__init__()
         self.setDockNestingEnabled(True)  # allow dockwidget nesting
         self.setAnimated(True)  # animate docking of dock widgets
 

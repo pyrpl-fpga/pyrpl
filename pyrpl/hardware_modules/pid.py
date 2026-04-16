@@ -176,7 +176,7 @@ class SignalLauncherPid(SignalLauncher):
     # the widget decides at the other hand if it has to be done or not
     # depending on the visibility
     def __init__(self, module):
-        super(SignalLauncherPid, self).__init__(module)
+        super().__init__(module)
         self.timer_ival = QtCore.QTimer()
         self.timer_ival.setInterval(1000)  # max. refresh rate: 1 Hz
         self.timer_ival.timeout.connect(self.update_ival)
@@ -188,7 +188,7 @@ class SignalLauncherPid(SignalLauncher):
         kill all timers
         """
         self.timer_ival.stop()
-        super(SignalLauncherPid, self)._clear()
+        super()._clear()
 
 
 class Pid(FilterModule):

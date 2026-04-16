@@ -7,7 +7,7 @@ import pytest
 logger = logging.getLogger(name=__name__)
 
 
-class TestRedpitaya(object):
+class TestRedpitaya:
     @pytest.fixture(autouse=True)
     def setup_rp(self, hardware_session):
         """

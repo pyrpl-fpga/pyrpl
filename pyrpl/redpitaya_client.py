@@ -37,7 +37,7 @@ from .pyrpl_utils import time
 CLIENT_NUMBER = 0
 
 
-class MonitorClient(object):
+class MonitorClient:
     def __init__(self, hostname="192.168.1.0", port=2222, restartserver=None):
         """initiates a client connected to monitor_server
 
@@ -75,7 +75,7 @@ class MonitorClient(object):
                     )
             try:
                 self.socket.connect((self._hostname, self._port))
-            except socket.error:  # mostly because port is still closed
+            except OSError:  # mostly because port is still closed
                 self.logger.warning("Socket error during connection attempt %s.", i)
                 # could try a different port here by putting port=-1
                 self._port = self._restartserver()
@@ -87,7 +87,7 @@ class MonitorClient(object):
         try:
             self.socket.send(b"c" + bytes(bytearray([0, 0, 0, 0, 0, 0, 0])))
             self.socket.close()
-        except socket.error:
+        except OSError:
             return
 
     def __del__(self):
@@ -171,7 +171,7 @@ class MonitorClient(object):
         for i in range(n):
             try:
                 value = function(addr, value)
-            except (socket.timeout, socket.error):
+            except (OSError, socket.timeout):
                 self.logger.error(
                     "Error occured in reading attempt %s. "
                     "Reconnecting at addr %s to %s value %s by "
@@ -189,7 +189,7 @@ class MonitorClient(object):
         self.__init__(hostname=self._hostname, port=port, restartserver=self._restartserver)
 
 
-class DummyClient(object):  # pragma: no cover
+class DummyClient:  # pragma: no cover
     """Class for unitary tests without RedPitaya hardware available"""
 
     class fpgadict(dict):

@@ -340,7 +340,7 @@ def bodeplot(data, xlog=True):
     plt.show()
 
 
-class IirFilter(object):
+class IirFilter:
     """
     Computes coefficients and predicts transfer functions of an IIR filter.
 

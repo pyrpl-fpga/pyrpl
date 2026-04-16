@@ -177,7 +177,7 @@ class ScopeWidget(AcquisitionModuleWidget):
             self.update_rolling_mode_visibility
         )
 
-        super(ScopeWidget, self).init_gui()
+        super().init_gui()
         # since trigger_mode radiobuttons is not a regular attribute_widget,
         # it is not synced with the module at creation time.
         self.update_running_buttons()
@@ -194,7 +194,7 @@ class ScopeWidget(AcquisitionModuleWidget):
         """
         Updates all attributes on the gui when their values have changed.
         """
-        super(ScopeWidget, self).update_attribute_by_name(name, new_value_list)
+        super().update_attribute_by_name(name, new_value_list)
         if name in ["rolling_mode", "duration"]:
             self.rolling_mode = self.module.rolling_mode
             self.update_rolling_mode_visibility()
@@ -220,7 +220,7 @@ class ScopeWidget(AcquisitionModuleWidget):
         For some reason the visibility of the rolling mode panel is not updated
         when the scope becomes free again unless we ask for it explicitly...
         """
-        super(ScopeWidget, self).change_ownership()
+        super().change_ownership()
         self.update_rolling_mode_visibility()
 
     def display_curve(self, list_of_arrays):
@@ -296,7 +296,7 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.button_single.setEnabled(single_enabled)
 
     def update_running_buttons(self):
-        super(ScopeWidget, self).update_running_buttons()
+        super().update_running_buttons()
         self.update_rolling_mode_visibility()
 
     def autoscale_x(self):

@@ -18,7 +18,7 @@ class PyrplConfig(Module):
     configfile = StringProperty()
 
     def __init__(self, parent, name=None):
-        super(PyrplConfig, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         self.configfile = self.pyrpl.c._filename or ""
 
     text = TextProperty()

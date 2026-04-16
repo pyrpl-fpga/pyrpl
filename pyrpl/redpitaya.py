@@ -68,7 +68,7 @@ defaultparameters = dict(
 )
 
 
-class RedPitaya(object):
+class RedPitaya:
     cls_modules = (
         [rp.HK, rp.AMS, rp.Scope, rp.Sampler, rp.Asg0, rp.Asg1]
         + [rp.Pwm] * 2
@@ -384,7 +384,7 @@ class RedPitaya(object):
     def get_os_version(self):
         self.ssh.ask()  # clear buffer
         result = self.ssh.ask("cat /root/.version")
-        self.logger.debug("cat /root/.version: {}".format(result))
+        self.logger.debug(f"cat /root/.version: {result}")
 
         # Parse version from response
         version = None
@@ -394,7 +394,7 @@ class RedPitaya(object):
                 version = line
                 break
         if version is None:
-            self.logger.warning("Could not parse OS version from response: {}".format(result))
+            self.logger.warning(f"Could not parse OS version from response: {result}")
             version = "unknown"
         self.logger.debug("OS version: %s", version)
         self.os_version = version
@@ -443,7 +443,7 @@ class RedPitaya(object):
                 self.logger.error("FPGA binfile not found at: %s", source)
                 self.logger.error("Directory does not exist: %s", expected_dir)
 
-            raise IOError(
+            raise OSError(
                 "FPGA binfile not found",
                 "The fpga binfile was not found at: " + source + "\n"
                 "Please ensure the file exists or specify a different file with the filename "
@@ -490,7 +490,7 @@ class RedPitaya(object):
         )
         self.put_file(source, bin_file_path)
 
-        update_cmd = "/opt/redpitaya/sbin/overlay.sh pyrpl {}".format(bin_file_path)
+        update_cmd = f"/opt/redpitaya/sbin/overlay.sh pyrpl {bin_file_path}"
 
         # add dtbo file to command if it exists
         if dtbo_source is not None:
@@ -498,7 +498,7 @@ class RedPitaya(object):
                 self.parameters["serverdirname"], self.parameters["serverdtbofilename"]
             )
             self.put_file(dtbo_source, dtbo_file_path)
-            update_cmd = "{} {}".format(update_cmd, dtbo_file_path)
+            update_cmd = f"{update_cmd} {dtbo_file_path}"
 
         # kill all other servers to prevent reading while fpga is flashed
         self.end()
@@ -551,7 +551,7 @@ class RedPitaya(object):
                 )
             )
         )
-        self.logger.debug("ls serverbinfilename result: {}".format(result))
+        self.logger.debug(f"ls serverbinfilename result: {result}")
 
         return result.find("No such file or directory") < 0
 

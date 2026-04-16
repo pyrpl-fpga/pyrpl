@@ -1,6 +1,8 @@
 from qtpy import QtCore
-from pyrpl.software_modules.lockbox import *
-from pyrpl.async_utils import sleep_async
+from ...software_modules.lockbox import LockboxPlotLoop, LockboxModule
+from ...attributes import FloatProperty, BoolProperty
+import numpy as np
+from ...async_utils import sleep_async
 
 
 class GainOptimizerLoop(LockboxPlotLoop):

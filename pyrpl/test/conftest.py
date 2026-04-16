@@ -110,7 +110,7 @@ def hardware_session():
     if os.path.isfile(tmp_conf):
         try:
             os.remove(tmp_conf)
-        except (WindowsError, OSError):
+        except OSError:
             pass
 
     if _require_full_pyrpl:
@@ -164,7 +164,7 @@ def hardware_session():
     if os.path.isfile(tmp_conf):
         try:
             os.remove(tmp_conf)
-        except (WindowsError, OSError):
+        except OSError:
             pass
 
     # Wait for file to be fully deleted

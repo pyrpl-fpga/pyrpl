@@ -232,7 +232,7 @@ class Event(asyncio.Event):
     """
 
     def __init__(self):
-        super(Event, self).__init__()
+        super().__init__()
 
     def _get_loop(self):
         return LOOP

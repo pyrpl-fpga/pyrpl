@@ -1,7 +1,6 @@
 import logging
 import pytest
 import numpy as np
-from pyrpl.attributes import *
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
 

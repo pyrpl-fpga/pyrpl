@@ -1,10 +1,6 @@
 import logging
-from pyrpl.attributes import *
 from pyrpl.test.test_base import TestPyrpl
-from pyrpl.software_modules import *
-from pyrpl.software_modules.module_managers import *
-from pyrpl.hardware_modules import *
-from pyrpl.modules import *
+from pyrpl.software_modules import Lockbox
 from pyrpl import APP
 from pyrpl.test.test_load_save import scramble_values
 from pyrpl.test.test_attribute import DummyModule

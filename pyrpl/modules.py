@@ -49,7 +49,7 @@ class SignalLauncher(QtCore.QObject):
     # changed
 
     def __init__(self, module):
-        super(SignalLauncher, self).__init__()
+        super().__init__()
         self.module = module
 
     def emit_signal_by_name(self, name, *args, **kwds):
@@ -231,7 +231,7 @@ class ModuleMetaClass(type):
                 self.__doc__ += self.__dict__[name].__doc__ + "\n"
 
 
-class DoSetup(object):
+class DoSetup:
     """
     A context manager that allows to nicely write Module setup functions.
 
@@ -760,7 +760,7 @@ class HardwareModule(Module):
         self._client = parent.client
         self._addr_base = self.addr_base
         self._rp = parent
-        super(HardwareModule, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         # self.__doc__ = "Available registers: \r\n\r\n" + self.help()
 
     def _ownership_changed(self, old, new):

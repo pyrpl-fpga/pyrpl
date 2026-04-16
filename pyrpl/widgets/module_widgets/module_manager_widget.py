@@ -72,7 +72,7 @@ class IqManagerWidget(ModuleManagerWidget):
         In addition to the normal ModuleManagerWidget stacking of module attributes, the
         IqManagerWidget displays a schematic of the iq  module internal logic.
         """
-        super(IqManagerWidget, self).init_gui()
+        super().init_gui()
         self.button_hide = QtWidgets.QPushButton("^", parent=self)
         self.button_hide.setMaximumHeight(15)
         self.button_hide.clicked.connect(self.button_hide_clicked)
@@ -278,5 +278,5 @@ class IqManagerWidget(ModuleManagerWidget):
         call adjust_drawing upon resize.
         """
 
-        super(IqManagerWidget, self).resizeEvent(event)
+        super().resizeEvent(event)
         self.adjust_drawing()

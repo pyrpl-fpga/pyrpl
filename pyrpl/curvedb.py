@@ -56,7 +56,7 @@ except (ImportError, AttributeError, KeyError, TypeError):
         def values(self):
             return self.y
 
-    class CurveDB(object):
+    class CurveDB:
         _dirname = user_curve_dir
         file_extension = ".dat"
 

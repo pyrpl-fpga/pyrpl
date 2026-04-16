@@ -162,7 +162,7 @@ def get_config_file(filename=None, source=None):
     return filename
 
 
-class MemoryBranch(object):
+class MemoryBranch:
     """Represents a branch of a memoryTree
 
     All methods are preceded by an underscore to guarantee that tab
@@ -262,7 +262,7 @@ class MemoryBranch(object):
         """implements the dot notation.
         Example: self.subbranch.leaf returns the item 'leaf' of 'subbranch'"""
         if name.startswith("_"):
-            return super(MemoryBranch, self).__getattribute__(name)
+            return super().__getattribute__(name)
         else:
             # convert dot notation into dict notation
             return self[name]
@@ -288,7 +288,7 @@ class MemoryBranch(object):
 
     def __setattr__(self, name, value):
         if name.startswith("_"):
-            super(MemoryBranch, self).__setattr__(name, value)
+            super().__setattr__(name, value)
         else:  # implemment dot notation
             self[name] = value
 
@@ -518,7 +518,7 @@ class MemoryTree(MemoryBranch):
 
         # root of the tree is also a MemoryBranch with parent self and
         # branch name ""
-        super(MemoryTree, self).__init__(self, "")
+        super().__init__(self, "")
 
     @property
     def _buffer_filename(self):

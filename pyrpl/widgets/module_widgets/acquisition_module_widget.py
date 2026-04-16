@@ -37,7 +37,7 @@ from qtpy import QtCore, QtWidgets
 
 class CurrentAvgLabel(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(CurrentAvgLabel, self).__init__(parent)
+        super().__init__(parent)
         self.main_lay = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_lay)
         self.label = QtWidgets.QLabel("current_avg")

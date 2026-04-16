@@ -31,7 +31,7 @@ class Pwm(DspModule):
     _gui_attributes = _setup_attributes
 
     def __init__(self, rp, name=None):
-        super(Pwm, self).__init__(rp, name=dict(pwm0="in1", pwm1="in2")[name])
+        super().__init__(rp, name=dict(pwm0="in1", pwm1="in2")[name])
         # because pwm's input is using adc-input's plug
         self.name = name
         with self.do_setup:

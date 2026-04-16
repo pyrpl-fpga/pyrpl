@@ -99,7 +99,7 @@ class AsgAmplitudeAttribute(FloatRegister):
         if obj.waveform == "noise":
             return obj._rmsamplitude
         else:
-            return super(AsgAmplitudeAttribute, self).get_value(obj)
+            return super().get_value(obj)
 
     def set_value(self, obj, val):
         if obj.waveform == "noise":
@@ -109,14 +109,14 @@ class AsgAmplitudeAttribute(FloatRegister):
             # fill normal-distributed data into data memory
             obj.data = obj._noise_distribution()
             # multiplier set to 1.0 to benefit from full available resolution
-            super(AsgAmplitudeAttribute, self).set_value(obj, 1.0)
+            super().set_value(obj, 1.0)
         else:
-            super(AsgAmplitudeAttribute, self).set_value(obj, val)
+            super().set_value(obj, val)
 
 
 class AsgOffsetAttribute(FloatProperty):
     def __init__(self, **kwargs):
-        super(AsgOffsetAttribute, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def set_value(self, instance, val):
         instance._offset_masked = val
@@ -163,7 +163,7 @@ def make_asg(channel=0):
         addr_base = 0x40200000
 
         def __init__(self, parent, name=None):
-            super(Asg, self).__init__(parent, name=name)
+            super().__init__(parent, name=name)
             self._counter_wrap = self._default_counter_wrap
             self._writtendata = np.zeros(self.data_length)
 

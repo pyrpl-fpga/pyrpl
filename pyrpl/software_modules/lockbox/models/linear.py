@@ -1,4 +1,5 @@
-from .. import *
+from .. import InputDirect, Lockbox
+from pyrpl.attributes import FloatProperty
 
 
 class LinearInputDirect(InputDirect):

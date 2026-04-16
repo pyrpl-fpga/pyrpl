@@ -141,8 +141,8 @@ meters is implemented there. Another very often used model type is
 
 """
 
-from __future__ import print_function
 
+import importlib
 import logging
 import os
 from qtpy import QtWidgets, API_NAME
@@ -163,14 +163,12 @@ from .redpitaya import RedPitaya
 from . import pyrpl_utils
 from .software_modules import get_module
 from .async_utils import sleep
-
-# it is important that Lockbox is loaded before the models
-from .software_modules.lockbox import *
-from .software_modules.lockbox.models import *  # make sure all models are
-
-# loaded when we get started
 from .directories import user_config_dir
 from ._version import __version__
+
+# it is important that Lockbox is loaded before the models
+importlib.import_module(".software_modules.lockbox", package=__package__)
+importlib.import_module(".software_modules.lockbox.models", package=__package__)
 
 
 raw_input = input
@@ -230,7 +228,7 @@ loglevel logging level, one of [debug, info, warning, error]
 """ % (__version__)
 
 
-class Pyrpl(object):
+class Pyrpl:
     """
     Higher level object, in charge of loading the right hardware and software
     module, depending on the configuration described in a config file.

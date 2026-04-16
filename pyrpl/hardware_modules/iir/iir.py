@@ -124,7 +124,7 @@ class IirListProperty(ComplexProperty):
         return [self.validate_and_normalize_element(obj, val) for val in value]
 
     def validate_and_normalize_element(self, obj, val):
-        return super(IirListProperty, self).validate_and_normalize(obj, val)
+        return super().validate_and_normalize(obj, val)
 
 
 class IirFloatListProperty(FloatAttributeListProperty):
@@ -133,7 +133,7 @@ class IirFloatListProperty(FloatAttributeListProperty):
     """
 
     def value_updated(self, obj, value=None, appendix=[]):
-        super(IirFloatListProperty, self).value_updated(obj, value=value, appendix=appendix)
+        super().value_updated(obj, value=value, appendix=appendix)
         pole_or_zero = self.name.split("_")[1]  # 2nd part of name is pole/zero
         # forward value_updated to master
         getattr(obj.__class__, pole_or_zero).value_updated(obj)
@@ -184,7 +184,7 @@ class IirFloatListProperty(FloatAttributeListProperty):
                 finally:
                     setattr(module, "_selecting", False)
                 module._signal_launcher.update_plot.emit()
-        super(IirFloatListProperty, self).list_changed(module, operation, index, value=value)
+        super().list_changed(module, operation, index, value=value)
 
 
 class IirComplexListProperty(IirFloatListProperty, ComplexAttributeListProperty):
@@ -231,7 +231,7 @@ class IirComplexListProperty(IirFloatListProperty, ComplexAttributeListProperty)
 
 class TfTypeProperty(SelectProperty):
     def value_updated(self, module, value=None, appendix=[]):
-        super(TfTypeProperty, self).value_updated(module, value=value)
+        super().value_updated(module, value=value)
         module._signal_launcher.update_plot.emit()
 
 

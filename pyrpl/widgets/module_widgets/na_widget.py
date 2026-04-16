@@ -121,7 +121,7 @@ class NaWidget(AcquisitionModuleWidget):
         # self.button_layout.addWidget(aws["trace_average"])
         # self.button_layout.addWidget(aws["curve_name"])
 
-        super(NaWidget, self).init_gui()
+        super().init_gui()
         # self.button_layout.addWidget(self.button_single)
         # self.button_layout.addWidget(self.button_continuous)
         # self.button_layout.addWidget(self.button_stop)
@@ -243,7 +243,7 @@ class NaWidget(AcquisitionModuleWidget):
         return np.angle(data, deg=True)
 
     def update_attribute_by_name(self, name, new_value_list):
-        super(NaWidget, self).update_attribute_by_name(name, new_value_list)
+        super().update_attribute_by_name(name, new_value_list)
         if name == "_running_state":
             # self.display_state(self.module.running_state)
             self.update_running_buttons()
