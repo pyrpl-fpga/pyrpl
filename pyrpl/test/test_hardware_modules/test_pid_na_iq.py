@@ -1,9 +1,11 @@
 import logging
-from pyrpl.attributes import *
-from pyrpl import CurveDB
-from pyrpl.test.test_base import TestPyrpl
-from pyrpl.async_utils import sleep
+
+import numpy as np
 import pytest
+
+from pyrpl import CurveDB
+from pyrpl.async_utils import sleep
+from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
@@ -83,7 +85,7 @@ class TestPidNaIq(TestPyrpl):
                 c = CurveDB.create(f, data, name="test_na-failed-data")
                 c.add_child(CurveDB.create(f, theory, name="test_na-failed-theory"))
                 c.add_child(CurveDB.create(f, relerror, name="test_na-failed-relerror"))
-                assert False, maxerror
+                raise AssertionError(maxerror)
 
     def test_inputfilter(self):
         """
@@ -125,7 +127,7 @@ class TestPidNaIq(TestPyrpl):
         pid.d = 0
         pid.ival = 0
 
-        pid.inputfilter  # make sure this has been accessed before next step
+        _ = pid.inputfilter  # make sure this has been accessed before next step
         inputfilters = pid.inputfilter_options
         for bw in reversed(inputfilters):
             pid.inputfilter = [bw]
@@ -143,7 +145,7 @@ class TestPidNaIq(TestPyrpl):
                 c.save()
                 c.add_child(CurveDB.create(f, theory, name="test_inputfilter-failed-theory"))
                 c.add_child(CurveDB.create(f, relerror, name="test_inputfilter-failed-relerror"))
-                assert False, (maxerror, bw)
+                raise AssertionError((maxerror, bw))
 
     def test_pid_na1(self):
         # setup a pid module with a bunch of different settings and measure
@@ -201,7 +203,7 @@ class TestPidNaIq(TestPyrpl):
                 c = CurveDB.create(f, data, name="test_na_pid-failed-data")
                 c.add_child(CurveDB.create(f, theory, name="test_na_pid-failed-theory"))
                 c.add_child(CurveDB.create(f, relerror, name="test_na_pid-failed-relerror"))
-                assert False, maxerror
+                raise AssertionError(maxerror)
 
     def test_pid_na2(self):
         # setup a pid module with a bunch of different settings and measure
@@ -246,7 +248,7 @@ class TestPidNaIq(TestPyrpl):
             pid.inputfilter = 0
             data = na.single()
             f = na.data_x
-            plotdata.append((f, data, "p=%.1e, i=%.1e" % (pid.p, pid.i)))
+            plotdata.append((f, data, f"p={pid.p:.1e}, i={pid.i:.1e}"))
             theory = pid.transfer_function(f, extradelay=extradelay)
             relerror = np.abs((data - theory) / theory)
             maxerror = np.max(relerror)
@@ -255,7 +257,7 @@ class TestPidNaIq(TestPyrpl):
                 c = CurveDB.create(f, data, name="test_na_pid-failed-data")
                 c.add_child(CurveDB.create(f, theory, name="test_na_pid-failed-theory"))
                 c.add_child(CurveDB.create(f, relerror, name="test_na_pid-failed-relerror"))
-                assert False, maxerror
+                raise AssertionError(maxerror)
             # check that no saturation has occured
             print("Integral value after measurement: ", pid.ival)
             if abs(pid.ival) >= 1.0:
@@ -320,7 +322,7 @@ class TestPidNaIq(TestPyrpl):
                 c = CurveDB.create(f, data, name="test_na_pid-failed-data")
                 c.add_child(CurveDB.create(f, theory, name="test_na_pid-failed-theory"))
                 c.add_child(CurveDB.create(f, relerror, name="test_na_pid-failed-relerror"))
-                assert False, maxerror
+                raise AssertionError(maxerror)
             # reset
             pid.setpoint = 0
             pid.p = 0
@@ -388,7 +390,7 @@ class TestPidNaIq(TestPyrpl):
                     c.add_child(CurveDB.create(f, theory, name="test_iq_na-failed-theory"))
                     c.add_child(CurveDB.create(f, abserror, name="test_iq_na-failed-relerror"))
                     # c.add_child(CurveDB.create(f,relerror,name='test_iq_na-failed-abserror'))
-                    assert False, (maxerror, phase, bpf.name)
+                    raise AssertionError((maxerror, phase, bpf.name))
 
     def test_diff_pid(self):
         """
@@ -545,8 +547,7 @@ class TestPidNaIq(TestPyrpl):
         angles = [np.angle(iq._nadata, deg=True) for iq in iqs]
         desyncdiff = max(angles) - min(angles)
         assert desyncdiff > 0.01, (
-            "iq modules not desynchronized, desyncdiff = %f < 0.01! Angles: %s"
-            % (desyncdiff, angles)
+            f"iq modules not desynchronized, desyncdiff = {desyncdiff:f} < 0.01! Angles: {angles}"
         )
         # synchronize
         rp.iq0.synchronize_iqs()
@@ -558,6 +559,6 @@ class TestPidNaIq(TestPyrpl):
         syncdiff = max(angles) - min(angles)
         print(desyncdiff, syncdiff)
         assert syncdiff < 0.01, (
-            "synchronization of iq modules not working, syncdiff = %f > 0.01! Angles: %s"
-            % (syncdiff, angles)
+            "synchronization of iq modules not working, "
+            f"syncdiff = {syncdiff:f} > 0.01! Angles: {angles}"
         )

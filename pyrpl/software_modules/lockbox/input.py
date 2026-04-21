@@ -1,21 +1,23 @@
-from __future__ import division
-import numpy as np
+import contextlib
 import logging
+
+import numpy as np
+
 from ...attributes import (
-    SelectProperty,
+    FilterProperty,
     FloatProperty,
     FrequencyProperty,
-    PhaseProperty,
-    FilterProperty,
     FrequencyRegister,
+    PhaseProperty,
+    SelectProperty,
 )
-from ...widgets.module_widgets import LockboxInputWidget
 from ...hardware_modules.dsp import DSP_INPUTS, InputSelectProperty
-from ...pyrpl_utils import time, recursive_getattr
 from ...module_attributes import ModuleProperty
-from ...software_modules.lockbox import LockboxModule
 from ...modules import SignalModule
+from ...pyrpl_utils import recursive_getattr, time
+from ...software_modules.lockbox import LockboxModule
 from ...software_modules.module_managers import InsufficientResourceError
+from ...widgets.module_widgets import LockboxInputWidget
 
 logger = logging.getLogger(__name__)
 
@@ -261,18 +263,15 @@ class InputSignal(Signal):
     def __init__(self, parent, name=None):
         # self.parameters = dict()
         self._lasttime = -1e10
-        super(InputSignal, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
 
     def _input_signal_dsp_module(self):
         """returns the dsp signal corresponding to input_signal"""
         signal = self.input_signal
         # problem arises if there is a long loop of logical signals -> iterate
-        for i in range(5):  # try at most 5 hierarchy levels
-            try:
+        for _i in range(5):  # try at most 5 hierarchy levels
+            with contextlib.suppress(AttributeError, TypeError):
                 signal = recursive_getattr(self.pyrpl, signal).signal()
-            except (AttributeError, TypeError):
-                # do not insist on this to work as signal may be a str
-                pass
             if signal in DSP_INPUTS:
                 return signal
         # no break ever occured
@@ -489,11 +488,9 @@ class InputSignal(Signal):
     #         return None
 
     def _create_widget(self):
-        widget = super(InputSignal, self)._create_widget()
-        try:
+        widget = super()._create_widget()
+        with contextlib.suppress(AttributeError, RuntimeError, TypeError, ValueError):
             self.update_graph()
-        except (AttributeError, RuntimeError, TypeError, ValueError):
-            pass
         return widget
 
 
@@ -508,9 +505,7 @@ class InputFromOutput(InputDirect):
         pass
 
     input_signal = InputSelectProperty(
-        options=(
-            lambda instance: ["lockbox.outputs." + k for k in instance.lockbox.outputs.keys()]
-        ),
+        options=(lambda instance: ["lockbox.outputs." + key for key in instance.lockbox.outputs]),
         doc="lockbox signal used as input",
     )
 
@@ -579,7 +574,7 @@ class IqFilterProperty(FilterProperty):
         except TypeError:
             val = [val, val]  # preferentially choose second order filter
         instance.iq.bandwidth = val
-        super(IqFilterProperty, self).set_value(instance, self.get_value(instance))
+        super().set_value(instance, self.get_value(instance))
         return val
 
     def get_value(self, instance):
@@ -639,7 +634,7 @@ class InputIq(InputSignal):
     def _clear(self):
         self.pyrpl.iqs.free(self.iq)
         self._iq = None
-        super(InputIq, self)._clear()
+        super()._clear()
 
     def _setup(self):
         """

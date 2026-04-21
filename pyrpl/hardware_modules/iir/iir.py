@@ -1,23 +1,26 @@
-from . import iir_theory  # , bodefit
-from .. import FilterModule
-from ...attributes import (
-    IntRegister,
-    BoolRegister,
-    ComplexProperty,
-    FloatProperty,
-    StringProperty,
-    CurveSelectProperty,
-    ConstantIntRegister,
-    FloatAttributeListProperty,
-    ComplexAttributeListProperty,
-    BoolProperty,
-    SelectProperty,
-)
-from ...widgets.module_widgets import IirWidget
-from ...modules import SignalLauncher
+import contextlib
 
 import numpy as np
 from qtpy import QtCore
+
+from ...attributes import (
+    BoolProperty,
+    BoolRegister,
+    ComplexAttributeListProperty,
+    ComplexProperty,
+    ConstantIntRegister,
+    CurveSelectProperty,
+    FloatAttributeListProperty,
+    FloatProperty,
+    IntRegister,
+    SelectProperty,
+    StringProperty,
+)
+from ...modules import SignalLauncher
+from ...widgets.module_widgets import IirWidget
+from .. import FilterModule
+from . import iir_theory  # , bodefit
+
 # from scipy.signal import freqz
 
 
@@ -36,11 +39,8 @@ def freqz_numpy(b, a=1, worN=512, fs=1.0):
     b = np.atleast_1d(b)
     a = np.atleast_1d(a)
 
-    if np.isscalar(worN):
-        # equally spaced points from 0 to pi
-        w = np.linspace(0, np.pi, worN, endpoint=False)
-    else:
-        w = np.array(worN)
+    # equally spaced points from 0 to pi
+    w = np.linspace(0, np.pi, worN, endpoint=False) if np.isscalar(worN) else np.array(worN)
 
     # evaluate numerator and denominator on the unit circle
     ejw = np.exp(1j * w[:, None] * np.arange(max(len(b), len(a))))
@@ -66,7 +66,7 @@ class OverflowProperty(StringProperty):
         elif bool(value & 0b0111111):
             text = "internal saturation"
         else:
-            text = "unknown overflow %d" % value
+            text = f"unknown overflow {value:d}"
         return text
 
     def validate_and_normalize(self, obj, value):
@@ -124,7 +124,7 @@ class IirListProperty(ComplexProperty):
         return [self.validate_and_normalize_element(obj, val) for val in value]
 
     def validate_and_normalize_element(self, obj, val):
-        return super(IirListProperty, self).validate_and_normalize(obj, val)
+        return super().validate_and_normalize(obj, val)
 
 
 class IirFloatListProperty(FloatAttributeListProperty):
@@ -132,8 +132,10 @@ class IirFloatListProperty(FloatAttributeListProperty):
     slave property to store real part of zeros and poles
     """
 
-    def value_updated(self, obj, value=None, appendix=[]):
-        super(IirFloatListProperty, self).value_updated(obj, value=value, appendix=appendix)
+    def value_updated(self, obj, value=None, appendix=None):
+        if appendix is None:
+            appendix = []
+        super().value_updated(obj, value=value, appendix=appendix)
         pole_or_zero = self.name.split("_")[1]  # 2nd part of name is pole/zero
         # forward value_updated to master
         getattr(obj.__class__, pole_or_zero).value_updated(obj)
@@ -166,25 +168,21 @@ class IirFloatListProperty(FloatAttributeListProperty):
 
     def list_changed(self, module, operation, index, value=None):
         """make sure that only one element from one of the four lists is selected at once"""
-        if operation == "select":
-            # unselect all others
-            if not hasattr(module, "_selecting") or not getattr(module, "_selecting"):
-                try:
-                    setattr(module, "_selecting", True)
-                    for name in [
-                        start + "_" + end
-                        for start in ["real", "complex"]
-                        for end in ["poles", "zeros"]
-                    ]:
-                        if name != self.name:
-                            getattr(module, name).selected = None
-                            module._logger.debug("%s.selected = None", name)
-                    setattr(module, "_selected_pole_or_zero", self.name)
-                    setattr(module, "_selected_index", index)
-                finally:
-                    setattr(module, "_selecting", False)
-                module._signal_launcher.update_plot.emit()
-        super(IirFloatListProperty, self).list_changed(module, operation, index, value=value)
+        if operation == "select" and (not hasattr(module, "_selecting") or not module._selecting):
+            try:
+                module._selecting = True
+                for name in [
+                    start + "_" + end for start in ["real", "complex"] for end in ["poles", "zeros"]
+                ]:
+                    if name != self.name:
+                        getattr(module, name).selected = None
+                        module._logger.debug("%s.selected = None", name)
+                module._selected_pole_or_zero = self.name
+                module._selected_index = index
+            finally:
+                module._selecting = False
+            module._signal_launcher.update_plot.emit()
+        super().list_changed(module, operation, index, value=value)
 
 
 class IirComplexListProperty(IirFloatListProperty, ComplexAttributeListProperty):
@@ -230,8 +228,10 @@ class IirComplexListProperty(IirFloatListProperty, ComplexAttributeListProperty)
 
 
 class TfTypeProperty(SelectProperty):
-    def value_updated(self, module, value=None, appendix=[]):
-        super(TfTypeProperty, self).value_updated(module, value=value)
+    def value_updated(self, module, value=None, appendix=None):
+        if appendix is None:
+            appendix = []
+        super().value_updated(module, value=value)
         module._signal_launcher.update_plot.emit()
 
 
@@ -303,7 +303,7 @@ class IIR(FilterModule):
 
     loops = IntRegister(
         0x100,
-        doc="Decimation factor of IIR w.r.t. 125 MHz. Must be at least %d. " % _minloops,
+        doc=f"Decimation factor of IIR w.r.t. 125 MHz. Must be at least {_minloops:d}. ",
         default=_minloops,
         min=_minloops,
         max=_maxloops,
@@ -436,10 +436,7 @@ class IIR(FilterModule):
                 elif j == 3:
                     coefficients[i, j] = 1.0
                 else:
-                    if j > 3:
-                        k = j - 2
-                    else:
-                        k = j
+                    k = j - 2 if j > 3 else j
                     coefficients[i, j] = self._to_double(
                         data[i * 8 + 2 * k + 1],
                         data[i * 8 + 2 * k],
@@ -644,10 +641,8 @@ class IIR(FilterModule):
                 self._logger.debug("IIR Overflow pattern: %s", bin(self.overflow_bitfield))
             self._signal_launcher.update_plot.emit()
             # update curve name
-            try:
+            with contextlib.suppress(AttributeError):
                 self.data_curve_name = self._data_curve_object.name
-            except AttributeError:
-                pass
 
     @property
     def sampling_time(self):
@@ -661,9 +656,7 @@ class IIR(FilterModule):
         self,
         value,
         logdist=True,
-        search_in=[
-            start + "_" + end for start in ["real", "complex"] for end in ["poles", "zeros"]
-        ],
+        search_in=None,
     ):
         """
         selects the pole or zero closest to value
@@ -671,14 +664,16 @@ class IIR(FilterModule):
         logdist=True computes the distance in logarithmic units
         search_in may be used to restrict the search to certain sublists
         """
+        if search_in is None:
+            search_in = [
+                start + "_" + end for start in ["real", "complex"] for end in ["poles", "zeros"]
+            ]
         mindist = None
         for name in search_in:
             for element in getattr(self, name):
-                if name.startswith("complex"):
-                    # complex values are ordered by their imaginary part
-                    elementvalue = element.imag
-                else:
-                    elementvalue = element
+                # complex values are ordered by their imaginary part
+                elementvalue = element.imag if name.startswith("complex") else element
+
                 if logdist:
                     dist = abs(abs(value) / abs(elementvalue))
                     if dist < 1.0:
@@ -794,10 +789,7 @@ class IIR(FilterModule):
         :param freq:
         :return:
         """
-        if biquad == "all":
-            coefs = self.coefficients
-        else:
-            coefs = [self.coefficients[biquad]]
+        coefs = self.coefficients if biquad == "all" else [self.coefficients[biquad]]
 
         ys = np.zeros(len(xs))
         ys_biquad = np.zeros((len(coefs), 2))
@@ -820,10 +812,7 @@ class IIR(FilterModule):
         """
         print("yo")
 
-        if biquad == "all":
-            coefs = self.coefficients
-        else:
-            coefs = [self.coefficients[biquad]]
+        coefs = self.coefficients if biquad == "all" else [self.coefficients[biquad]]
         coefs = np.array(coefs)
 
         coefs = np.asarray(coefs * (2**self._IIRSHIFT), dtype=np.int64)
@@ -859,10 +848,7 @@ class IIR(FilterModule):
     def measure_time_domain_response(self, freq, biquad="all"):
         from pyrpl.async_utils import sleep, wait
 
-        if biquad == "all":
-            coefs = self.coefficients
-        else:
-            coefs = [self.coefficients[biquad]]
+        coefs = self.coefficients if biquad == "all" else [self.coefficients[biquad]]
         self.coefficients = coefs
 
         with self.pyrpl.asgs.pop("iir_measurement") as asg:

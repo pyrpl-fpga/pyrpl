@@ -1,5 +1,7 @@
-from .attributes import *
-from .modules import *
+import contextlib
+
+from .attributes import ModuleAttribute
+from .modules import Module
 
 
 class ModuleProperty(ModuleAttribute):
@@ -60,7 +62,10 @@ class ModuleProperty(ModuleAttribute):
 class ModuleList(Module, list):
     """a list of modules"""
 
-    def __init__(self, parent, name=None, element_cls=Module, default=[]):
+    def __init__(self, parent, name=None, element_cls=Module, default=None):
+        if default is None:
+            default = []
+
         def element_name(element_self):
             """function that is used to dynamically assign each
             ModuleListElement's name to the index in the list.
@@ -94,7 +99,7 @@ class ModuleList(Module, list):
             },
         )
         self._signal_launcher = self.element_cls._signal_launcher
-        super(ModuleList, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         # set to default setting
         self.extend(default)
 
@@ -107,9 +112,9 @@ class ModuleList(Module, list):
     def insert(self, index, new):
         # insert None as a placeholder at the right place in the list
         # in order to assign right indices to surrounding elements
-        super(ModuleList, self).insert(index, None)
+        super().insert(index, None)
         # make new module (initial_name must be given).
-        super(ModuleList, self).__setitem__(index, self.element_cls(self, initial_name=index))
+        super().__setitem__(index, self.element_cls(self, initial_name=index))
         # set initial name to none, since name is now inferred from index in the list
         self[index]._initial_name = None
         # initialize setup_attributes
@@ -128,7 +133,7 @@ class ModuleList(Module, list):
         # make sure at object destruction that the name variable corresponds to former name
         self[index]._initial_name = index
         # setting a list element sets up the corresponding module
-        to_delete = super(ModuleList, self).pop(index)
+        to_delete = super().pop(index)
         # call destructor
         to_delete._clear()
         # remove saved state from config file
@@ -189,10 +194,8 @@ class ModuleListProperty(ModuleProperty):
         newmodule = self.module_cls(
             obj, name=self.name, element_cls=self.element_cls, default=self.default
         )
-        try:
+        with contextlib.suppress(AttributeError):
             newmodule._widget_class = self._widget_class
-        except AttributeError:
-            pass
         return newmodule
 
     def validate_and_normalize(self, obj, value):
@@ -200,13 +203,11 @@ class ModuleListProperty(ModuleProperty):
         if not isinstance(value, list):
             try:
                 value = value.values()
-            except AttributeError:
+            except AttributeError as exc:
                 raise ValueError(
                     "ModuleProperty must be assigned a list. "
-                    "You have wrongly assigned an object of type "
-                    "%s. ",
-                    type(value),
-                )
+                    f"You assigned an object of type {type(value)}."
+                ) from exc
         return value
 
 
@@ -234,7 +235,7 @@ class ModuleDict(Module):
 
     @property
     def setup_attributes(self):
-        return super(ModuleDict, self).setup_attributes
+        return super().setup_attributes
 
     @setup_attributes.setter
     def setup_attributes(self, kwds):
@@ -293,7 +294,7 @@ class ModuleDictProperty(ModuleProperty):
         # ModuleDictClassInstance._module_attributes = kwargs.keys()
 
         # init this attribute with the contained module
-        super(ModuleDictProperty, self).__init__(
+        super().__init__(
             ModuleDictClassInstance,
             default=default,
             doc=doc,

@@ -1,6 +1,9 @@
+import numpy as np
 from qtpy import QtCore
-from pyrpl.software_modules.lockbox import *
-from pyrpl.async_utils import sleep_async
+
+from ...async_utils import sleep_async
+from ...attributes import BoolProperty, FloatProperty
+from ...software_modules.lockbox import LockboxModule, LockboxPlotLoop
 
 
 class GainOptimizerLoop(LockboxPlotLoop):
@@ -124,7 +127,7 @@ class GainOptimizer(LockboxModule):
             self._logger.error('The lockbox must be "locked" in order to start gain optimization.')
 
     def _start_when_locked(self):
-        for i in range(100):  # 100s timeout
+        for _i in range(100):  # 100s timeout
             sleep_async(1.0)
             if self.lockbox.is_locked_and_final(loglevel=0):
                 return self.start()

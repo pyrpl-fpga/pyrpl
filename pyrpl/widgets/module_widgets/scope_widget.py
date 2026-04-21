@@ -35,9 +35,10 @@ attributes specific to the :class:`~pyrpl.hardware_modules.scope.Scope`:
     trace averaging nor durations below 0.1 s.
 """
 
+import numpy as np
 import pyqtgraph as pg
 from qtpy import QtGui, QtWidgets
-import numpy as np
+
 from ...errors import NotReadyError
 from .acquisition_module_widget import AcquisitionModuleWidget
 
@@ -82,19 +83,19 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.layout_ch1.addWidget(aws["ch1_active"])
         self.layout_ch1.addWidget(aws["input1"])
         self.layout_ch1.addWidget(aws["threshold"])
-        aws["ch1_active"].setStyleSheet("color: %s" % self.ch_color[0])
+        aws["ch1_active"].setStyleSheet(f"color: {self.ch_color[0]}")
 
         self.attribute_layout.removeWidget(aws["ch2_active"])
         self.attribute_layout.removeWidget(aws["input2"])
         self.attribute_layout.removeWidget(aws["hysteresis"])
-        aws["ch2_active"].setStyleSheet("color: %s" % self.ch_color[1])
+        aws["ch2_active"].setStyleSheet(f"color: {self.ch_color[1]}")
 
         self.layout_ch2.addWidget(aws["ch2_active"])
         self.layout_ch2.addWidget(aws["input2"])
         self.layout_ch2.addWidget(aws["hysteresis"])
 
         self.layout_math.addWidget(aws["ch_math_active"])
-        aws["ch_math_active"].setStyleSheet("color: %s" % self.ch_color[2])
+        aws["ch_math_active"].setStyleSheet(f"color: {self.ch_color[2]}")
         self.layout_math.addWidget(aws["math_formula"])
 
         self.attribute_layout.addLayout(self.layout_channels)
@@ -177,7 +178,7 @@ class ScopeWidget(AcquisitionModuleWidget):
             self.update_rolling_mode_visibility
         )
 
-        super(ScopeWidget, self).init_gui()
+        super().init_gui()
         # since trigger_mode radiobuttons is not a regular attribute_widget,
         # it is not synced with the module at creation time.
         self.update_running_buttons()
@@ -194,7 +195,7 @@ class ScopeWidget(AcquisitionModuleWidget):
         """
         Updates all attributes on the gui when their values have changed.
         """
-        super(ScopeWidget, self).update_attribute_by_name(name, new_value_list)
+        super().update_attribute_by_name(name, new_value_list)
         if name in ["rolling_mode", "duration"]:
             self.rolling_mode = self.module.rolling_mode
             self.update_rolling_mode_visibility()
@@ -220,7 +221,7 @@ class ScopeWidget(AcquisitionModuleWidget):
         For some reason the visibility of the rolling mode panel is not updated
         when the scope becomes free again unless we ask for it explicitly...
         """
-        super(ScopeWidget, self).change_ownership()
+        super().change_ownership()
         self.update_rolling_mode_visibility()
 
     def display_curve(self, list_of_arrays):
@@ -296,7 +297,7 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.button_single.setEnabled(single_enabled)
 
     def update_running_buttons(self):
-        super(ScopeWidget, self).update_running_buttons()
+        super().update_running_buttons()
         self.update_rolling_mode_visibility()
 
     def autoscale_x(self):

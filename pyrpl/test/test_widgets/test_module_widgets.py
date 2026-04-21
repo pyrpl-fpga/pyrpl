@@ -1,4 +1,5 @@
 import logging
+
 from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)

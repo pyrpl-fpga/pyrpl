@@ -140,18 +140,19 @@ do what they are supposed to.
 
 import numpy as np
 from qtpy import QtCore
+
 from ..attributes import (
-    FloatProperty,
     BoolRegister,
+    FloatProperty,
     FloatRegister,
     GainRegister,
     SelectRegister,
 )
-from .dsp import PauseRegister
 from ..modules import SignalLauncher
-from . import FilterModule
-from ..widgets.module_widgets import PidWidget
 from ..pyrpl_utils import sorted_dict
+from ..widgets.module_widgets import PidWidget
+from .dsp import PauseRegister
+from .filter import FilterModule
 
 
 class IValAttribute(FloatProperty):
@@ -176,7 +177,7 @@ class SignalLauncherPid(SignalLauncher):
     # the widget decides at the other hand if it has to be done or not
     # depending on the visibility
     def __init__(self, module):
-        super(SignalLauncherPid, self).__init__(module)
+        super().__init__(module)
         self.timer_ival = QtCore.QTimer()
         self.timer_ival.setInterval(1000)  # max. refresh rate: 1 Hz
         self.timer_ival.timeout.connect(self.update_ival)
@@ -188,7 +189,7 @@ class SignalLauncherPid(SignalLauncher):
         kill all timers
         """
         self.timer_ival.stop()
-        super(SignalLauncherPid, self)._clear()
+        super()._clear()
 
 
 class Pid(FilterModule):
@@ -409,12 +410,14 @@ class Pid(FilterModule):
         frequencies,
         p,
         i,
-        filter_values=list(),
+        filter_values=None,
         d=0,
         module_delay_cycle=_delay,
         extradelay_s=0.0,
         frequency_correction=1.0,
     ):
+        if filter_values is None:
+            filter_values = list()
         return (
             Pid._pid_transfer_function(
                 frequencies, p=p, i=i, d=d, frequency_correction=frequency_correction

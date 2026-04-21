@@ -1,5 +1,5 @@
-from .dsp import DspModule
 from ..attributes import FilterRegister
+from .dsp import DspModule
 
 
 class FilterModule(DspModule):

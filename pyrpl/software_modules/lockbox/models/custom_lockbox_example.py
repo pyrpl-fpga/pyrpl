@@ -1,6 +1,17 @@
 # these imports are the standard imports for required for derived lockboxes
-from pyrpl.software_modules.lockbox import *
-from pyrpl.software_modules.loop import *
+import numpy as np
+
+from pyrpl.attributes import FloatProperty
+from pyrpl.module_attributes import ModuleProperty
+from pyrpl.software_modules.lockbox import (
+    InputSignal,
+    Lockbox,
+    LockboxLoop,
+    LockboxModuleDictProperty,
+    LockboxPlotLoop,
+    OutputSignal,
+)
+from pyrpl.software_modules.loop import time
 
 
 # Any InputSignal must define a class that contains the function "expected_signal(variable)" that
@@ -95,7 +106,7 @@ class CustomLockbox(Lockbox):
 
 class ExampleLoop(LockboxPlotLoop):  # or inherit from
     def __init__(self, parent, name=None):
-        super(ExampleLoop, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         self.c.n = 0
         self.last_texcess = 0
         self.result_ready = "not ready"

@@ -1,7 +1,8 @@
-from qtpy import QtCore, QtWidgets
+import logging
 import sys
 from traceback import format_exception, format_exception_only
-import logging
+
+from qtpy import QtCore, QtWidgets
 
 
 class ExceptionLauncher(QtCore.QObject):
@@ -11,7 +12,7 @@ class ExceptionLauncher(QtCore.QObject):
     show_log = QtCore.Signal(list)
 
     def __init__(self):
-        super(ExceptionLauncher, self).__init__()
+        super().__init__()
 
     def display_exception(self, etype, evalue, tb):
         # self.etype = etype
@@ -83,7 +84,7 @@ class MyDockWidget(QtWidgets.QDockWidget):
         """
         create_widget_func is a function to create the widget.
         """
-        super(MyDockWidget, self).__init__(name)
+        super().__init__(name)
         self.setObjectName(name)
         self.setFeatures(
             QtWidgets.QDockWidget.DockWidgetFloatable
@@ -104,16 +105,13 @@ class MyDockWidget(QtWidgets.QDockWidget):
                 self.setWidget(self.scrollarea)
             else:
                 self.setWidget(self.widget)
-        super(MyDockWidget, self).showEvent(event)
+        super().showEvent(event)
 
     def event(self, event):
         event.type()
         if event.type() == 176:  # QEvent::NonClientAreaMouseButtonDblClick
             if self.isFloating():
-                if self.isMaximized():
-                    fn = self.showNormal()
-                else:
-                    fn = self.showMaximized()
+                fn = self.showNormal() if self.isMaximized() else self.showMaximized()
                 # strange bug: always goes back to normal
                 # self.showMaximized()
                 # dirty workaround: make a timer
@@ -136,7 +134,7 @@ class PyrplWidget(QtWidgets.QMainWindow):
         self.handler = LogHandler()
         self.logger.addHandler(self.handler)
 
-        super(PyrplWidget, self).__init__()
+        super().__init__()
         self.setDockNestingEnabled(True)  # allow dockwidget nesting
         self.setAnimated(True)  # animate docking of dock widgets
 
@@ -221,7 +219,7 @@ class PyrplWidget(QtWidgets.QMainWindow):
             timer.stop()
 
     def add_dock_widget(self, create_widget, name):
-        dock_widget = MyDockWidget(create_widget, name + " (%s)" % self.parent.name)
+        dock_widget = MyDockWidget(create_widget, name + f" ({self.parent.name})")
         self.dock_widgets[name] = dock_widget
         self.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock_widget)
         if self.last_docked is not None:
@@ -354,4 +352,4 @@ class PyrplWidget(QtWidgets.QMainWindow):
                 pass
             else:
                 color = "#" + color
-            widget.setStyleSheet("background-color:%s" % color)
+            widget.setStyleSheet(f"background-color:{color}")

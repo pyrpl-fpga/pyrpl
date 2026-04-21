@@ -1,8 +1,10 @@
 import logging
+
 import numpy as np
-from pyrpl.async_utils import wait, sleep
-from pyrpl.test.test_base import TestPyrpl
+
 from pyrpl import APP
+from pyrpl.async_utils import sleep, wait
+from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
@@ -25,18 +27,12 @@ class TestScope(TestPyrpl):
     def data_changing(self):
         sleep(0.1)
         APP.processEvents()
-        if self.r.scope.data_avg is not None:
-            data = self.r.scope.data_avg[0]
-        else:
-            data = None
+        data = self.r.scope.data_avg[0] if self.r.scope.data_avg is not None else None
         sleep(0.75)
-        for i in range(1000):
+        for _i in range(1000):
             APP.processEvents()
         sleep(0.1)
-        if self.r.scope.data_avg is not None:
-            res = self.r.scope.data_avg[0]
-        else:
-            res = None
+        res = self.r.scope.data_avg[0] if self.r.scope.data_avg is not None else None
         if data is None:
             return res is not None
         return ((data != res)[~np.isnan(data)]).any()

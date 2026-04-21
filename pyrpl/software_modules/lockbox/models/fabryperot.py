@@ -1,9 +1,21 @@
-from .. import *
-from .interferometer import Interferometer
+import logging
+
+import numpy as np
+
 from pyrpl.async_utils import wait
+from pyrpl.attributes import FloatProperty, FrequencyProperty, SelectProperty
+
+from .. import (
+    InputDirect,
+    InputIq,
+    InputSignal,
+    InsufficientResourceError,
+    LockboxModuleDictProperty,
+)
+from .interferometer import Interferometer
 
 
-class Lorentz(object):
+class Lorentz:
     """base class for Lorentzian-like signals"""
 
     def _lorentz(self, x):
@@ -274,7 +286,7 @@ class HighFinesseInput(InputSignal):
 
     def calibrate(self, autosave=False):
         # take a first coarse calibration for trigger threshold estimation
-        curve0, _ = super(HighFinesseInput, self).sweep_acquire()
+        curve0, _ = super().sweep_acquire()
         if curve0 is None:
             self._logger.warning("Aborting calibration because no scope is available...")
             return None

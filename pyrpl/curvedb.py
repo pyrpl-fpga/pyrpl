@@ -27,10 +27,12 @@
 # For full performance, download pyinstruments to replace this class
 # otherwise you can custimize here what is to be done to your data
 #
-import numpy as np
-import os
 import logging
+import os
 import pickle as file_backend
+
+import numpy as np
+
 # import json as file_backend  # currently unable to store pandas
 
 
@@ -56,7 +58,7 @@ except (ImportError, AttributeError, KeyError, TypeError):
         def values(self):
             return self.y
 
-    class CurveDB(object):
+    class CurveDB:
         _dirname = user_curve_dir
         file_extension = ".dat"
 
@@ -170,10 +172,10 @@ except (ImportError, AttributeError, KeyError, TypeError):
             parent = self.parent
             childs = self.childs
             if isinstance(childs, list) and len(childs) > 0:
-                self.logger.debug("Deleting all childs of curve %d" % delpk)
+                self.logger.debug(f"Deleting all childs of curve {delpk:d}")
                 for child in childs:
                     child.delete()
-            self.logger.debug("Deleting curve %d" % delpk)
+            self.logger.debug(f"Deleting curve {delpk:d}")
             try:
                 filename = os.path.join(self._dirname, str(self.pk) + self.file_extension)
                 os.remove(filename)

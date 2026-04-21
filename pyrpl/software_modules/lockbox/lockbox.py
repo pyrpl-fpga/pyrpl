@@ -1,17 +1,20 @@
-from __future__ import division
-from collections import OrderedDict
-from qtpy import QtCore
+import contextlib
 import logging
-from ...modules import SignalLauncher
+from collections import OrderedDict
+
+from qtpy import QtCore
+
+from ...async_utils import Event, ensure_future, sleep_async, wait
+from ...attributes import BoolProperty, FloatProperty, SelectProperty
 from ...module_attributes import ModuleListProperty
-from .input import *
-from .output import *
+from ...modules import SignalLauncher
+from ...pyrpl_utils import all_subclasses, recursive_getattr, time
 from ...widgets.module_widgets import LockboxWidget
-from ...pyrpl_utils import all_subclasses
-from .stage import Stage
-from . import LockboxModule, LockboxModuleDictProperty
 from ...widgets.module_widgets.lockbox_widget import LockboxSequenceWidget
-from pyrpl.async_utils import wait, sleep_async, ensure_future, Event
+from . import LockboxModule, LockboxModuleDictProperty
+from .input import InputFromOutput, InputSignal
+from .output import OutputSignal
+from .stage import Stage
 
 
 def all_classnames():
@@ -26,7 +29,7 @@ class ClassnameProperty(SelectProperty):
     """
 
     def set_value(self, obj, val):
-        super(ClassnameProperty, self).set_value(obj, val)
+        super().set_value(obj, val)
         # we must save the attribute immediately here in order to guarantee
         # that make_Lockbox works
         if obj._autosave_active:
@@ -46,7 +49,7 @@ class ClassnameProperty(SelectProperty):
 
 class StateSelectProperty(SelectProperty):
     def set_value(self, obj, val):
-        super(StateSelectProperty, self).set_value(obj, val)
+        super().set_value(obj, val)
         # save the last time of change of state
         obj._state_change_time = time()
         if val in ["lock_on"]:
@@ -106,7 +109,7 @@ class Lockbox(LockboxModule):
     classname = ClassnameProperty(options=lambda: list(all_classnames().keys()))
 
     def __init__(self, parent, name=None):
-        super(Lockbox, self).__init__(parent=parent, name=name)
+        super().__init__(parent=parent, name=name)
         # set state change time to negative value to indicate startup condition
         self._state_change_time = -1
         self._acquire_lock_task = None
@@ -318,10 +321,8 @@ class Lockbox(LockboxModule):
             self.lock_status = new_status
             self._signal_launcher.update_lockstatus.emit([new_status])
             # optionally, call logging functionality implemented derived classes here...
-            try:
+            with contextlib.suppress(AttributeError):
                 self.log_lockstatus()
-            except AttributeError:
-                pass
             await sleep_async(self.lockstatus_interval)
 
     async def _lock_async(self, retry_times=1, **kwds):
@@ -476,7 +477,7 @@ class Lockbox(LockboxModule):
             # sequence in place
             self._monitor_lock_status_task.cancel()
 
-        super(Lockbox, self)._clear()
+        super()._clear()
         setattr(pyrpl, name, None)  # pyrpl.lockbox = None
         try:
             self.parent.software_modules.remove(self)

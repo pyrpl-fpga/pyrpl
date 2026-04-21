@@ -43,8 +43,10 @@ The following attributes can be manipulated by the SpectrumAnalyzer widget:
 """
 
 import logging
-from qtpy import QtWidgets
+
 import numpy as np
+from qtpy import QtWidgets
+
 from ..attribute_widgets import DataWidget
 from .acquisition_module_widget import AcquisitionModuleWidget
 
@@ -53,7 +55,7 @@ logger = logging.getLogger(name=__name__)
 
 class BasebandAttributesWidget(QtWidgets.QWidget):
     def __init__(self, specan_widget):
-        super(BasebandAttributesWidget, self).__init__()
+        super().__init__()
         self.h_layout = QtWidgets.QHBoxLayout()
         self.setLayout(self.h_layout)
         aws = specan_widget.attribute_widgets
@@ -82,7 +84,7 @@ class BasebandAttributesWidget(QtWidgets.QWidget):
 
 class IqModeAttributesWidget(QtWidgets.QWidget):
     def __init__(self, specan_widget):
-        super(IqModeAttributesWidget, self).__init__()
+        super().__init__()
         self.h_layout = QtWidgets.QHBoxLayout()
         self.setLayout(self.h_layout)
         aws = specan_widget.attribute_widgets
@@ -97,7 +99,7 @@ class IqModeAttributesWidget(QtWidgets.QWidget):
 
 class OtherAttributesWidget(QtWidgets.QWidget):
     def __init__(self, specan_widget):
-        super(OtherAttributesWidget, self).__init__()
+        super().__init__()
         self.h_layout = QtWidgets.QHBoxLayout()
         self.setLayout(self.h_layout)
         aws = specan_widget.attribute_widgets
@@ -165,13 +167,13 @@ class SpecAnWidget(AcquisitionModuleWidget):
         # self.curve_cross = self.plot_item.plot(pen=self.ch_col[2][0]) #
         # curve for
 
-        super(SpecAnWidget, self).init_gui()
+        super().init_gui()
 
         aws = self.attribute_widgets
 
-        aws["display_input1_baseband"].setStyleSheet("color: %s" % self.ch_col[0])
-        aws["display_input2_baseband"].setStyleSheet("color: %s" % self.ch_col[1])
-        aws["display_cross_amplitude"].setStyleSheet("color: %s" % self.ch_col[2])
+        aws["display_input1_baseband"].setStyleSheet(f"color: {self.ch_col[0]}")
+        aws["display_input2_baseband"].setStyleSheet(f"color: {self.ch_col[1]}")
+        aws["display_cross_amplitude"].setStyleSheet(f"color: {self.ch_col[2]}")
         # Not sure why the stretch factors in button_layout are not good by
         # default...
 
@@ -179,7 +181,7 @@ class SpecAnWidget(AcquisitionModuleWidget):
         self.update_baseband_visibility()
 
     def update_attribute_by_name(self, name, new_value_list):
-        super(SpecAnWidget, self).update_attribute_by_name(name, new_value_list)
+        super().update_attribute_by_name(name, new_value_list)
         if name in ["_running_state"]:
             self.update_running_buttons()
         if name in ["baseband"]:
@@ -230,9 +232,10 @@ class SpecAnWidget(AcquisitionModuleWidget):
 
         self.last_data = datas
         freqs = datas[0]
-        to_units = lambda x: self.module.data_to_display_unit(
-            x, self.module.attributes_last_run["rbw"]
-        )
+
+        def to_units(x):
+            return self.module.data_to_display_unit(x, self.module.attributes_last_run["rbw"])
+
         if not self.module.baseband:  # iq mode, only 1 curve to display
             self.win2._set_widget_value((freqs, datas[1]), transform_magnitude=to_units)
         else:  # baseband mode: data is (spec1, spec2, real(cross), imag(cross))
@@ -255,9 +258,10 @@ class SpecAnWidget(AcquisitionModuleWidget):
         """
         self.last_data = datas
         freqs = datas[0]
-        to_units = lambda x: self.module.data_to_display_unit(
-            x, self.module.attributes_last_run["rbw"]
-        )
+
+        def to_units(x):
+            return self.module.data_to_display_unit(x, self.module.attributes_last_run["rbw"])
+
         if not self.module.baseband:  # baseband mode, only 1 curve to display
             self.curve.setData(freqs, to_units(datas[1]))
             self.curve.setVisible(True)

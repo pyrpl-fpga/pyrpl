@@ -1,14 +1,13 @@
+import contextlib
 import logging
-from pyrpl.attributes import *
-from pyrpl.test.test_base import TestPyrpl
-from pyrpl.software_modules import *
-from pyrpl.software_modules.module_managers import *
-from pyrpl.hardware_modules import *
-from pyrpl.modules import *
-from pyrpl.async_utils import sleep
-from pyrpl.test.test_attribute import DummyModule
 import numbers
 
+from pyrpl.async_utils import sleep
+from pyrpl.attributes import SelectProperty
+from pyrpl.software_modules import Lockbox, SpectrumAnalyzer
+from pyrpl.software_modules.module_managers import ModuleManager
+from pyrpl.test.test_attribute import DummyModule
+from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
@@ -18,7 +17,7 @@ def scramble_values(
     str_val="foo",
     num_val=12.0,
     bool_val=True,
-    list_val=[1912],
+    list_val=None,
     option_index=0,
     list_length=4,
 ):
@@ -39,6 +38,8 @@ def scramble_values(
     Returns:
         attr_names, attr_vals: lists of all modified attribute names and the set values.
     """
+    if list_val is None:
+        list_val = [1912]
     attr_names = []
     attr_vals = []
     for attr in mod._setup_attributes:
@@ -110,10 +111,8 @@ class TestLoadSave(TestPyrpl):
                 with subtests.test(mod=mod):
                     self.assert_load_save_module(mod)
                 # make sure all modules are stopped at the end of this test
-                try:
+                with contextlib.suppress(AttributeError, RuntimeError, OSError):
                     mod.stop()
-                except (AttributeError, RuntimeError, OSError):
-                    pass
 
     def assert_load_save_module(self, mod):
         if not isinstance(mod, ModuleManager):

@@ -1,20 +1,17 @@
-from __future__ import division
-
 import numpy as np
 
-from ...software_modules.lockbox.input import Signal
 from ...attributes import (
     BoolProperty,
-    FloatProperty,
-    SelectProperty,
     FilterProperty,
+    FloatProperty,
     FrequencyProperty,
     IntProperty,
+    SelectProperty,
 )
 from ...curvedb import CurveDB
-
 from ...hardware_modules.asg import Asg1
 from ...hardware_modules.pid import Pid
+from ...software_modules.lockbox.input import Signal
 from ...widgets.module_widgets import OutputSignalWidget
 
 
@@ -146,10 +143,7 @@ class OutputSignal(Signal):
         sample = getattr(self.pyrpl.rp.sampler, self.pid.name)
         # criterion for saturation: integrator value saturated
         # and current value (including pid) as well
-        if (ival > max or ival < min) and (sample > max or sample < min):
-            return True
-        else:
-            return False
+        return bool((ival > max or ival < min) and (sample > max or sample < min))
 
     def _setup_pid_output(self):
         self.pid.max_voltage = self.max_voltage
@@ -165,7 +159,7 @@ class OutputSignal(Signal):
             pwm.input = self.pid
         else:
             raise NotImplementedError(
-                "Selected output_channel '%s' is not implemented" % self.output_channel
+                f"Selected output_channel '{self.output_channel}' is not implemented"
             )
 
     def _clear(self):
@@ -174,7 +168,7 @@ class OutputSignal(Signal):
         """
         self.pyrpl.pids.free(self.pid)
         self._pid = None
-        super(OutputSignal, self)._clear()
+        super()._clear()
 
     def unlock(self, reset_offset=False):
         self.pid.p = 0

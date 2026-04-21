@@ -1,11 +1,14 @@
-from __future__ import division
-from . import LockboxModule
-from ...attributes import FloatProperty, BoolProperty, StringProperty
-from ...module_attributes import *
-from ...hardware_modules import InputSelectProperty
-from ...widgets.module_widgets import LockboxStageWidget, StageOutputWidget
 from qtpy import QtCore
-from pyrpl.async_utils import sleep_async, ensure_future, wait
+
+from pyrpl.async_utils import ensure_future, sleep_async, wait
+
+from ...attributes import BoolIgnoreProperty, BoolProperty, FloatProperty, StringProperty
+from ...hardware_modules import InputSelectProperty
+from ...module_attributes import ModuleDictProperty
+from ...modules import SignalLauncher
+from ...pyrpl_utils import recursive_getattr
+from ...widgets.module_widgets import LockboxStageWidget, StageOutputWidget
+from . import LockboxModule
 
 
 class StageSignalLauncher(SignalLauncher):
@@ -64,18 +67,18 @@ class Stage(LockboxModule):
     outputs = ModuleDictProperty(module_cls=LockboxModule)
 
     def __init__(self, parent, name=None):
-        super(Stage, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         for output in self.lockbox.outputs:
             self.outputs[output.name] = StageOutput
         self._signal_launcher.stage_created.emit([self])
         self.parent._signal_launcher.stage_created.emit([self])
-        self.lockbox._logger.debug("Stage %s initialized" % self.name)
+        self.lockbox._logger.debug(f"Stage {self.name} initialized")
 
     def _clear(self):
-        self.lockbox._logger.debug("Deleting stage %s" % self.name)
+        self.lockbox._logger.debug(f"Deleting stage {self.name}")
         self._signal_launcher.stage_deleted.emit([self])
         self.parent._signal_launcher.stage_deleted.emit([self])
-        super(Stage, self)._clear()
+        super()._clear()
 
     @property
     def _states(self):

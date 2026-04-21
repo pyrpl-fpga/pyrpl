@@ -5,13 +5,14 @@ An instance attr of Attribute can create its AttributeWidget counterPart
 by calling attr.create_widget(name, parent).
 """
 
-import numpy as np
-from qtpy import QtCore, QtWidgets
-import pyqtgraph as pg
-from .spinbox import NumberSpinBox, IntSpinBox, FloatSpinBox, ComplexSpinBox
-from .. import pyrpl_utils
-
 import sys
+
+import numpy as np
+import pyqtgraph as pg
+from qtpy import QtCore, QtWidgets
+
+from .. import pyrpl_utils
+from .spinbox import ComplexSpinBox, FloatSpinBox, IntSpinBox, NumberSpinBox
 
 
 # TODO: try to remove widget_name from here (again)
@@ -35,7 +36,7 @@ class BaseAttributeWidget(QtWidgets.QWidget):
     value_changed = QtCore.Signal()
 
     def __init__(self, module, attribute_name, widget_name=None):
-        super(BaseAttributeWidget, self).__init__()
+        super().__init__()
         self.module = module
         self.attribute_name = attribute_name
         if widget_name is None:
@@ -166,7 +167,7 @@ class BaseAttributeWidget(QtWidgets.QWidget):
         # We generally disable the mouse wheel because it is a
         # frequent source of errors / undesired changes of variables
         # Here, it is simply forwarded upwards in hierarchy.
-        return super(BaseAttributeWidget, self).wheelEvent(event)
+        return super().wheelEvent(event)
 
 
 class StringAttributeWidget(BaseAttributeWidget):
@@ -207,7 +208,7 @@ class NumberAttributeWidget(BaseAttributeWidget):
     SpinBox = NumberSpinBox
 
     def _make_widget(self):
-        super(NumberAttributeWidget, self)._make_widget()
+        super()._make_widget()
         self.widget = self.SpinBox(None)
         self.widget.value_changed.connect(self.write_widget_value_to_attribute)
         self.widget.setSingleStep(self.attribute_descriptor.increment)
@@ -271,7 +272,7 @@ class ListElementWidget(BaseAttributeWidget):
     def __init__(self, parent, startindex, *args, **kwargs):
         self.parent = parent
         self.startindex = startindex
-        super(ListElementWidget, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.set_horizontal()
         self.button_remove = QtWidgets.QPushButton("-")
         self.button_remove.clicked.connect(self.remove_this_element)
@@ -305,7 +306,7 @@ class ListElementWidget(BaseAttributeWidget):
             self.parent.attribute_value.selected = self.index
         elif event.button() == QtCore.Qt.RightButton:
             pass  # no functionality so far
-        return super(ListElementWidget, self).mousePressEvent(event)
+        return super().mousePressEvent(event)
 
     def focusInEvent(self, QFocusEvent):
         self.parent.attribute_value.selected = self.index
@@ -455,7 +456,7 @@ class ListComboBox(QtWidgets.QWidget):
     value_changed = QtCore.Signal()
 
     def __init__(self, number, name, options, decimals=3):
-        super(ListComboBox, self).__init__()
+        super().__init__()
         self.setToolTip(
             "First order filter frequencies \n"
             "negative values are for high-pass \n"
@@ -466,7 +467,7 @@ class ListComboBox(QtWidgets.QWidget):
         self.combos = []
         self.options = options
         self.decimals = decimals
-        for i in range(number):
+        for _i in range(number):
             combo = QtWidgets.QComboBox()
             self.combos.append(combo)
             combo.addItems(self.options)
@@ -531,7 +532,7 @@ class FilterAttributeWidget(BaseAttributeWidget):
         else:
             self.number = 1
         self.options = getattr(module.__class__, attribute_name).valid_frequencies(module)
-        super(FilterAttributeWidget, self).__init__(module, attribute_name, widget_name=widget_name)
+        super().__init__(module, attribute_name, widget_name=widget_name)
 
     def _make_widget(self):
         """
@@ -642,7 +643,7 @@ class LedAttributeWidget(BaseAttributeWidget):
         else:
             color = "red"
             text = "start"
-        self.widget.setStyleSheet("background-color:%s" % color)
+        self.widget.setStyleSheet(f"background-color:{color}")
         self.widget.setText(text)
 
     def button_clicked(self):
@@ -711,7 +712,7 @@ class DataWidget(pg.GraphicsLayoutWidget):
     _defaultcolors = ["m", "b", "g", "r", "y", "c", "o", "w"]
 
     def __init__(self, title=None):
-        super(DataWidget, self).__init__(title=title)
+        super().__init__(title=title)
         self.plot_item = self.addPlot(title="Curve")
         self.plot_item_phase = self.addPlot(row=1, col=0, title="Phase (deg)")
         self.plot_item_phase.setXLink(self.plot_item)
@@ -787,7 +788,7 @@ class PlotAttributeWidget(BaseAttributeWidget):
         """
         self.widget = pg.GraphicsLayoutWidget(title="Plot")
         legend = getattr(self.module.__class__, self.attribute_name).legend
-        self.pw = self.widget.addPlot(title="%s vs. time (s)" % legend)
+        self.pw = self.widget.addPlot(title=f"{legend} vs. time (s)")
         self.plot_start_time = self.time()
         self.curves = {}
         setattr(self.module.__class__, "_" + self.attribute_name + "_pw", self.pw)
@@ -802,7 +803,7 @@ class PlotAttributeWidget(BaseAttributeWidget):
                 args, kwargs = new_value, {}
             else:
                 args, kwargs = [new_value], {}
-        for k in kwargs.keys():
+        for k in kwargs:
             v = kwargs.pop(k)
             kwargs[k[0]] = v
         i = 0

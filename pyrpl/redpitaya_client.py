@@ -17,19 +17,20 @@
 ###############################################################################
 
 
-import numpy as np
-import socket
 import logging
+import socket
+
+import numpy as np
 
 try:
     from pysine import sine  # for debugging read/write calls
 except ImportError:
 
     def sine(frequency, duration):
-        print("Called sine(frequency=%f, duration=%f)" % (frequency, duration))
+        print(f"Called sine(frequency={frequency:f}, duration={duration:f})")
 
 
-from .hardware_modules.dsp import dsp_addr_base, DSP_INPUTS
+from .hardware_modules.dsp import DSP_INPUTS, dsp_addr_base
 from .pyrpl_utils import time
 
 # global conter to assign a number to each client
@@ -37,7 +38,7 @@ from .pyrpl_utils import time
 CLIENT_NUMBER = 0
 
 
-class MonitorClient(object):
+class MonitorClient:
     def __init__(self, hostname="192.168.1.0", port=2222, restartserver=None):
         """initiates a client connected to monitor_server
 
@@ -64,18 +65,18 @@ class MonitorClient(object):
                 if self._port is None:
                     # likely means that _restartserver failed.
                     raise ValueError(
-                        "Connection to hostname %s failed. "
-                        "Please check your connection parameters!" % (self._hostname)
+                        f"Connection to hostname {self._hostname} failed. "
+                        "Please check your connection parameters!"
                     )
                 else:
                     raise ValueError(
                         "Trying to open MonitorClient for "
-                        "hostname %s on invalid port %s. Please "
-                        "check your connection parameters!" % (self._hostname, self._port)
+                        f"hostname {self._hostname} on invalid port {self._port}. Please "
+                        "check your connection parameters!"
                     )
             try:
                 self.socket.connect((self._hostname, self._port))
-            except socket.error:  # mostly because port is still closed
+            except OSError:  # mostly because port is still closed
                 self.logger.warning("Socket error during connection attempt %s.", i)
                 # could try a different port here by putting port=-1
                 self._port = self._restartserver()
@@ -87,7 +88,7 @@ class MonitorClient(object):
         try:
             self.socket.send(b"c" + bytes(bytearray([0, 0, 0, 0, 0, 0, 0])))
             self.socket.close()
-        except socket.error:
+        except OSError:
             return
 
     def __del__(self):
@@ -161,7 +162,7 @@ class MonitorClient(object):
             return None
 
     def emptybuffer(self):
-        for i in range(100):
+        for _i in range(100):
             n = len(self.socket.recv(16384))
             if n <= 0:
                 return
@@ -171,11 +172,11 @@ class MonitorClient(object):
         for i in range(n):
             try:
                 value = function(addr, value)
-            except (socket.timeout, socket.error):
+            except (OSError, socket.timeout):
                 self.logger.error(
-                    "Error occured in reading attempt %s. "
-                    "Reconnecting at addr %s to %s value %s by "
-                    "client %s" % (i, hex(addr), function.__name__, value, self.client_number)
+                    f"Error occured in reading attempt {i}. "
+                    f"Reconnecting at addr {hex(addr)} to {function.__name__} value {value} by "
+                    f"client {self.client_number}"
                 )
                 if self._restartserver is not None:
                     self.restart()
@@ -189,7 +190,7 @@ class MonitorClient(object):
         self.__init__(hostname=self._hostname, port=port, restartserver=self._restartserver)
 
 
-class DummyClient(object):  # pragma: no cover
+class DummyClient:  # pragma: no cover
     """Class for unitary tests without RedPitaya hardware available"""
 
     class fpgadict(dict):
@@ -235,34 +236,32 @@ class DummyClient(object):  # pragma: no cover
                 elif offset == 0x228:  # MINBW
                     return 1
             elif module.startswith("iir"):
-                if offset == 0x200:  # IIRBITS
-                    return 64
-                elif offset == 0x204:  # IIRSHIFT
-                    return 32
-                elif offset == 0x208:  # IIRSTAGES
-                    return 16
-                elif offset == 0x220:  # filterstages
-                    return 1
-                elif offset == 0x108:  # overflow
-                    return 0
+                iir_map = {
+                    0x200: 64,  # IIRBITS
+                    0x204: 32,  # IIRSHIFT
+                    0x208: 16,  # IIRSTAGES
+                    0x220: 1,  # filterstages
+                    0x108: 0,  # overflow
+                }
+                if offset in iir_map:
+                    return iir_map[offset]
             elif module.startswith("iq"):
                 if offset == 0x220:  # filterstages
                     return 1
                 # rbw filter register
-                elif offset == 0x230:  # filterstages = 0x230
-                    return 2
-                elif offset == 0x234:  # shiftbits = 0x234
+                elif offset == 0x230 or offset == 0x234:  # filterstages = 0x230
                     return 2
                 elif offset == 0x238:  # minbw = 0x238
                     return 1
             for filter_module in ["iq", "pid", "iir"]:
                 if module.startswith(filter_module):
-                    if offset == 0x220:  # filterstages
-                        return 1
-                    elif offset == 0x224:  # shiftbits
-                        return 2
-                    elif offset == 0x228:  # minbw
-                        return 1
+                    filter_map = {
+                        0x220: 1,  # filterstages
+                        0x224: 2,  # shiftbits
+                        0x228: 1,  # minbw
+                    }
+                    if offset in filter_map:
+                        return filter_map[offset]
 
         # everything else is restored from the dict
         return self.fpgamemory[str(addr)]

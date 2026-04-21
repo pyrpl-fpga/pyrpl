@@ -6,32 +6,32 @@ member ModuleClass._widget_class specifies which ModuleWidget class should
 be used for the particular ModuleClass.
 """
 
-from .base_module_widget import ReducedModuleWidget, ModuleWidget
 from .asg_widget import AsgWidget
+from .base_module_widget import ModuleWidget, ReducedModuleWidget
+from .curve_viewer_widget import CurveViewerWidget
 from .iir_widget import IirWidget
 from .iq_widget import IqWidget
-from .pwm_widget import PwmWidget
 from .lockbox_widget import (
-    LockboxWidget,
-    OutputSignalWidget,
     InputsWidget,
     LockboxInputWidget,
     LockboxSequenceWidget,
     LockboxStageWidget,
+    LockboxWidget,
+    OutputSignalWidget,
     StageOutputWidget,
 )
 from .module_manager_widget import (
-    ModuleManagerWidget,
-    IqManagerWidget,
-    PidManagerWidget,
-    ScopeManagerWidget,
-    IirManagerWidget,
     AsgManagerWidget,
+    IirManagerWidget,
+    IqManagerWidget,
+    ModuleManagerWidget,
+    PidManagerWidget,
     PwmManagerWidget,
+    ScopeManagerWidget,
 )
 from .na_widget import NaWidget
 from .pid_widget import PidWidget
+from .pwm_widget import PwmWidget
+from .pyrpl_config_widget import PyrplConfigWidget
 from .scope_widget import ScopeWidget
 from .spec_an_widget import SpecAnWidget
-from .pyrpl_config_widget import PyrplConfigWidget
-from .curve_viewer_widget import CurveViewerWidget

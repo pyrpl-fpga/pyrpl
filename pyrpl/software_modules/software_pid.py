@@ -1,7 +1,16 @@
-from .loop import PlotLoop
-from ..attributes import *
-from ..modules import Module
 import numpy as np
+
+from ..attributes import (
+    BoolProperty,
+    FloatProperty,
+    LedProperty,
+    Plotter,
+    StringProperty,
+    recursive_getattr,
+    recursive_setattr,
+)
+from ..modules import Module
+from .loop import PlotLoop
 
 
 class SoftwarePidLoop(PlotLoop):
@@ -63,7 +72,7 @@ class SoftwarePidLoop(PlotLoop):
 class RunningProperty(LedProperty):
     def get_value(self, obj):
         val = hasattr(obj, "loop") and obj.loop is not None
-        if val != super(RunningProperty, self).get_value(obj):
+        if val != super().get_value(obj):
             setattr(obj, self.name, val)
         return val
 

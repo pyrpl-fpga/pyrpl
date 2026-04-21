@@ -1,13 +1,14 @@
 import logging
+
 import numpy as np
-from pyrpl.async_utils import sleep
-from qtpy import QtCore
-from pyrpl.test.test_base import TestPyrpl
+from qtpy import QtCore, QtTest
+
 from pyrpl import APP
-from pyrpl.widgets.attribute_widgets import NumberAttributeWidget
+from pyrpl.async_utils import sleep
 from pyrpl.hardware_modules.iir import IIR
 from pyrpl.software_modules import NetworkAnalyzer
-from qtpy import QtTest
+from pyrpl.test.test_base import TestPyrpl
+from pyrpl.widgets.attribute_widgets import NumberAttributeWidget
 
 logger = logging.getLogger(name=__name__)
 
@@ -42,7 +43,7 @@ class TestAttributeWidgets(TestPyrpl):
     _TEST_SPINBOX_BUTTON_DOWN_TIME = 0.05
 
     def assert_spin_box(self, mod, widget, name, aw):
-        print("Testing spinbox widget for %s.%s..." % (mod.name, name))
+        print(f"Testing spinbox widget for {mod.name}.{name}...")
         # make sure the module is not reserved by some other module
         # (as this would disable the key press response)
         mod.free()
@@ -60,11 +61,11 @@ class TestAttributeWidgets(TestPyrpl):
         assert abs(w_value - m_value) / norm < 0.001, (w_value, m_value, mod.name, name)
 
         # some widgets are disabled by default and must be skipped
-        fullname = "%s.%s" % (mod.name, name)
+        fullname = f"{mod.name}.{name}"
         exclude = ["spectrumanalyzer.center"]
         if fullname in exclude:
             # skip test for those
-            print("Widget %s.%s was not enabled and cannot be tested..." % (mod.name, name))
+            print(f"Widget {mod.name}.{name} was not enabled and cannot be tested...")
             return
 
         # go up

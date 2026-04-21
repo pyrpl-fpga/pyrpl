@@ -1,9 +1,10 @@
 import logging
-from pyrpl.modules import Module
-from pyrpl.attributes import FloatProperty, SelectProperty, ProxyProperty
-from pyrpl.module_attributes import *
-from pyrpl.memory import MemoryTree
+
 from pyrpl.async_utils import sleep
+from pyrpl.attributes import FloatProperty, ProxyProperty, SelectProperty
+from pyrpl.memory import MemoryTree
+from pyrpl.module_attributes import ModuleProperty
+from pyrpl.modules import Module
 
 logger = logging.getLogger(name=__name__)
 
@@ -23,7 +24,7 @@ class MyModule(Module):
         self.setup_called = True
 
 
-class SignalReceiver(object):
+class SignalReceiver:
     """
     slots for signals to ensure that signals are properly emitted
     """
@@ -38,7 +39,7 @@ class SignalReceiver(object):
         self.arrived_signal = True
 
 
-class TestProxyProperty(object):
+class TestProxyProperty:
     def test_proxy(self):
         self.pyrpl = None
         self.parent = self.pyrpl
@@ -128,12 +129,12 @@ class TestProxyProperty(object):
         s.arrived_signal = False
         m.myselectproxy = 7
         # see whether signal arrives
-        for i in range(100):
+        for _i in range(100):
             sleep(0.01)
             if s.arrived_signal:
                 break
         else:
-            assert False, "Timeout: proxy signals are not properly connected"
+            raise AssertionError("Timeout: proxy signals are not properly connected")
         assert s.arrived_signal == ("myselectproxy", [7]), s.arrived_signal
 
         assert m.myselectproxy_options == newoptions
@@ -142,12 +143,12 @@ class TestProxyProperty(object):
         s.arrived_signal = False
         m.__class__.myselectproxy.change_options(m, ["foo", "par"])
         # see whether signal arrives
-        for i in range(100):
+        for _i in range(100):
             sleep(0.01)
             if s.arrived_signal:
                 break
         else:
-            assert False, "Timeout: proxy signals are not properly connected"
+            raise AssertionError("Timeout: proxy signals are not properly connected")
         assert s.arrived_signal == ("myselectproxy", ["foo", "par"]), s.arrived_signal
 
         assert m.myselectproxy_options == ["foo", "par"]

@@ -1,13 +1,16 @@
 # conftest.py - pytest automatically discovers fixtures from this file
+import contextlib
 import logging
-import pytest
 import os
 import socket
 from collections import namedtuple
+
+import pytest
+
 from .. import Pyrpl, RedPitaya, global_config
+from ..async_utils import sleep
 from ..directories import user_config_dir
 from ..pyrpl_utils import time
-from ..async_utils import sleep
 
 logger = logging.getLogger(name=__name__)
 
@@ -108,10 +111,8 @@ def hardware_session():
 
     # Cleanup start
     if os.path.isfile(tmp_conf):
-        try:
+        with contextlib.suppress(OSError):
             os.remove(tmp_conf)
-        except (WindowsError, OSError):
-            pass
 
     if _require_full_pyrpl:
         # --- HEAVY PATH ---
@@ -132,16 +133,16 @@ def hardware_session():
     # We allow 'r.hk.led' to act as a warmup and timing test
     N = 10
     t0 = time()
-    for i in range(N):
+    for _i in range(N):
         _ = rp_obj.hk.led
     read_time = (time() - t0) / float(N)
 
     t0 = time()
-    for i in range(N):
+    for _i in range(N):
         rp_obj.hk.led = 0
     write_time = (time() - t0) / float(N)
 
-    print("Est. Read/Write: %.1f ms / %.1f ms" % (read_time * 1000.0, write_time * 1000.0))
+    print(f"Est. Read/Write: {read_time * 1000.0:.1f} ms / {write_time * 1000.0:.1f} ms")
 
     # Yield the container
     yield HardwareSession(rp=rp_obj, pyrpl=pyrpl_obj, read_time=read_time, write_time=write_time)
@@ -149,23 +150,17 @@ def hardware_session():
     # --- TEARDOWN ---
     logger.info("Tearing down hardware session...")
     if pyrpl_obj:
-        try:
+        with contextlib.suppress(AttributeError, OSError, RuntimeError):
             pyrpl_obj._clear()
-        except (AttributeError, OSError, RuntimeError):
-            pass
     else:
         # If we only made the RP, we close it manually
-        try:
+        with contextlib.suppress(AttributeError, OSError, RuntimeError):
             rp_obj.end_all()
-        except (AttributeError, OSError, RuntimeError):
-            pass
 
     sleep(0.2)
     if os.path.isfile(tmp_conf):
-        try:
+        with contextlib.suppress(OSError):
             os.remove(tmp_conf)
-        except (WindowsError, OSError):
-            pass
 
     # Wait for file to be fully deleted
     max_attempts = 10

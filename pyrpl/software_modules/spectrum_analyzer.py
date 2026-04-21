@@ -111,12 +111,16 @@ refer to the section :ref:`How a spectrum is computed in PyRPL`.
 """
 
 import logging
-from ..module_attributes import *
-from ..hardware_modules import Scope
-from ..hardware_modules.dsp import all_inputs, InputSelectProperty
-from ..acquisition_module import AcquisitionModule
-from ..widgets.module_widgets import SpecAnWidget
 import sys
+
+import numpy as np
+
+from ..acquisition_module import AcquisitionModule
+from ..attributes import BoolProperty, FilterProperty, FrequencyProperty, SelectProperty
+from ..hardware_modules import Scope
+from ..hardware_modules.dsp import InputSelectProperty, all_inputs
+from ..widgets.module_widgets import SpecAnWidget
+
 # import scipy.signal as sig
 # import scipy.fftpack as fft
 
@@ -151,10 +155,7 @@ def get_window_numpy(name, N, fftbins=False):  # Remove heavy scipy module
         )
         return w
     elif window_type == "gaussian":
-        if param is None:
-            std = N / 10  # default
-        else:
-            std = float(param)
+        std = N / 10 if param is None else float(param)
         n = np.arange(0, N) - (N - 1) / 2
         w = np.exp(-0.5 * (n / std) ** 2)
         return w
@@ -168,7 +169,7 @@ def get_window_numpy(name, N, fftbins=False):  # Remove heavy scipy module
 
 class DisplayUnitProperty(SelectProperty):
     def set_value(self, obj, value):
-        super(DisplayUnitProperty, self).set_value(obj, value)
+        super().set_value(obj, value)
         obj._emit_signal_by_name("unit_changed")
 
 
@@ -248,7 +249,7 @@ class DecimationProperty(SelectProperty):
     """
 
     def set_value(self, obj, value):
-        super(DecimationProperty, self).set_value(obj, value)
+        super().set_value(obj, value)
         obj.__class__.span.value_updated(obj, obj.span)
         obj.__class__.rbw.value_updated(obj, obj.rbw)
 
@@ -259,7 +260,7 @@ class WindowProperty(SelectProperty):
     """
 
     def set_value(self, obj, value):
-        super(WindowProperty, self).set_value(obj, value)
+        super().set_value(obj, value)
         obj.__class__.rbw.refresh_options(obj)
 
 
@@ -411,7 +412,7 @@ class SpectrumAnalyzer(AcquisitionModule):
     acbandwidth = SpecAnAcBandwidth(call_setup=True)
 
     def __init__(self, parent, name=None):
-        super(SpectrumAnalyzer, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         self._transfer_function_square_cached = None
 
     @property
@@ -591,10 +592,7 @@ class SpectrumAnalyzer(AcquisitionModule):
 
     def transfer_function_scope(self, frequencies):
         # scope transfer function
-        if not self.baseband:
-            displaced_freqs = frequencies - self.center
-        else:
-            displaced_freqs = frequencies
+        displaced_freqs = frequencies - self.center if not self.baseband else frequencies
         if self._scope_decimation() > 1:
             norm_freq = self._scope_decimation() * displaced_freqs / 125e6
             return np.sinc(norm_freq)
@@ -614,7 +612,7 @@ class SpectrumAnalyzer(AcquisitionModule):
     # ----------------------------------------------------
 
     def _get_run_attributes(self):
-        params = super(SpectrumAnalyzer, self)._get_run_attributes()
+        params = super()._get_run_attributes()
         params["rbw"] = self.rbw
         return params
 
@@ -622,7 +620,7 @@ class SpectrumAnalyzer(AcquisitionModule):
         self.scope.free()
 
     def _prepare_averaging(self):
-        super(SpectrumAnalyzer, self)._prepare_averaging()
+        super()._prepare_averaging()
         self.current_avg = 0
         if self.baseband:
             self.data_avg = np.zeros((4, self._real_points))
@@ -755,9 +753,7 @@ class SpectrumAnalyzer(AcquisitionModule):
         the db_system. Also, returns the list [curve_ch1, curve_ch2]...
         """
         if not self.baseband:
-            return super(SpectrumAnalyzer, self)._save_curve(
-                self.data_x, self.data_avg, **self.setup_attributes
-            )
+            return super()._save_curve(self.data_x, self.data_avg, **self.setup_attributes)
         else:
             d = self.setup_attributes
             curves = [None, None]

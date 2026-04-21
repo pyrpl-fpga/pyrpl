@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 The Lockbox widget is used to produce a control signal to make a system's
 output follow a specified setpoint. The system has to behave linearly around
@@ -88,20 +87,21 @@ in the information as good as possible. Critical fields are:
 
 """
 
-from qtpy import QtWidgets
-import pyqtgraph as pg
 import numpy as np
-from .base_module_widget import ReducedModuleWidget, ModuleWidget
-from ...pyrpl_utils import get_base_module_class
+import pyqtgraph as pg
+from qtpy import QtWidgets
+
 from ... import APP
+from ...pyrpl_utils import get_base_module_class
+from .base_module_widget import ModuleWidget, ReducedModuleWidget
 
 
 class AnalogTfDialog(QtWidgets.QDialog):
     def __init__(self, parent):
-        super(AnalogTfDialog, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
-        self.setWindowTitle("Analog transfer function for output %s" % self.module.name)
+        self.setWindowTitle(f"Analog transfer function for output {self.module.name}")
         self.lay_v = QtWidgets.QVBoxLayout(self)
         self.lay_h = QtWidgets.QHBoxLayout()
         self.ok = QtWidgets.QPushButton("Ok")
@@ -177,7 +177,7 @@ class AnalogTfSpec(QtWidgets.QWidget):
     """
 
     def __init__(self, parent):
-        super(AnalogTfSpec, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -211,7 +211,7 @@ class AnalogTfSpec(QtWidgets.QWidget):
 
 class MainOutputProperties(QtWidgets.QGroupBox):
     def __init__(self, parent):
-        super(MainOutputProperties, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
         aws = self.parent.attribute_widgets
@@ -246,7 +246,7 @@ class MainOutputProperties(QtWidgets.QGroupBox):
 
 class SweepOutputProperties(QtWidgets.QGroupBox):
     def __init__(self, parent):
-        super(SweepOutputProperties, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         aws = self.parent.attribute_widgets
         self.layout = QtWidgets.QHBoxLayout(self)
@@ -263,7 +263,7 @@ class SweepOutputProperties(QtWidgets.QGroupBox):
 
 class WidgetManual(QtWidgets.QWidget):
     def __init__(self, parent):
-        super(WidgetManual, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.layout = QtWidgets.QVBoxLayout(self)
         self.pv1 = QtWidgets.QVBoxLayout()
@@ -288,7 +288,7 @@ class WidgetManual(QtWidgets.QWidget):
 
 class WidgetAssisted(QtWidgets.QWidget):
     def __init__(self, parent):
-        super(WidgetAssisted, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.layout = QtWidgets.QVBoxLayout(self)
         self.v1 = QtWidgets.QVBoxLayout()
@@ -310,7 +310,7 @@ class WidgetAssisted(QtWidgets.QWidget):
 
 class PidProperties(QtWidgets.QGroupBox):
     def __init__(self, parent):
-        super(PidProperties, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.module = self.parent.module
         self.layout = QtWidgets.QHBoxLayout(self)
@@ -368,7 +368,7 @@ class PidProperties(QtWidgets.QGroupBox):
 
 class PostFiltering(QtWidgets.QGroupBox):
     def __init__(self, parent):
-        super(PostFiltering, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         aws = self.parent.attribute_widgets
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -539,7 +539,7 @@ class InputsWidget(QtWidgets.QWidget):
     def __init__(self, all_sig_widget):
         self.all_sig_widget = all_sig_widget
         self.lb_widget = self.all_sig_widget.lb_widget
-        super(InputsWidget, self).__init__(all_sig_widget)
+        super().__init__(all_sig_widget)
         self.layout = QtWidgets.QHBoxLayout(self)
         self.input_widgets = dict()
         # self.layout.addStretch(1)
@@ -571,7 +571,7 @@ class MyTabBar(QtWidgets.QTabBar):
         """
         Tab '+' and 'inputs' are smaller since they don't have a close button
         """
-        size = super(MyTabBar, self).tabSizeHint(index)
+        size = super().tabSizeHint(index)
         # if index==0 or index==self.parent().count() - 1:
         #    return QtCore.QSize(size.width() - 15, size.height())
         # else:
@@ -584,7 +584,7 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
     """
 
     def __init__(self, lockbox_widget):
-        super(AllSignalsWidget, self).__init__()
+        super().__init__()
         self.tab_bar = MyTabBar()
         self.setTabBar(self.tab_bar)
         self.setTabsClosable(True)
@@ -613,7 +613,7 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
     def update_gain_color(self, output, p_or_i, color):
         output_widget = self.get_output_widget_by_name(output.name)
         button = getattr(output_widget.pid_props.manual_widget, p_or_i)
-        button.widget.setStyleSheet("background-color:%s" % color)
+        button.widget.setStyleSheet(f"background-color:{color}")
 
     def tab_changed(self, index):
         if index == self.count() - 1:  # tab "+" clicked
@@ -677,7 +677,7 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
 
 class MyCloseButton(QtWidgets.QPushButton):
     def __init__(self, parent=None):
-        super(MyCloseButton, self).__init__(parent)
+        super().__init__(parent)
         style = APP.style()
         close_icon = style.standardIcon(QtWidgets.QStyle.SP_TitleBarCloseButton)
         self.setIcon(close_icon)
@@ -688,7 +688,7 @@ class MyCloseButton(QtWidgets.QPushButton):
 
 class MyAddButton(QtWidgets.QPushButton):
     def __init__(self, parent=None):
-        super(MyAddButton, self).__init__(parent)
+        super().__init__(parent)
         style = APP.style()
         close_icon = style.standardIcon(QtWidgets.QStyle.SP_TitleBarNormalButton)
         self.setIcon(close_icon)
@@ -699,7 +699,7 @@ class MyAddButton(QtWidgets.QPushButton):
 
 class StageOutputWidget(ReducedModuleWidget):
     def init_attribute_layout(self):
-        super(StageOutputWidget, self).init_attribute_layout()
+        super().init_attribute_layout()
         # self.offset_widget = QtWidgets.QGroupBox()
         # self.main_layout.addWidget(self.offset_widget)
         # self.offset_layout = QtWidgets.QHBoxLayout()
@@ -728,7 +728,7 @@ class StageOutputWidget(ReducedModuleWidget):
         self.attribute_widgets["offset"].widget.setEnabled(self.module.reset_offset)
 
     def update_attribute_by_name(self, name, new_value_list):
-        super(StageOutputWidget, self).update_attribute_by_name(name, new_value_list)
+        super().update_attribute_by_name(name, new_value_list)
         if name == "reset_offset":
             self.update_offset_visibility()
 
@@ -750,7 +750,7 @@ class LockboxStageWidget(ReducedModuleWidget):
         # self.main_layout = QtWidgets.QVBoxLayout(self)
         self.init_main_layout(orientation="vertical")
         self.init_attribute_layout()
-        for name, attr in self.attribute_widgets.items():
+        for _name, attr in self.attribute_widgets.items():
             self.attribute_layout.removeWidget(attr)
         self.lay_h1 = QtWidgets.QHBoxLayout()
         self.main_layout.addLayout(self.lay_h1)
@@ -780,7 +780,7 @@ class LockboxStageWidget(ReducedModuleWidget):
         self.main_layout.addWidget(self.button_goto)
 
     def create_title_bar(self):
-        super(LockboxStageWidget, self).create_title_bar()
+        super().create_title_bar()
         self.close_button = MyCloseButton(self)
         self.close_button.clicked.connect(self.close)
         self.close_button.move(self.width() - self.close_button.width(), self.title_pos[1] + 8)
@@ -791,7 +791,7 @@ class LockboxStageWidget(ReducedModuleWidget):
         self.add_button.move(0, self.title_pos[1] + 8)
 
     def resizeEvent(self, evt):
-        super(LockboxStageWidget, self).resizeEvent(evt)
+        super().resizeEvent(evt)
         self.close_button.move(evt.size().width() - self.close_button.width(), self.title_pos[1])
         self.add_button.move(0, self.title_pos[1])
 
@@ -857,14 +857,14 @@ class LockboxSequenceWidget(ModuleWidget):
             widget.set_title(widget.name)
 
     def show_widget(self):
-        super(LockboxSequenceWidget, self).show_widget()
+        super().show_widget()
         minimumsizehint = (
             self.minimumSizeHint().height() + self.scrollarea.horizontalScrollBar().height()
         )
         self.scrollarea.setMinimumHeight(minimumsizehint)
 
     def hide_widget(self):
-        super(LockboxSequenceWidget, self).hide_widget()
+        super().hide_widget()
         minimumsizehint = (
             self.minimumSizeHint().height() + self.scrollarea.horizontalScrollBar().height()
         )
@@ -1104,7 +1104,7 @@ class LockboxWidget(ModuleWidget):
         self.update_lockstatus()
 
     def hide_lock(self):
-        for input, widget in self.all_sig_widget.inputs_widget.input_widgets.items():
+        for _input, widget in self.all_sig_widget.inputs_widget.input_widgets.items():
             widget.hide_lock()
 
     def _set_button_green(self, button, color="green"):
@@ -1114,14 +1114,16 @@ class LockboxWidget(ModuleWidget):
         if self.button_green is not None:
             self.button_green.setStyleSheet("")
         if button is not None:
-            button.setStyleSheet("background-color:%s" % color)
+            button.setStyleSheet(f"background-color:{color}")
         self.button_green = button
 
-    def update_lockstatus(self, islockedlist=[None]):
+    def update_lockstatus(self, islockedlist=None):
+        if islockedlist is None:
+            islockedlist = [None]
         islocked = islockedlist[0]
         # color = self.module._is_locked_display_color
         color = self._is_locked_display_color(islocked=islocked)
-        self.button_is_locked.setStyleSheet("background-color: %s; color:white" % color)
+        self.button_is_locked.setStyleSheet(f"background-color: {color}; color:white")
 
     def _is_locked_display_color(self, islocked=None):
         """function that returns the color of the LED indicating
