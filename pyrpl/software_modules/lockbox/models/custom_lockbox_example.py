@@ -1,16 +1,17 @@
 # these imports are the standard imports for required for derived lockboxes
+import numpy as np
+
+from pyrpl.attributes import FloatProperty
+from pyrpl.module_attributes import ModuleProperty
 from pyrpl.software_modules.lockbox import (
     InputSignal,
     Lockbox,
-    LockboxModuleDictProperty,
-    OutputSignal,
-    LockboxPlotLoop,
     LockboxLoop,
+    LockboxModuleDictProperty,
+    LockboxPlotLoop,
+    OutputSignal,
 )
-from pyrpl.attributes import FloatProperty
-from pyrpl.module_attributes import ModuleProperty
 from pyrpl.software_modules.loop import time
-import numpy as np
 
 
 # Any InputSignal must define a class that contains the function "expected_signal(variable)" that

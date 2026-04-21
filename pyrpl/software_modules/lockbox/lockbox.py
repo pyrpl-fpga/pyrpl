@@ -1,15 +1,20 @@
-from collections import OrderedDict
-from qtpy import QtCore
+import contextlib
 import logging
-from ...modules import SignalLauncher
+from collections import OrderedDict
+
+from qtpy import QtCore
+
+from ...async_utils import Event, ensure_future, sleep_async, wait
+from ...attributes import BoolProperty, FloatProperty, SelectProperty
 from ...module_attributes import ModuleListProperty
-from ...attributes import SelectProperty, FloatProperty, BoolProperty
+from ...modules import SignalLauncher
+from ...pyrpl_utils import all_subclasses, recursive_getattr, time
 from ...widgets.module_widgets import LockboxWidget
-from ...pyrpl_utils import all_subclasses, time, recursive_getattr
-from .stage import Stage
-from . import LockboxModule, LockboxModuleDictProperty, InputFromOutput, OutputSignal, InputSignal
 from ...widgets.module_widgets.lockbox_widget import LockboxSequenceWidget
-from ...async_utils import wait, sleep_async, ensure_future, Event
+from . import LockboxModule, LockboxModuleDictProperty
+from .input import InputFromOutput, InputSignal
+from .output import OutputSignal
+from .stage import Stage
 
 
 def all_classnames():
@@ -316,10 +321,8 @@ class Lockbox(LockboxModule):
             self.lock_status = new_status
             self._signal_launcher.update_lockstatus.emit([new_status])
             # optionally, call logging functionality implemented derived classes here...
-            try:
+            with contextlib.suppress(AttributeError):
                 self.log_lockstatus()
-            except AttributeError:
-                pass
             await sleep_async(self.lockstatus_interval)
 
     async def _lock_async(self, retry_times=1, **kwds):

@@ -1,12 +1,14 @@
 import logging
-import pyqtgraph as pg
-import numpy as np
 import time
+
+import numpy as np
+import pyqtgraph as pg
+import pytest
 from qtpy import QtCore
-from .test_redpitaya import TestRedpitaya
+
 from .. import APP
 from ..async_utils import sleep
-import pytest
+from .test_redpitaya import TestRedpitaya
 
 logger = logging.getLogger(name=__name__)
 
@@ -78,7 +80,7 @@ class TestPyqtgraph(TestRedpitaya):
             # this is needed such that the test GUI actually plots something
             sleep(0.01)
         if self.cycle < self.cycles:
-            assert False, f"Must complete {self.cycles:d} cycles before testing for speed!"
+            raise AssertionError(f"Must complete {self.cycles:d} cycles before testing for speed!")
         else:
             # time per frame
             dt = (self.endtime - self.starttime) / self.cycles

@@ -56,11 +56,12 @@ Example:
 """
 
 from copy import copy
-from .async_utils import ensure_future, sleep_async, wait, Event
 
-from .attributes import SelectProperty, IntProperty, StringProperty, BoolProperty
-from .modules import Module, SignalLauncher
 from qtpy import QtCore
+
+from .async_utils import Event, ensure_future, sleep_async, wait
+from .attributes import BoolProperty, IntProperty, SelectProperty, StringProperty
+from .modules import Module, SignalLauncher
 
 
 class AcquisitionError(ValueError):
@@ -70,13 +71,7 @@ class AcquisitionError(ValueError):
 class RunningStateProperty(SelectProperty):
     def __init__(
         self,
-        options=[
-            "running_single",
-            "running_continuous",
-            "paused_single",
-            "paused_continuous",
-            "stopped",
-        ],
+        options=None,
         **kwargs,
     ):
         """
@@ -98,6 +93,14 @@ class RunningStateProperty(SelectProperty):
         continuous(), stop(), pause(), resume(). However, a boolean attribute
         run_continuous can be used to switch between continuous() and stopped()
         """
+        if options is None:
+            options = [
+                "running_single",
+                "running_continuous",
+                "paused_single",
+                "paused_continuous",
+                "stopped",
+            ]
         super().__init__(options=options, **kwargs)
 
     def set_value(self, obj, value):

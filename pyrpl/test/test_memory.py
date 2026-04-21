@@ -1,7 +1,8 @@
 import logging
 import os
-from ..memory import MemoryTree, MemoryBranch
+
 from ..async_utils import sleep
+from ..memory import MemoryBranch, MemoryTree
 
 logger = logging.getLogger(name=__name__)
 

@@ -1,3 +1,5 @@
+import contextlib
+
 from .attributes import ModuleAttribute
 from .modules import Module
 
@@ -60,7 +62,10 @@ class ModuleProperty(ModuleAttribute):
 class ModuleList(Module, list):
     """a list of modules"""
 
-    def __init__(self, parent, name=None, element_cls=Module, default=[]):
+    def __init__(self, parent, name=None, element_cls=Module, default=None):
+        if default is None:
+            default = []
+
         def element_name(element_self):
             """function that is used to dynamically assign each
             ModuleListElement's name to the index in the list.
@@ -189,10 +194,8 @@ class ModuleListProperty(ModuleProperty):
         newmodule = self.module_cls(
             obj, name=self.name, element_cls=self.element_cls, default=self.default
         )
-        try:
+        with contextlib.suppress(AttributeError):
             newmodule._widget_class = self._widget_class
-        except AttributeError:
-            pass
         return newmodule
 
     def validate_and_normalize(self, obj, value):
@@ -200,13 +203,11 @@ class ModuleListProperty(ModuleProperty):
         if not isinstance(value, list):
             try:
                 value = value.values()
-            except AttributeError:
+            except AttributeError as exc:
                 raise ValueError(
                     "ModuleProperty must be assigned a list. "
-                    "You have wrongly assigned an object of type "
-                    "%s. ",
-                    type(value),
-                )
+                    f"You assigned an object of type {type(value)}."
+                ) from exc
         return value
 
 

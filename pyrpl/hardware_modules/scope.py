@@ -125,12 +125,12 @@ large an integrator gain will quickly saturate the outputs.
     print("First point in data buffer 1 [V]:", s.ch1_firstpoint)
 """
 
-from .dsp import all_inputs, dsp_addr_base, InputSelectRegister
-from ..acquisition_module import AcquisitionModule
-from ..async_utils import wait, sleep_async
-from ..pyrpl_utils import sorted_dict
 import logging
+
 import numpy as np
+
+from ..acquisition_module import AcquisitionModule
+from ..async_utils import sleep_async, wait
 from ..attributes import (
     BoolProperty,
     BoolRegister,
@@ -143,8 +143,9 @@ from ..attributes import (
     StringProperty,
 )
 from ..modules import HardwareModule
-from ..pyrpl_utils import time
+from ..pyrpl_utils import sorted_dict, time
 from ..widgets.module_widgets import ScopeWidget
+from .dsp import InputSelectRegister, all_inputs, dsp_addr_base
 
 logger = logging.getLogger(name=__name__)
 

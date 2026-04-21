@@ -1,27 +1,27 @@
+# timeit.default_timer() is THE precise timer to use (microsecond precise vs
+# milliseconds for time.time()). see
+# http://stackoverflow.com/questions/85451/python-time-clock-vs-time-time-accuracy
+import timeit
+
 import numpy as np
 
+from ..acquisition_module import AcquisitionModule
 from ..async_utils import sleep_async  # PyrplFuture,
 
 # MainThreadTimer,
 # CancelledError, sleep
 from ..attributes import (
+    BoolProperty,
+    FilterProperty,
     FloatProperty,
     FrequencyProperty,
     IntProperty,
-    BoolProperty,
-    FilterProperty,
     SelectProperty,
 )
-from ..hardware_modules import all_output_directs, InputSelectProperty
-from ..modules import SignalModule
-from ..acquisition_module import AcquisitionModule
-from ..widgets.module_widgets import NaWidget
+from ..hardware_modules import InputSelectProperty, all_output_directs
 from ..hardware_modules.iq import Iq
-
-# timeit.default_timer() is THE precise timer to use (microsecond precise vs
-# milliseconds for time.time()). see
-# http://stackoverflow.com/questions/85451/python-time-clock-vs-time-time-accuracy
-import timeit
+from ..modules import SignalModule
+from ..widgets.module_widgets import NaWidget
 
 
 class NaAcBandwidth(FilterProperty):
@@ -315,30 +315,26 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
             await sleep_async(0.01)
 
     async def _start_point_acquisition(self, index):
-        if self.is_zero_span():
-            # in zero span, data_x are time, not frequency
-            frequency = self.start_freq
-        else:
-            # normal frequency sweep, get frequency from data_x-array
-            frequency = self.frequencies[index]
-        if self.auto_bandwidth:  # RBW should be updated if needed
-            if (
-                self.auto_rbw_value(frequency) > self._current_bandwidth + 0.001
-            ):  # avoid rounding problems
-                self._current_bandwidth *= 2
-                self.iq.bandwidth = [self._current_bandwidth, self._current_bandwidth]
+        # in zero span, data_x are time, not frequency
+        frequency = self.start_freq if self.is_zero_span() else self.frequencies[index]
+        if self.auto_bandwidth and (
+            self.auto_rbw_value(frequency) > self._current_bandwidth + 0.001
+        ):  # RBW should be updated if needed
+            # avoid rounding problems
+            self._current_bandwidth *= 2
+            self.iq.bandwidth = [self._current_bandwidth, self._current_bandwidth]
 
-                new_sleep_cycles = int(np.round(125e6 / self._current_bandwidth * self.sleeptimes))
-                self.iq._na_sleepcycles = new_sleep_cycles
-                new_na_averages = int(
-                    np.round(125e6 / self._current_bandwidth * self.average_per_point)
-                )
-                self.iq._na_averages = new_na_averages
-                self._cached_na_averages = new_na_averages
+            new_sleep_cycles = int(np.round(125e6 / self._current_bandwidth * self.sleeptimes))
+            self.iq._na_sleepcycles = new_sleep_cycles
+            new_na_averages = int(
+                np.round(125e6 / self._current_bandwidth * self.average_per_point)
+            )
+            self.iq._na_averages = new_na_averages
+            self._cached_na_averages = new_na_averages
 
-                self.time_per_point = float(new_sleep_cycles + new_na_averages) / (
-                    125e6 * self.iq._frequency_correction
-                )
+            self.time_per_point = float(new_sleep_cycles + new_na_averages) / (
+                125e6 * self.iq._frequency_correction
+            )
         if self.auto_amplitude:
             if self.current_avg == 0:  # need to determine next amp
                 if index <= self.AUTO_AMP_AVG:  # use user-defined amplitude
@@ -364,10 +360,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
                     else:
                         self.amplitude_list[index] = last_amp  # keep the same amplitude
             else:
-                if index == 0:
-                    last_index = -1
-                else:
-                    last_index = index - 1
+                last_index = -1 if index == 0 else index - 1
                 if abs(self.amplitude_list[last_index] - self.amplitude_list[index]) > 1e-6:
                     await self._ramp_iq_amp_async(self.amplitude_list[index])
 
@@ -612,10 +605,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
     def _remaining_time(self):
         """Remaining time in seconds until current point is ready"""
         # implement here the extra waiting at the beginning
-        if self.current_point == 0:
-            time_per_point = 3 * self.time_per_point
-        else:
-            time_per_point = self.time_per_point
+        time_per_point = 3 * self.time_per_point if self.current_point == 0 else self.time_per_point
         return time_per_point - (timeit.default_timer() - self._time_last_point)
 
     def _prepare_averaging(self):

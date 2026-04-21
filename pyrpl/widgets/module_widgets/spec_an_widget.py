@@ -43,8 +43,10 @@ The following attributes can be manipulated by the SpectrumAnalyzer widget:
 """
 
 import logging
-from qtpy import QtWidgets
+
 import numpy as np
+from qtpy import QtWidgets
+
 from ..attribute_widgets import DataWidget
 from .acquisition_module_widget import AcquisitionModuleWidget
 

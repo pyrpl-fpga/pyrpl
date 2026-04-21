@@ -1,6 +1,6 @@
-from . import DspModule
-from ..widgets.module_widgets import PwmWidget
 from ..errors import ExpectedPyrplError
+from ..widgets.module_widgets import PwmWidget
+from .dsp import DspModule
 
 
 class Pwm(DspModule):

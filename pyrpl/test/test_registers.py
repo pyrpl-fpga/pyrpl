@@ -1,16 +1,19 @@
 import logging
+
 import numpy as np
-from pyrpl.modules import Module
+
 from pyrpl.attributes import (
     BaseRegister,
-    LongRegister,
     BoolRegister,
-    IORegister,
     FloatRegister,
-    PhaseRegister,
     FrequencyRegister,
+    IORegister,
+    LongRegister,
+    PhaseRegister,
     SelectRegister,
 )
+from pyrpl.modules import Module
+
 from .test_redpitaya import TestRedpitaya
 
 logger = logging.getLogger(name=__name__)
@@ -40,7 +43,7 @@ class TestRegisters(TestRedpitaya):
         # same test as above but without the yield not supported by pytest,
         # I don't think it changes anything here keeping both for nosetests
         if self.r is None:
-            assert False
+            raise AssertionError()
         for modulekey, module in self.r.__dict__.items():
             if isinstance(module, Module):
                 logger.info("Scanning module %s...", modulekey)
@@ -57,7 +60,7 @@ class TestRegisters(TestRedpitaya):
             value = module.__getattribute__(regkey)
             # make sure Register represents an int
             if not isinstance(value, int):
-                assert False, f"wrong type: int != {str(type(value))}"
+                raise AssertionError(f"wrong type: int != {str(type(value))}")
             # write back to it to test setter
             module.__setattr__(regkey, value)
             newvalue = module.__getattribute__(regkey)
@@ -69,7 +72,7 @@ class TestRegisters(TestRedpitaya):
             value = module.__getattribute__(regkey)
             # make sure Register represents an int
             if not isinstance(value, int):
-                assert False, f"wrong type: int != {str(type(value))}"
+                raise AssertionError(f"wrong type: int != {str(type(value))}")
             # write back to it to test setter
             module.__setattr__(regkey, value)
             newvalue = module.__getattribute__(regkey)
@@ -82,7 +85,7 @@ class TestRegisters(TestRedpitaya):
             value = module.__getattribute__(regkey)
             # make sure Register represents an int
             if type(value) is not bool:
-                assert False
+                raise AssertionError()
             # exclude read-only registers
             if regkey in [
                 "_reset_writestate_machine",
@@ -96,17 +99,17 @@ class TestRegisters(TestRedpitaya):
             # write opposite value and confirm it has changed
             module.__setattr__(regkey, not value)
             if value == module.__getattribute__(regkey):
-                assert False
+                raise AssertionError()
             # write back original value and check for equality
             module.__setattr__(regkey, value)
             if value != module.__getattribute__(regkey):
-                assert False
+                raise AssertionError()
         if type(reg) is FloatRegister:
             # try to read
             value = module.__getattribute__(regkey)
             # make sure Register represents a float
             if not isinstance(value, float):
-                assert False
+                raise AssertionError()
             # exclude read-only registers
             if (
                 regkey
@@ -125,34 +128,31 @@ class TestRegisters(TestRedpitaya):
             ):
                 return
             # write something different and confirm change
-            if value == 0:
-                write = 1e10
-            else:
-                write = 0
+            write = 10000000000.0 if value == 0 else 0
             module.__setattr__(regkey, write)
             if value == module.__getattribute__(regkey):
-                assert False
+                raise AssertionError()
             # write sth negative
             write = -1e10
             module.__setattr__(regkey, write)
             if module.__getattribute__(regkey) >= 0:
                 if reg.signed:
-                    assert False
+                    raise AssertionError()
                 else:
                     # unsigned registers should use absolute value and
                     # therefore not be zero when assigned large negative values
                     if module.__getattribute__(regkey) == 0:
-                        assert False
+                        raise AssertionError()
             # set back original value
             module.__setattr__(regkey, value)
             if value != module.__getattribute__(regkey):
-                assert False
+                raise AssertionError()
         if type(reg) is PhaseRegister:
             # try to read
             value = module.__getattribute__(regkey)
             # make sure Register represents a float
             if not isinstance(value, float):
-                assert False
+                raise AssertionError()
             # make sure any random phase has an error below 1e-6 degrees !
             if regkey not in ["scopetriggerphase"]:
                 for phase in np.linspace(-1234, 5678, 90):
@@ -161,17 +161,17 @@ class TestRegisters(TestRedpitaya):
                     bits = getattr(module.__class__, regkey).bits
                     thr = 360.0 / 2**bits / 2  # factor 2 because rounding is used
                     if diff > thr:
-                        assert False, "at phase " + str(phase) + ": diff = " + str(diff)
+                        raise AssertionError("at phase " + str(phase) + ": diff = " + str(diff))
             # set back original value
             module.__setattr__(regkey, value)
             if value != module.__getattribute__(regkey):
-                assert False
+                raise AssertionError()
         if type(reg) is FrequencyRegister:
             # try to read
             value = module.__getattribute__(regkey)
             # make sure Register represents a float
             if not isinstance(value, float):
-                assert False
+                raise AssertionError()
             # make sure any frequency has an error below 100 mHz!
             if regkey not in []:
                 for freq in [
@@ -189,17 +189,17 @@ class TestRegisters(TestRedpitaya):
                     module.__setattr__(regkey, freq)
                     diff = abs(module.__getattribute__(regkey) - freq)
                     if diff > 0.1:
-                        assert False, "at freq " + str(freq) + ": diff = " + str(diff)
+                        raise AssertionError("at freq " + str(freq) + ": diff = " + str(diff))
             # set back original value
             module.__setattr__(regkey, value)
             if value != module.__getattribute__(regkey):
-                assert False
+                raise AssertionError()
         if type(reg) is SelectRegister:
             # try to read
             value = module.__getattribute__(regkey)
             # make sure Register represents an int
             if not isinstance((sorted(reg.options(module))[0]), type(value)):
-                assert False
+                raise AssertionError()
             # exclude read-only registers
             if regkey in ["id"]:
                 return
@@ -207,9 +207,9 @@ class TestRegisters(TestRedpitaya):
             for option in sorted(reg.options(module)):
                 module.__setattr__(regkey, option)
                 if option != module.__getattribute__(regkey):
-                    assert False
+                    raise AssertionError()
             # set back original value
             module.__setattr__(regkey, value)
             if value != module.__getattribute__(regkey):
-                assert False
+                raise AssertionError()
         return

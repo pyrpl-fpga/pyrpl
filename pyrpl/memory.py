@@ -16,16 +16,17 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
+import logging
 import os
 from collections import OrderedDict
 from shutil import copyfile
+
 import numpy as np
+import yaml
 from qtpy import QtCore
+
 from .directories import default_config_dir, user_config_dir
 from .pyrpl_utils import time
-import yaml
-
-import logging
 
 logger = logging.getLogger(name=__name__)
 
@@ -107,7 +108,7 @@ def save(
 
 
 def isbranch(obj):
-    return isinstance(obj, dict) or isinstance(obj, list)
+    return isinstance(obj, (dict, list))
 
 
 # two functions to locate config files
@@ -221,10 +222,10 @@ class MemoryBranch:
     def _update_instance_dict(self):
         data = self._data
         if isinstance(data, dict):
-            for k in self.__dict__.keys():
+            for k in self.__dict__:
                 if k not in data and not k.startswith("_"):
                     self.__dict__.pop(k)
-            for k in data.keys():
+            for k in data:
                 # write None since this is only a
                 # placeholder (__getattribute__ is overwritten below)
                 self.__dict__[k] = None
@@ -346,7 +347,7 @@ class MemoryBranch:
         remove an item from the branch
         """
         value = self._data.pop(name)
-        if name in self.__dict__.keys():
+        if name in self.__dict__:
             self.__dict__.pop(name)
         self._save()
         return value
@@ -376,7 +377,7 @@ class MemoryBranch:
             currentbranch = self
             for subbranchname in name.split("."):
                 # make new branch if applicable
-                if subbranchname not in currentbranch._data.keys():
+                if subbranchname not in currentbranch._data:
                     currentbranch[subbranchname] = dict()
                 # move into new branch in case another subbranch will be created
                 currentbranch = currentbranch[subbranchname]
@@ -599,11 +600,10 @@ class MemoryTree(MemoryBranch):
             # security 2: atomic writing such as shown in
             # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python:
             try:
-                f = open(self._buffer_filename, mode="w")
-                save(self._data, stream=f)
-                f.flush()
-                os.fsync(f.fileno())
-                f.close()
+                with open(self._buffer_filename, mode="w") as f:
+                    save(self._data, stream=f)
+                    f.flush()
+                    os.fsync(f.fileno())
                 os.unlink(self._filename)
                 os.rename(self._buffer_filename, self._filename)
             except Exception:

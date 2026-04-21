@@ -3,9 +3,11 @@ This file contains a number of methods for asynchronous operations.
 """
 
 import logging
-from qtpy import QtCore
-from timeit import default_timer
 import sys
+from timeit import default_timer
+
+from qtpy import QtCore
+
 from . import APP  # APP is only created once at the startup of PyRPL
 
 logger = logging.getLogger(name=__name__)
@@ -15,14 +17,14 @@ MAIN_THREAD = APP.thread()
 
 try:
     from asyncio import (
-        Future,
         CancelledError,
-        set_event_loop,
+        Future,
         TimeoutError,
+        set_event_loop,
     )
 except ImportError:  # this occurs in python 2.7
     logger.debug("asyncio not found, we will use concurrent.futures instead of python 3.5 Futures.")
-    from concurrent.futures import Future, CancelledError, TimeoutError
+    from concurrent.futures import CancelledError, Future, TimeoutError
 else:
     import quamash
 

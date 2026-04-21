@@ -76,9 +76,9 @@ demodulation and a remodulation stage. The correct settings are::
   phase=30 # eventually include some dephasing to the filter
 """
 
-from .base_module_widget import ModuleWidget
-
 from qtpy import QtWidgets
+
+from .base_module_widget import ModuleWidget
 
 
 class IqWidget(ModuleWidget):
@@ -91,7 +91,7 @@ class IqWidget(ModuleWidget):
         # Then remove properties from normal property layout
         # We will make one where buttons are stack on top of each
         # others by functional column blocks
-        for key, widget in self.attribute_widgets.items():
+        for _key, widget in self.attribute_widgets.items():
             self.attribute_layout.removeWidget(widget)
         self.attribute_widgets["bandwidth"].widget.set_max_cols(2)
         self.attribute_layout.addWidget(self.attribute_widgets["input"])

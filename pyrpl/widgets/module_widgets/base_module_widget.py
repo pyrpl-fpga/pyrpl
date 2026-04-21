@@ -40,10 +40,12 @@ for your own purposes.
              and restart PyRPL with that configuration.
 """
 
-from qtpy import QtCore, QtWidgets
-from collections import OrderedDict
 import functools
 import logging
+from collections import OrderedDict
+
+from qtpy import QtCore, QtWidgets
+
 from ..yml_editor import YmlEditor
 
 
@@ -111,9 +113,7 @@ class SaveLabel(MyMenuLabel):
         state = str(state)
         if accept:
             if state in self.module.states:
-                raise ValueError(
-                    f"State {state} of module {self.module.name} already exists!"
-                )
+                raise ValueError(f"State {state} of module {self.module.name} already exists!")
             self.module.save_state(state)
 
 

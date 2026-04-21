@@ -1,7 +1,8 @@
-from ._version import __version_info__, __version__
-
+import contextlib
 import os
 import sys
+
+from ._version import __version__, __version_info__
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
@@ -10,6 +11,7 @@ __license__ = "MIT License"
 
 # manage warnings of numpy
 import warnings
+
 import numpy as np
 
 # pyqtgraph is throwing a warning on ScatterPlotItem
@@ -26,17 +28,19 @@ except AttributeError:
 
 # set up loggers
 import logging
+
 from pyrpl_utils import isnotebook
 from qtpy import QtCore, QtWidgets
-from .pyrpl_utils import setloglevel
+
 from .directories import (
-    user_dir,
+    default_config_dir,
     user_config_dir,
     user_curve_dir,
+    user_dir,
     user_lockbox_dir,
-    default_config_dir,
 )
 from .memory import MemoryTree
+from .pyrpl_utils import setloglevel
 
 logging.basicConfig()
 logger = logging.getLogger(name=__name__)
@@ -71,34 +75,10 @@ except KeyError:  # otherwise, try ~/pyrpl_user_dir (where ~ is the user's home 
 # try to set log level (and automatically generate custom global_config file)
 
 global_config = MemoryTree("global_config", source="global_config")
-try:
+with contextlib.suppress(AttributeError, KeyError, TypeError, ValueError):
     setloglevel(global_config.general.loglevel, loggername=logger.name)
-except (AttributeError, KeyError, TypeError, ValueError):  # pragma: no cover
-    pass
 
 # main imports
-from .redpitaya import RedPitaya
-from .hardware_modules import (
-    AMS,
-    Asg0,
-    Asg1,
-    DSP_INPUTS,
-    DspModule,
-    FilterModule,
-    HK,
-    IIR,
-    InputSelectProperty,
-    InputSelectRegister,
-    Iq,
-    Pid,
-    Pwm,
-    Sampler,
-    Scope,
-    Trig,
-    all_inputs,
-    all_output_directs,
-    dsp_addr_base,
-)
 from .attributes import (
     AttributeList,
     BaseAttribute,
@@ -132,21 +112,21 @@ from .attributes import (
     FrequencyProperty,
     FrequencyRegister,
     GainRegister,
-    IORegister,
     IntAttributeWidget,
     IntProperty,
     IntRegister,
+    IORegister,
     LedAttributeWidget,
     LedProperty,
     LongRegister,
     ModuleAttribute,
     NumberProperty,
-    PWMRegister,
     PhaseProperty,
     PhaseRegister,
     PlotAttributeWidget,
     Plotter,
     ProxyProperty,
+    PWMRegister,
     SelectAttributeWidget,
     SelectProperty,
     SelectRegister,
@@ -157,6 +137,28 @@ from .attributes import (
     epsilon,
     recursive_getattr,
     recursive_setattr,
+)
+from .curvedb import CurveDB, XYSeries
+from .hardware_modules import (
+    AMS,
+    DSP_INPUTS,
+    HK,
+    IIR,
+    Asg0,
+    Asg1,
+    DspModule,
+    FilterModule,
+    InputSelectProperty,
+    InputSelectRegister,
+    Iq,
+    Pid,
+    Pwm,
+    Sampler,
+    Scope,
+    Trig,
+    all_inputs,
+    all_output_directs,
+    dsp_addr_base,
 )
 from .modules import (
     DoSetup,
@@ -170,9 +172,8 @@ from .modules import (
     SignalModule,
     unique_list,
 )
-from .curvedb import CurveDB, XYSeries
 from .pyrpl import Pyrpl, default_pyrpl_config, get_module, help_message
-
+from .redpitaya import RedPitaya
 
 __all__ = [
     "__version_info__",

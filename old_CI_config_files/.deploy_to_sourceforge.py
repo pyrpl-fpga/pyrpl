@@ -1,7 +1,7 @@
-import sys
 import os
-from pyrpl import sshshell, __version__
+import sys
 
+from pyrpl import __version__, sshshell
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -20,9 +20,7 @@ if __name__ == "__main__":
             try:
                 ssh.scp.put(filename, destpath)
             except BaseException as e:
-                print(
-                    f"Upload of file '{filename}' to '{destpath}' to sourceforge failed: {e}!"
-                )
+                print(f"Upload of file '{filename}' to '{destpath}' to sourceforge failed: {e}!")
                 ssh = sshshell.SshShell(
                     hostname="frs.sourceforge.net",
                     user="lneuhaus",

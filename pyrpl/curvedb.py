@@ -27,10 +27,12 @@
 # For full performance, download pyinstruments to replace this class
 # otherwise you can custimize here what is to be done to your data
 #
-import numpy as np
-import os
 import logging
+import os
 import pickle as file_backend
+
+import numpy as np
+
 # import json as file_backend  # currently unable to store pandas
 
 

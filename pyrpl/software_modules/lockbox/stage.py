@@ -1,12 +1,14 @@
-from . import LockboxModule
-from ...attributes import FloatProperty, BoolProperty, StringProperty, BoolIgnoreProperty
-from ...module_attributes import ModuleDictProperty
-from ...pyrpl_utils import recursive_getattr
-from ...modules import SignalLauncher
-from ...hardware_modules import InputSelectProperty
-from ...widgets.module_widgets import LockboxStageWidget, StageOutputWidget
 from qtpy import QtCore
-from pyrpl.async_utils import sleep_async, ensure_future, wait
+
+from pyrpl.async_utils import ensure_future, sleep_async, wait
+
+from ...attributes import BoolIgnoreProperty, BoolProperty, FloatProperty, StringProperty
+from ...hardware_modules import InputSelectProperty
+from ...module_attributes import ModuleDictProperty
+from ...modules import SignalLauncher
+from ...pyrpl_utils import recursive_getattr
+from ...widgets.module_widgets import LockboxStageWidget, StageOutputWidget
+from . import LockboxModule
 
 
 class StageSignalLauncher(SignalLauncher):

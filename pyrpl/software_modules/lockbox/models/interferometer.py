@@ -1,6 +1,7 @@
-from .. import InputDirect, LockboxModuleDictProperty, PiezoOutput, Lockbox, InputIq
-from ....attributes import FloatProperty, SelectProperty
 import numpy as np
+
+from ....attributes import FloatProperty, SelectProperty
+from .. import InputDirect, InputIq, Lockbox, LockboxModuleDictProperty, PiezoOutput
 
 
 class InterferometerPort1(InputDirect):

@@ -5,13 +5,14 @@ An instance attr of Attribute can create its AttributeWidget counterPart
 by calling attr.create_widget(name, parent).
 """
 
-import numpy as np
-from qtpy import QtCore, QtWidgets
-import pyqtgraph as pg
-from .spinbox import NumberSpinBox, IntSpinBox, FloatSpinBox, ComplexSpinBox
-from .. import pyrpl_utils
-
 import sys
+
+import numpy as np
+import pyqtgraph as pg
+from qtpy import QtCore, QtWidgets
+
+from .. import pyrpl_utils
+from .spinbox import ComplexSpinBox, FloatSpinBox, IntSpinBox, NumberSpinBox
 
 
 # TODO: try to remove widget_name from here (again)
@@ -466,7 +467,7 @@ class ListComboBox(QtWidgets.QWidget):
         self.combos = []
         self.options = options
         self.decimals = decimals
-        for i in range(number):
+        for _i in range(number):
             combo = QtWidgets.QComboBox()
             self.combos.append(combo)
             combo.addItems(self.options)
@@ -802,7 +803,7 @@ class PlotAttributeWidget(BaseAttributeWidget):
                 args, kwargs = new_value, {}
             else:
                 args, kwargs = [new_value], {}
-        for k in kwargs.keys():
+        for k in kwargs:
             v = kwargs.pop(k)
             kwargs[k[0]] = v
         i = 0

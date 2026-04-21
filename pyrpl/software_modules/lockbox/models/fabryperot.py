@@ -1,15 +1,18 @@
+import logging
+
+import numpy as np
+
+from pyrpl.async_utils import wait
+from pyrpl.attributes import FloatProperty, FrequencyProperty, SelectProperty
+
 from .. import (
     InputDirect,
-    InputSignal,
     InputIq,
-    LockboxModuleDictProperty,
+    InputSignal,
     InsufficientResourceError,
+    LockboxModuleDictProperty,
 )
 from .interferometer import Interferometer
-from pyrpl.async_utils import wait
-from pyrpl.attributes import FrequencyProperty, FloatProperty, SelectProperty
-import logging
-import numpy as np
 
 
 class Lorentz:

@@ -38,13 +38,14 @@ output selected in :code:`output_direct`.
   (not implemented at the moment).
 """
 
-from .acquisition_module_widget import AcquisitionModuleWidget
-
-from qtpy import QtCore, QtWidgets
-import pyqtgraph as pg
-from time import time
-import numpy as np
 import sys
+from time import time
+
+import numpy as np
+import pyqtgraph as pg
+from qtpy import QtCore, QtWidgets
+
+from .acquisition_module_widget import AcquisitionModuleWidget
 
 
 class NaWidget(AcquisitionModuleWidget):
@@ -382,5 +383,4 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
                 self.parent_widget.attribute_widgets["zeros"].set_selected(-1)
         except Exception as e:
             self.parent_widget.module._logger.error(e)
-        finally:
-            return super(pg.GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)
+        return super(pg.GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)

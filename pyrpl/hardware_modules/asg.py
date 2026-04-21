@@ -23,22 +23,24 @@ Let's set up the ASG to output a sawtooth signal of amplitude 0.8 V
               trigger_source='immediately')
 """
 
-import numpy as np
 from collections import OrderedDict
+
+import numpy as np
+
 from ..attributes import (
     BoolRegister,
+    FloatProperty,
     FloatRegister,
-    SelectRegister,
-    SelectProperty,
+    FrequencyRegister,
     IntRegister,
     LongRegister,
     PhaseRegister,
-    FrequencyRegister,
-    FloatProperty,
+    SelectProperty,
+    SelectRegister,
 )
 from ..modules import HardwareModule, SignalModule
 from ..widgets.module_widgets import AsgWidget
-from . import all_output_directs, dsp_addr_base
+from .dsp import all_output_directs, dsp_addr_base
 
 
 class WaveformAttribute(SelectProperty):

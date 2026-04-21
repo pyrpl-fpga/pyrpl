@@ -1,7 +1,8 @@
-from qtpy import QtCore, QtWidgets
+import logging
 import sys
 from traceback import format_exception, format_exception_only
-import logging
+
+from qtpy import QtCore, QtWidgets
 
 
 class ExceptionLauncher(QtCore.QObject):
@@ -110,10 +111,7 @@ class MyDockWidget(QtWidgets.QDockWidget):
         event.type()
         if event.type() == 176:  # QEvent::NonClientAreaMouseButtonDblClick
             if self.isFloating():
-                if self.isMaximized():
-                    fn = self.showNormal()
-                else:
-                    fn = self.showMaximized()
+                fn = self.showNormal() if self.isMaximized() else self.showMaximized()
                 # strange bug: always goes back to normal
                 # self.showMaximized()
                 # dirty workaround: make a timer

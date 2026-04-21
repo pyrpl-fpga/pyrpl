@@ -111,13 +111,16 @@ refer to the section :ref:`How a spectrum is computed in PyRPL`.
 """
 
 import logging
+import sys
+
 import numpy as np
+
+from ..acquisition_module import AcquisitionModule
 from ..attributes import BoolProperty, FilterProperty, FrequencyProperty, SelectProperty
 from ..hardware_modules import Scope
-from ..hardware_modules.dsp import all_inputs, InputSelectProperty
-from ..acquisition_module import AcquisitionModule
+from ..hardware_modules.dsp import InputSelectProperty, all_inputs
 from ..widgets.module_widgets import SpecAnWidget
-import sys
+
 # import scipy.signal as sig
 # import scipy.fftpack as fft
 
@@ -152,10 +155,7 @@ def get_window_numpy(name, N, fftbins=False):  # Remove heavy scipy module
         )
         return w
     elif window_type == "gaussian":
-        if param is None:
-            std = N / 10  # default
-        else:
-            std = float(param)
+        std = N / 10 if param is None else float(param)
         n = np.arange(0, N) - (N - 1) / 2
         w = np.exp(-0.5 * (n / std) ** 2)
         return w
@@ -592,10 +592,7 @@ class SpectrumAnalyzer(AcquisitionModule):
 
     def transfer_function_scope(self, frequencies):
         # scope transfer function
-        if not self.baseband:
-            displaced_freqs = frequencies - self.center
-        else:
-            displaced_freqs = frequencies
+        displaced_freqs = frequencies - self.center if not self.baseband else frequencies
         if self._scope_decimation() > 1:
             norm_freq = self._scope_decimation() * displaced_freqs / 125e6
             return np.sinc(norm_freq)
@@ -756,9 +753,7 @@ class SpectrumAnalyzer(AcquisitionModule):
         the db_system. Also, returns the list [curve_ch1, curve_ch2]...
         """
         if not self.baseband:
-            return super()._save_curve(
-                self.data_x, self.data_avg, **self.setup_attributes
-            )
+            return super()._save_curve(self.data_x, self.data_avg, **self.setup_attributes)
         else:
             d = self.setup_attributes
             curves = [None, None]

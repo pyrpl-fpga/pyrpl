@@ -1,16 +1,18 @@
+import contextlib
 from collections import OrderedDict
+
 from ..attributes import (
-    BoolRegister,
-    SelectProperty,
-    SelectRegister,
-    IntRegister,
-    FloatRegister,
     BaseRegister,
     BoolProperty,
+    BoolRegister,
+    FloatRegister,
+    IntRegister,
+    SelectProperty,
+    SelectRegister,
 )
-from ..modules import HardwareModule, SignalModule
-from ..pyrpl_utils import sorted_dict, recursive_getattr
 from ..errors import ExpectedPyrplError
+from ..modules import HardwareModule, SignalModule
+from ..pyrpl_utils import recursive_getattr, sorted_dict
 
 # order here determines the order in the GUI etc.
 DSP_INPUTS = OrderedDict(
@@ -57,7 +59,7 @@ def all_inputs_keys(instance):
                             module_signals = {module.name: module}
                         else:
                             continue
-                    for name, signal in module_signals.items():
+                    for _name, signal in module_signals.items():
                         signals.append(signal.name)
                         signal = signal.parent
                         while signal != pyrpl:
@@ -75,11 +77,9 @@ def all_inputs(instance):
         if k in DSP_INPUTS:
             signals[k] = DSP_INPUTS[k]
         elif instance is not None:
-            try:
+            with contextlib.suppress(AttributeError):
                 signals[k] = recursive_getattr(instance.pyrpl, k + ".signal")()
-            except AttributeError:
-                pass
-    for i in range(4):  # avoid closed loops by maximum depth of iteration
+    for _i in range(4):  # avoid closed loops by maximum depth of iteration
         for signal in signals:
             if signals[signal] not in signals:
                 pass
@@ -271,13 +271,15 @@ class DspModule(HardwareModule, SignalModule):
         "of the module.",
     )
 
-    def _synchronize(self, modules=[]):
+    def _synchronize(self, modules=None):
         """
         synchronizes the given list of modules.
 
         If an empty list is given (default), all modules are syncronized.
         """
         # store current value
+        if modules is None:
+            modules = []
         sync_stored = self._sync
         if not modules:
             sync_reset = 0  # sync all modules

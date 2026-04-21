@@ -35,9 +35,10 @@ attributes specific to the :class:`~pyrpl.hardware_modules.scope.Scope`:
     trace averaging nor durations below 0.1 s.
 """
 
+import numpy as np
 import pyqtgraph as pg
 from qtpy import QtGui, QtWidgets
-import numpy as np
+
 from ...errors import NotReadyError
 from .acquisition_module_widget import AcquisitionModuleWidget
 

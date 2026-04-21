@@ -49,16 +49,17 @@ starting from the end of the list) is returned by the module manager:
 """
 
 import logging
-from ..widgets.module_widgets import (
-    ModuleManagerWidget,
-    AsgManagerWidget,
-    PidManagerWidget,
-    IqManagerWidget,
-    ScopeManagerWidget,
-    IirManagerWidget,
-    PwmManagerWidget,
-)
+
 from ..modules import Module
+from ..widgets.module_widgets import (
+    AsgManagerWidget,
+    IirManagerWidget,
+    IqManagerWidget,
+    ModuleManagerWidget,
+    PidManagerWidget,
+    PwmManagerWidget,
+    ScopeManagerWidget,
+)
 
 logger = logging.getLogger(name=__name__)
 
@@ -103,7 +104,7 @@ class ModuleManager(Module):
 
         return [
             key
-            for key in self.pyrpl.rp.modules.keys()
+            for key in self.pyrpl.rp.modules
             if key[:-1] == self.name[:-1] or key == self.name[:-1]
         ]
 
@@ -150,9 +151,8 @@ class ModuleManager(Module):
         """
         total = 0
         for index, module in enumerate(self.all_modules):  # start with
-            if index not in self._reserved_modules:
-                if module.owner is None:
-                    total += 1
+            if index not in self._reserved_modules and module.owner is None:
+                total += 1
         return total
 
     @property

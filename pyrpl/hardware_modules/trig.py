@@ -1,12 +1,12 @@
 from ..attributes import (
     BoolRegister,
     FloatRegister,
-    SelectRegister,
-    PhaseRegister,
     LongRegister,
+    PhaseRegister,
+    SelectRegister,
 )
-from . import FilterModule
 from ..pyrpl_utils import sorted_dict
+from .filter import FilterModule
 
 
 class Trig(FilterModule):

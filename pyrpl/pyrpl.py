@@ -141,11 +141,11 @@ meters is implemented there. Another very often used model type is
 
 """
 
-
 import importlib
 import logging
 import os
-from qtpy import QtWidgets, API_NAME
+
+from qtpy import API_NAME, QtWidgets
 
 if API_NAME is None:
     raise RuntimeError(
@@ -157,14 +157,14 @@ if API_NAME is None:
         "  pip install pyrpl[qt-pyside2]\n"
     )
 
-from .widgets.pyrpl_widget import PyrplWidget
-from .memory import MemoryTree
-from .redpitaya import RedPitaya
 from . import pyrpl_utils
-from .software_modules import get_module
+from ._version import __version__
 from .async_utils import sleep
 from .directories import user_config_dir
-from ._version import __version__
+from .memory import MemoryTree
+from .redpitaya import RedPitaya
+from .software_modules import get_module
+from .widgets.pyrpl_widget import PyrplWidget
 
 # it is important that Lockbox is loaded before the models
 importlib.import_module(".software_modules.lockbox", package=__package__)

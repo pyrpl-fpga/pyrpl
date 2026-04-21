@@ -1,12 +1,13 @@
+import copy
 import logging
 import time
-import copy
-from qtpy import QtCore
-from .test_base import TestPyrpl
-from .. import global_config
-from ..async_utils import sleep
-from ..async_utils import wait
+
 import pytest
+from qtpy import QtCore
+
+from .. import global_config
+from ..async_utils import sleep, wait
+from .test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
@@ -288,7 +289,7 @@ class TestNA(TestPyrpl):
         )
 
         old = self.pyrpl.c._save_counter
-        for i in range(10):
+        for _i in range(10):
             sleep(0.01)
         new = self.pyrpl.c._save_counter
         self.na.stop()

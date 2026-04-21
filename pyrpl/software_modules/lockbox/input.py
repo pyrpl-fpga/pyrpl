@@ -1,20 +1,23 @@
-import numpy as np
+import contextlib
 import logging
+
+import numpy as np
+
 from ...attributes import (
-    SelectProperty,
+    FilterProperty,
     FloatProperty,
     FrequencyProperty,
-    PhaseProperty,
-    FilterProperty,
     FrequencyRegister,
+    PhaseProperty,
+    SelectProperty,
 )
-from ...widgets.module_widgets import LockboxInputWidget
 from ...hardware_modules.dsp import DSP_INPUTS, InputSelectProperty
-from ...pyrpl_utils import time, recursive_getattr
 from ...module_attributes import ModuleProperty
-from ...software_modules.lockbox import LockboxModule
 from ...modules import SignalModule
+from ...pyrpl_utils import recursive_getattr, time
+from ...software_modules.lockbox import LockboxModule
 from ...software_modules.module_managers import InsufficientResourceError
+from ...widgets.module_widgets import LockboxInputWidget
 
 logger = logging.getLogger(__name__)
 
@@ -266,12 +269,9 @@ class InputSignal(Signal):
         """returns the dsp signal corresponding to input_signal"""
         signal = self.input_signal
         # problem arises if there is a long loop of logical signals -> iterate
-        for i in range(5):  # try at most 5 hierarchy levels
-            try:
+        for _i in range(5):  # try at most 5 hierarchy levels
+            with contextlib.suppress(AttributeError, TypeError):
                 signal = recursive_getattr(self.pyrpl, signal).signal()
-            except (AttributeError, TypeError):
-                # do not insist on this to work as signal may be a str
-                pass
             if signal in DSP_INPUTS:
                 return signal
         # no break ever occured
@@ -489,10 +489,8 @@ class InputSignal(Signal):
 
     def _create_widget(self):
         widget = super()._create_widget()
-        try:
+        with contextlib.suppress(AttributeError, RuntimeError, TypeError, ValueError):
             self.update_graph()
-        except (AttributeError, RuntimeError, TypeError, ValueError):
-            pass
         return widget
 
 
@@ -507,9 +505,7 @@ class InputFromOutput(InputDirect):
         pass
 
     input_signal = InputSelectProperty(
-        options=(
-            lambda instance: ["lockbox.outputs." + k for k in instance.lockbox.outputs.keys()]
-        ),
+        options=(lambda instance: ["lockbox.outputs." + key for key in instance.lockbox.outputs]),
         doc="lockbox signal used as input",
     )
 

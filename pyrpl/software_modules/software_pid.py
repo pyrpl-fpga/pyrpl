@@ -1,15 +1,16 @@
-from .loop import PlotLoop
+import numpy as np
+
 from ..attributes import (
+    BoolProperty,
+    FloatProperty,
+    LedProperty,
+    Plotter,
+    StringProperty,
     recursive_getattr,
     recursive_setattr,
-    LedProperty,
-    FloatProperty,
-    BoolProperty,
-    StringProperty,
-    Plotter,
 )
 from ..modules import Module
-import numpy as np
+from .loop import PlotLoop
 
 
 class SoftwarePidLoop(PlotLoop):

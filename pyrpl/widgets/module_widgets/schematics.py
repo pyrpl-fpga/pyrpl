@@ -4,7 +4,8 @@ For now it is only used in IqManagerWidget.
 """
 
 import os.path as osp
-from qtpy import QtCore, QtWidgets, QtGui
+
+from qtpy import QtCore, QtGui, QtWidgets
 
 IMAGE_PATH = osp.join(osp.split(osp.dirname(__file__))[0], "images")
 

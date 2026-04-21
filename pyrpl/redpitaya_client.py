@@ -17,9 +17,10 @@
 ###############################################################################
 
 
-import numpy as np
-import socket
 import logging
+import socket
+
+import numpy as np
 
 try:
     from pysine import sine  # for debugging read/write calls
@@ -29,7 +30,7 @@ except ImportError:
         print(f"Called sine(frequency={frequency:f}, duration={duration:f})")
 
 
-from .hardware_modules.dsp import dsp_addr_base, DSP_INPUTS
+from .hardware_modules.dsp import DSP_INPUTS, dsp_addr_base
 from .pyrpl_utils import time
 
 # global conter to assign a number to each client
@@ -161,7 +162,7 @@ class MonitorClient:
             return None
 
     def emptybuffer(self):
-        for i in range(100):
+        for _i in range(100):
             n = len(self.socket.recv(16384))
             if n <= 0:
                 return
@@ -235,34 +236,32 @@ class DummyClient:  # pragma: no cover
                 elif offset == 0x228:  # MINBW
                     return 1
             elif module.startswith("iir"):
-                if offset == 0x200:  # IIRBITS
-                    return 64
-                elif offset == 0x204:  # IIRSHIFT
-                    return 32
-                elif offset == 0x208:  # IIRSTAGES
-                    return 16
-                elif offset == 0x220:  # filterstages
-                    return 1
-                elif offset == 0x108:  # overflow
-                    return 0
+                iir_map = {
+                    0x200: 64,  # IIRBITS
+                    0x204: 32,  # IIRSHIFT
+                    0x208: 16,  # IIRSTAGES
+                    0x220: 1,  # filterstages
+                    0x108: 0,  # overflow
+                }
+                if offset in iir_map:
+                    return iir_map[offset]
             elif module.startswith("iq"):
                 if offset == 0x220:  # filterstages
                     return 1
                 # rbw filter register
-                elif offset == 0x230:  # filterstages = 0x230
-                    return 2
-                elif offset == 0x234:  # shiftbits = 0x234
+                elif offset == 0x230 or offset == 0x234:  # filterstages = 0x230
                     return 2
                 elif offset == 0x238:  # minbw = 0x238
                     return 1
             for filter_module in ["iq", "pid", "iir"]:
                 if module.startswith(filter_module):
-                    if offset == 0x220:  # filterstages
-                        return 1
-                    elif offset == 0x224:  # shiftbits
-                        return 2
-                    elif offset == 0x228:  # minbw
-                        return 1
+                    filter_map = {
+                        0x220: 1,  # filterstages
+                        0x224: 2,  # shiftbits
+                        0x228: 1,  # minbw
+                    }
+                    if offset in filter_map:
+                        return filter_map[offset]
 
         # everything else is restored from the dict
         return self.fpgamemory[str(addr)]

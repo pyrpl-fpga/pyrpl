@@ -5,14 +5,13 @@ Usage: `ipnbdoctest.py foo.ipynb [bar.ipynb [...]]`
 """
 # License: Public Domain, but credit is nice (Min RK).
 
-from glob import glob
 import os
 import sys
+from glob import glob
 
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
-
 
 NOTEBOOK_DIR = os.path.dirname(__file__)
 TUTORIAL_DIR = os.path.join(
@@ -20,11 +19,6 @@ TUTORIAL_DIR = os.path.join(
     "docs",
     "example-notebooks",
 )
-
-try:
-    TimeoutError  # builtin in python 3
-except NameError:
-    TimeoutError = RuntimeError  # a RunTimeError is launched in python 2.7
 
 
 class MyExecutePreprocessor(ExecutePreprocessor):
@@ -77,8 +71,8 @@ def _notebook_run(path):
 ##############################################################################
 
 # testing for the transferability of environment variables
-os.environ["python_sys_version"] = sys.version
-os.environ["pyrpl_path"] = "C://Users//HQNOM//Documents//GitHub//pyrpl"
+os.environ["PYTHON_SYS_VERSION"] = sys.version
+os.environ["PYRPL_PATH"] = "C://Users//HQNOM//Documents//GitHub//pyrpl"
 
 # For some reason, the notebook preprocessor doesn't close
 # itself properly in python 3.7. I don't think it's worth the effort

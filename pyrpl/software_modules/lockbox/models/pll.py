@@ -1,15 +1,16 @@
+from pyrpl.attributes import FloatProperty, FrequencyProperty, FrequencyRegister, SelectProperty
+
 from .. import (
     InputDirect,
-    InputSignal,
     InputIq,
+    InputSignal,
+    InsufficientResourceError,
+    IqFilterProperty,
+    IqQuadratureFactorProperty,
     Lockbox,
     LockboxModuleDictProperty,
     PiezoOutput,
-    InsufficientResourceError,
-    IqQuadratureFactorProperty,
-    IqFilterProperty,
 )
-from pyrpl.attributes import FrequencyProperty, FrequencyRegister, FloatProperty, SelectProperty
 
 
 class PllInput(InputDirect):

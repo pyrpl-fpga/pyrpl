@@ -15,18 +15,19 @@ their attributes in the GUI having their state load and saved in the config
 file.
 """
 
-from .attributes import BaseAttribute, ModuleAttribute
-from .widgets.module_widgets import ModuleWidget
-from .curvedb import CurveDB
-from .pyrpl_utils import unique_list, DuplicateFilter
-
-from .errors import ExpectedPyrplError
-
+import contextlib
 import logging
 import string
-import numpy as np
 from collections import OrderedDict
+
+import numpy as np
 from qtpy import QtCore
+
+from .attributes import BaseAttribute, ModuleAttribute
+from .curvedb import CurveDB
+from .errors import ExpectedPyrplError
+from .pyrpl_utils import DuplicateFilter, unique_list
+from .widgets.module_widgets import ModuleWidget
 
 
 class SignalLauncher(QtCore.QObject):
@@ -84,10 +85,10 @@ class SignalLauncher(QtCore.QObject):
             except AttributeError:  # for qtpy <= 1.9.0
                 signal = QtCore.pyqtBoundSignal
             if isinstance(val, signal):
-                try:
+                with contextlib.suppress(
+                    TypeError
+                ):  # occurs if signal is not connected to anything
                     val.disconnect()
-                except TypeError:  # occurs if signal is not connected to anything
-                    pass
 
 
 class ModuleMetaClass(type):
@@ -132,18 +133,12 @@ class ModuleMetaClass(type):
         _setup_attributes, _gui_attributes, _module_attributes = [], [], []
 
         for base in reversed(bases):  # append all base class _setup_attributes
-            try:
+            with contextlib.suppress(AttributeError):
                 _setup_attributes += base._setup_attributes
-            except AttributeError:
-                pass
-            try:
+            with contextlib.suppress(AttributeError):
                 _gui_attributes += base._gui_attributes
-            except AttributeError:
-                pass
-            try:
+            with contextlib.suppress(AttributeError):
                 _module_attributes += base._module_attributes
-            except AttributeError:
-                pass
         _setup_attributes += self._setup_attributes
         _gui_attributes += self._gui_attributes
         # 1b. make a list of _module_attributes and add _module_attributes to _setup_attributes

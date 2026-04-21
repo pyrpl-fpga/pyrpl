@@ -1,6 +1,6 @@
-from timeit import default_timer
 import logging
 from collections import OrderedDict
+from timeit import default_timer
 
 logger = logging.getLogger(__file__)
 

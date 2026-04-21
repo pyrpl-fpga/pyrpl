@@ -1,4 +1,5 @@
 import logging
+
 from ..attributes import SelectProperty, StringProperty, TextProperty
 from ..memory import MemoryTree
 from ..modules import Module

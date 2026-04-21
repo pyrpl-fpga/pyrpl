@@ -1,7 +1,8 @@
 import logging
+
+from pyrpl.async_utils import sleep
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl.widgets.startup_widget import HostnameSelectorWidget
-from pyrpl.async_utils import sleep
 
 logger = logging.getLogger(name=__name__)
 

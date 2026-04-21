@@ -1,15 +1,17 @@
 import logging
-from qtpy.QtTest import QTest
-from qtpy.QtCore import Qt
 import os
+
+import pytest
+from qtpy.QtCore import Qt
+from qtpy.QtTest import QTest
+
+from ..attributes import BoolProperty, NumberProperty, SelectProperty
 from ..widgets.attribute_widgets import (
-    SelectAttributeWidget,
     BoolAttributeWidget,
     NumberAttributeWidget,
+    SelectAttributeWidget,
 )
-from ..attributes import BoolProperty, NumberProperty, SelectProperty
 from .test_base import TestPyrpl
-import pytest
 
 logger = logging.getLogger(name=__name__)
 
@@ -42,13 +44,13 @@ class TestModuleWidgets(TestPyrpl):
                     attr.widget.setCurrentIndex(to_set)
                     assert getattr(self.pyrpl.rp.scope, attr.attribute_name) == option
             elif isinstance(attr, BoolAttributeWidget):
-                for i in range(2):
+                for _i in range(2):
                     QTest.mouseClick(attr.widget, Qt.LeftButton)
                     assert getattr(self.pyrpl.rp.scope, attr.attribute_name) == (
                         attr.widget.checkState() == 2
                     )
             elif isinstance(attr, NumberAttributeWidget):
-                for i in range(3):
+                for _i in range(3):
                     attr.widget.stepUp()
                     assert (
                         abs(getattr(self.pyrpl.rp.scope, attr.attribute_name) - attr.widget.value())
@@ -72,11 +74,11 @@ class TestModuleWidgets(TestPyrpl):
                     attr.widget.setCurrentIndex(to_set)
                     assert getattr(module, attr.name) == option
             elif isinstance(attr, BoolProperty):
-                for i in range(2):
+                for _i in range(2):
                     QTest.mouseClick(attr.widget, Qt.LeftButton)
                     assert getattr(module, attr.name) == (attr.widget.checkState() == 2)
             elif isinstance(attr, NumberProperty):
-                for i in range(3):
+                for _i in range(3):
                     attr.widget.stepUp()
                     val = getattr(module, attr.name)
                     wid_val = attr.widget.value()

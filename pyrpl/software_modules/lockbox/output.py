@@ -1,19 +1,17 @@
-
 import numpy as np
 
-from ...software_modules.lockbox.input import Signal
 from ...attributes import (
     BoolProperty,
-    FloatProperty,
-    SelectProperty,
     FilterProperty,
+    FloatProperty,
     FrequencyProperty,
     IntProperty,
+    SelectProperty,
 )
 from ...curvedb import CurveDB
-
 from ...hardware_modules.asg import Asg1
 from ...hardware_modules.pid import Pid
+from ...software_modules.lockbox.input import Signal
 from ...widgets.module_widgets import OutputSignalWidget
 
 
@@ -145,10 +143,7 @@ class OutputSignal(Signal):
         sample = getattr(self.pyrpl.rp.sampler, self.pid.name)
         # criterion for saturation: integrator value saturated
         # and current value (including pid) as well
-        if (ival > max or ival < min) and (sample > max or sample < min):
-            return True
-        else:
-            return False
+        return bool((ival > max or ival < min) and (sample > max or sample < min))
 
     def _setup_pid_output(self):
         self.pid.max_voltage = self.max_voltage

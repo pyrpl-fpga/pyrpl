@@ -30,9 +30,9 @@ The different buttons in the acquisition module control panel below the plot are
   :attr:`~.AcquisitionModule.curve_name`.
 """
 
-from . import ModuleWidget
-
 from qtpy import QtCore, QtWidgets
+
+from . import ModuleWidget
 
 
 class CurrentAvgLabel(QtWidgets.QWidget):

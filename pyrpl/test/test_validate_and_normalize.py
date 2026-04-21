@@ -1,9 +1,11 @@
+import contextlib
 import logging
-from pyrpl.test.test_base import TestPyrpl
-from pyrpl.software_modules import Lockbox
+
 from pyrpl import APP
-from pyrpl.test.test_load_save import scramble_values
+from pyrpl.software_modules import Lockbox
 from pyrpl.test.test_attribute import DummyModule
+from pyrpl.test.test_base import TestPyrpl
+from pyrpl.test.test_load_save import scramble_values
 
 logger = logging.getLogger(name=__name__)
 
@@ -39,10 +41,8 @@ class TestValidateAndNormalize(TestPyrpl):
                 with subtests.test(mod=mod):
                     self.assert_validate_and_normalize(mod)
                 # make sure all modules are stopped at the end of this test
-                try:
+                with contextlib.suppress(AttributeError, RuntimeError, OSError):
                     mod.stop()
-                except (AttributeError, RuntimeError, OSError):
-                    pass
 
     def assert_validate_and_normalize(self, mod):
         self.results = []

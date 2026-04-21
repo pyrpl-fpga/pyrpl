@@ -11,7 +11,7 @@ class PwmWidget(ModuleWidget):
         # Then remove properties from normal property layout
         # We will make one where buttons are stack on top
         # of each others by functional column blocks
-        for key, widget in self.attribute_widgets.items():
+        for _key, widget in self.attribute_widgets.items():
             self.attribute_layout.removeWidget(widget)
 
         self.attribute_layout.addWidget(self.attribute_widgets["input"])

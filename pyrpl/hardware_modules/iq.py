@@ -193,24 +193,24 @@ reasonable frequency lock).
 
 import sys
 from time import sleep
+
 import numpy as np
 
 from ..attributes import (
     BoolRegister,
+    FilterProperty,
+    FilterRegister,
+    FloatProperty,
     FloatRegister,
-    SelectRegister,
+    FrequencyRegister,
+    GainRegister,
     IntRegister,
     PhaseRegister,
-    FrequencyRegister,
-    FloatProperty,
-    FilterRegister,
-    FilterProperty,
-    GainRegister,
+    SelectRegister,
 )
-from ..widgets.module_widgets import IqWidget
 from ..pyrpl_utils import sorted_dict
-
-from . import FilterModule
+from ..widgets.module_widgets import IqWidget
+from .filter import FilterModule
 
 
 class IqGain(FloatProperty):

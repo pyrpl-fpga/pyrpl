@@ -1,6 +1,8 @@
 import logging
-from pyrpl.test.test_base import TestPyrpl
+
 import pytest
+
+from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
@@ -25,9 +27,9 @@ def setup_lockbox(hardware_session):
     print("Tearing down lockbox for TestInput...")
     lockbox.auto_lock = False
     lockbox.unlock()
-    for key in lockbox.outputs.keys():
-        lockbox.outputs[key].pid.free()
-        lockbox.outputs[key].pid.output_direct = "off"
+    for output in lockbox.outputs:
+        output.pid.free()
+        output.pid.output_direct = "off"
     lockbox.asg.free()
 
 

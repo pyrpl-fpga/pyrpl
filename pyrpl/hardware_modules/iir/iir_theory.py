@@ -17,8 +17,11 @@
 ###############################################################################
 
 
-import numpy as np
+import contextlib
 import logging
+
+import numpy as np
+
 from ...errors import ExpectedPyrplError
 
 logger = logging.getLogger(name=__name__)
@@ -73,10 +76,7 @@ def freqz_numpy(*args, dt=8e-9, worN=None):
         a = np.atleast_1d(args[1]) if len(args) > 1 else np.array([1.0])
         if worN is None:
             worN = 512
-        if np.isscalar(worN):
-            w = np.linspace(0, np.pi, worN, endpoint=False)
-        else:
-            w = np.array(worN)
+        w = np.linspace(0, np.pi, worN, endpoint=False) if np.isscalar(worN) else np.array(worN)
 
         ejw = np.exp(-1j * w[:, None] * np.arange(max(len(b), len(a))))
         b_poly = np.sum(b * ejw[:, : len(b)], axis=1)
@@ -171,14 +171,10 @@ def freqs(sys, w):
     for i in range(max([len(z), len(p)])):
         # do multiplication and division alternatingly to avoid the unlikely
         # event of numerical overflow
-        try:
+        with contextlib.suppress(IndexError):
             h *= s - z[i]
-        except IndexError:
-            pass
-        try:
+        with contextlib.suppress(IndexError):
             h /= s - p[i]
-        except IndexError:
-            pass
     return h
 
 
@@ -244,10 +240,8 @@ def residues(z, p, k):
         for j in range(len(p)):
             # do multiplication and division alternatingly to avoid the unlikely
             # event of numerical overflow
-            try:
+            with contextlib.suppress(IndexError):
                 a[i] *= p[i] - z[j]
-            except IndexError:
-                pass
             if i != j:
                 a[i] /= p[i] - p[j]
     return a, c
@@ -306,12 +300,12 @@ def bodeplot(data, xlog=True):
         import matplotlib.pyplot as plt
 
         ax1 = plt.subplot(211)
-    except ImportError:
+    except ImportError as exc:
         raise ExpectedPyrplError(
             "No installation of matplotlib found. "
             "Please install matplotlib in order to use "
             "this feature."
-        )
+        ) from exc
     if len(data[0]) == 3:  # unpack the labels from data
         newdata = []
         labels = []
@@ -320,16 +314,13 @@ def bodeplot(data, xlog=True):
             labels.append(label)
         data = newdata
     for i, (f, tf) in enumerate(data):
-        if len(labels) > i:
-            label = labels[i]
-        else:
-            label = ""
+        label = labels[i] if len(labels) > i else ""
         ax1.plot(f, np.log10(np.abs(tf)) * 20, label=label)
     if xlog:
         ax1.set_xscale("log")
     ax1.set_ylabel("Magnitude [dB]")
     ax2 = plt.subplot(212, sharex=ax1)
-    for i, (f, tf) in enumerate(data):
+    for _, (f, tf) in enumerate(data):
         ax2.plot(f, np.angle(tf, deg=True))
     ax2.set_xlabel("Frequency [Hz]")
     ax2.set_ylabel("Phase [deg]")
@@ -698,11 +689,9 @@ class IirFilter:
 
         def timedilatation(w):
             """accounts for effective time dilatation due to warping effect"""
-            if np.imag(w) == 0:
-                w = np.abs(w)
-                # return 1.0  # do not prewarp real poles/zeros
-            else:
-                w = np.abs(np.imag(w))
+
+            w = np.abs(w) if np.imag(w) == 0 else np.abs(np.imag(w))
+
             if w == 0:
                 return 1.0
             else:
@@ -907,10 +896,7 @@ class IirFilter:
                 z, p, k = sos2zpk_numpy([c])
                 # compute something proportional to the frequency of the pole
                 ppp = [np.abs(np.log(pp)) for pp in p if pp != 0]
-                if not ppp:
-                    f = 1e20  # no pole -> superfast
-                else:
-                    f = np.max(ppp)
+                f = 1e20 if not ppp else np.max(ppp)  # no pole -> superfast
                 ranks.append(f)
         newcoefficients = [
             c for (rank, c) in sorted(zip(ranks, list(coefficients)), key=lambda pair: -pair[0])
@@ -1103,10 +1089,7 @@ class IirFilter:
             frequencies = self.frequencies
         frequencies = np.asarray(frequencies, dtype=np.float64)
 
-        if coefficients is None:
-            fcoefficients = self.coefficients
-        else:
-            fcoefficients = coefficients
+        fcoefficients = self.coefficients if coefficients is None else coefficients
 
         w = frequencies * 2 * np.pi * self.dt * self.loops
 

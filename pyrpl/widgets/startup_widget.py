@@ -1,9 +1,10 @@
-from qtpy import QtWidgets, QtCore
-import socket
 import logging
+import socket
 
+from qtpy import QtCore, QtWidgets
+
+from ..async_utils import ensure_future, sleep_async
 from ..sshshell import SshShell
-from ..async_utils import sleep_async, ensure_future
 
 
 class HostnameSelectorWidget(QtWidgets.QDialog):
@@ -12,7 +13,9 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
     _SCAN_TIMEOUT = 0.05
     _CONNECT_TIMEOUT = 1.0
 
-    def __init__(self, parent=None, config={"user": None, "password": None, "sshport": None}):
+    def __init__(self, parent=None, config=None):
+        if config is None:
+            config = {"user": None, "password": None, "sshport": None}
         self.parent = parent
         self.items = []
         self.ips_and_macs = []
@@ -175,7 +178,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         else:
             self.progressbar.hide()
 
-    def _get_all_own_ip_addresses(self, exclude=["127.0.0.1"]):
+    def _get_all_own_ip_addresses(self, exclude=None):
         """
         Returns a list of all ip addresses of the running computer
 
@@ -185,6 +188,8 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         Returns:
             list: list of internal ip addresses of all ipv4-able adapters of the computer
         """
+        if exclude is None:
+            exclude = ["127.0.0.1"]
         addr_list = []
         try:
             import netifaces

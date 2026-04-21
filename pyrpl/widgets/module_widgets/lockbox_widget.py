@@ -87,12 +87,13 @@ in the information as good as possible. Critical fields are:
 
 """
 
-from qtpy import QtWidgets
-import pyqtgraph as pg
 import numpy as np
-from .base_module_widget import ReducedModuleWidget, ModuleWidget
-from ...pyrpl_utils import get_base_module_class
+import pyqtgraph as pg
+from qtpy import QtWidgets
+
 from ... import APP
+from ...pyrpl_utils import get_base_module_class
+from .base_module_widget import ModuleWidget, ReducedModuleWidget
 
 
 class AnalogTfDialog(QtWidgets.QDialog):
@@ -749,7 +750,7 @@ class LockboxStageWidget(ReducedModuleWidget):
         # self.main_layout = QtWidgets.QVBoxLayout(self)
         self.init_main_layout(orientation="vertical")
         self.init_attribute_layout()
-        for name, attr in self.attribute_widgets.items():
+        for _name, attr in self.attribute_widgets.items():
             self.attribute_layout.removeWidget(attr)
         self.lay_h1 = QtWidgets.QHBoxLayout()
         self.main_layout.addLayout(self.lay_h1)
@@ -1103,7 +1104,7 @@ class LockboxWidget(ModuleWidget):
         self.update_lockstatus()
 
     def hide_lock(self):
-        for input, widget in self.all_sig_widget.inputs_widget.input_widgets.items():
+        for _input, widget in self.all_sig_widget.inputs_widget.input_widgets.items():
             widget.hide_lock()
 
     def _set_button_green(self, button, color="green"):
@@ -1116,7 +1117,9 @@ class LockboxWidget(ModuleWidget):
             button.setStyleSheet(f"background-color:{color}")
         self.button_green = button
 
-    def update_lockstatus(self, islockedlist=[None]):
+    def update_lockstatus(self, islockedlist=None):
+        if islockedlist is None:
+            islockedlist = [None]
         islocked = islockedlist[0]
         # color = self.module._is_locked_display_color
         color = self._is_locked_display_color(islocked=islocked)

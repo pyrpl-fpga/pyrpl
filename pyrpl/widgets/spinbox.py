@@ -1,8 +1,8 @@
-from qtpy import QtCore, QtWidgets, QtGui
-import numpy as np
-import time
 import logging
+import time
 
+import numpy as np
+from qtpy import QtCore, QtGui, QtWidgets
 
 integer_types = (int,)
 
@@ -218,7 +218,7 @@ class NumberSpinBox(QtWidgets.QWidget):
         if self.MOUSE_WHEEL_ACTIVATED:
             nsteps = int(event.delta() / 120)
             func = self.step_up if nsteps > 0 else self.step_down
-            for i in range(abs(nsteps)):
+            for _i in range(abs(nsteps)):
                 func(single_increment=True)
 
     # def sizeHint(self): #doesn t do anything, probably need to change
@@ -358,10 +358,7 @@ class NumberSpinBox(QtWidgets.QWidget):
 
     def finish_step(self):
         self.change_timer.stop()
-        if hasattr(self, "start_time"):
-            dt = time.time() - self.start_time
-        else:
-            dt = 0
+        dt = time.time() - self.start_time if hasattr(self, "start_time") else 0
         if dt > self.change_initial_latency:
             self.validate()  # make sure we validate if continue_step was on
 
@@ -413,9 +410,7 @@ class FloatSpinBox(NumberSpinBox):
 
     def __init__(self, label, decimals=4, min=-1, max=1, increment=2.0 ** (-13), **kwargs):
         self.decimals = decimals
-        super().__init__(
-            label=label, min=min, max=max, increment=increment, **kwargs
-        )
+        super().__init__(label=label, min=min, max=max, increment=increment, **kwargs)
 
     @property
     def val(self):

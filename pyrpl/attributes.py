@@ -14,30 +14,31 @@ time the attribute value is changed. The necessary mechanisms are happening
 behind the scene, and they are coded in this file.
 """
 
-from .pyrpl_utils import recursive_getattr, recursive_setattr
-from .widgets.attribute_widgets import (
-    BoolAttributeWidget,
-    FloatAttributeWidget,
-    FilterAttributeWidget,
-    IntAttributeWidget,
-    SelectAttributeWidget,
-    StringAttributeWidget,
-    BoolIgnoreAttributeWidget,
-    TextAttributeWidget,
-    CurveAttributeWidget,
-    DataAttributeWidget,
-    CurveSelectAttributeWidget,
-    LedAttributeWidget,
-    PlotAttributeWidget,
-    BasePropertyListPropertyWidget,
-    ComplexAttributeWidget,
-)
-
-from .curvedb import CurveDB
-from collections import OrderedDict
 import logging
 import sys
+from collections import OrderedDict
+
 import numpy as np
+
+from .curvedb import CurveDB
+from .pyrpl_utils import recursive_getattr, recursive_setattr
+from .widgets.attribute_widgets import (
+    BasePropertyListPropertyWidget,
+    BoolAttributeWidget,
+    BoolIgnoreAttributeWidget,
+    ComplexAttributeWidget,
+    CurveAttributeWidget,
+    CurveSelectAttributeWidget,
+    DataAttributeWidget,
+    FilterAttributeWidget,
+    FloatAttributeWidget,
+    IntAttributeWidget,
+    LedAttributeWidget,
+    PlotAttributeWidget,
+    SelectAttributeWidget,
+    StringAttributeWidget,
+    TextAttributeWidget,
+)
 
 logger = logging.getLogger(name=__name__)
 
@@ -111,7 +112,7 @@ class BaseProperty(BaseAttribute):
         """
         return value  # by default any value is valid
 
-    def value_updated(self, module, value=None, appendix=[]):
+    def value_updated(self, module, value=None, appendix=None):
         """
         Once the value has been changed internally, this function is called to perform the
         following actions:
@@ -125,15 +126,17 @@ class BaseProperty(BaseAttribute):
          Note for developers: We might consider moving the 2 last points in a connection behind the
          signal "attribute_changed".
         """
+        if appendix is None:
+            appendix = []
         if value is None:
             value = self.get_value(module)
         self.launch_signal(module, value, appendix=appendix)
-        if module._autosave_active:  # (for module, when module is slaved, don't save attributes)
-            if self.name in module._setup_attributes:
-                self.save_attribute(module, value)
+        if module._autosave_active and self.name in module._setup_attributes:
+            # (for module, when module is slaved, don't save attributes)
+            self.save_attribute(module, value)
         if self.call_setup and not module._setup_ongoing:
             # call setup unless a bunch of attributes are being changed together.
-            module._logger.debug("Calling setup() for %s.%s ...", module.name, self.name)
+            module._logger.debug(f"Calling setup() for {module.name}.{self.name} ...")
             module.setup()
         return value
 
@@ -147,15 +150,17 @@ class BaseProperty(BaseAttribute):
             return self
         return self.get_value(instance)
 
-    def launch_signal(self, module, new_value, appendix=[]):
+    def launch_signal(self, module, new_value, appendix=None):
         """
         Updates the widget and other subscribers with the module's value.
         """
+        if appendix is None:
+            appendix = []
         try:
             module._signal_launcher.update_attribute_by_name.emit(self.name, [new_value] + appendix)
         except AttributeError as e:  # occurs if nothing is connected (TODO:
             # remove this)
-            module._logger.error("Error in launch_signal of %s: %s", module.name, e)
+            module._logger.error(f"Error in launch_signal of {module.name}: {e}")
 
     def save_attribute(self, module, value):
         """
@@ -169,11 +174,8 @@ class BaseProperty(BaseAttribute):
         """
         if self._widget_class is None:
             logger.warning(
-                "Module %s of type %s is trying to create a widget "
-                "for %s, but no _widget_class is defined!",
-                str(module),
-                type(module),
-                self.name,
+                f"Module {module.name} of type {type(module)} is trying to create a widget "
+                f"for {self.name}, but no _widget_class is defined!"
             )
             return None
         widget = self._widget_class(module, self.name, widget_name=widget_name)
@@ -347,10 +349,7 @@ class IORegister(BoolRegister):
     def __init__(self, read_address, write_address, direction_address, outputmode=True, **kwargs):
         self.write_address = write_address
         self.read_address = read_address
-        if outputmode:
-            address = write_address
-        else:
-            address = read_address
+        address = write_address if outputmode else read_address
         self.direction_address = direction_address
         # self.direction = BoolRegister(direction_address,bit=bit, **kwargs)
         self.outputmode = outputmode  # set output direction
@@ -555,9 +554,8 @@ class FloatRegister(IntRegister, FloatProperty):
 
     def to_python(self, obj, value):
         # 2's complement
-        if self.signed:
-            if value >= 2 ** (self.bits - 1):
-                value -= 2**self.bits
+        if self.signed and value >= 2 ** (self.bits - 1):
+            value -= 2**self.bits
         # normalization
         if self.invert:
             if value == 0:
@@ -570,10 +568,7 @@ class FloatRegister(IntRegister, FloatProperty):
     def from_python(self, obj, value):
         # round and normalize
         if self.invert:
-            if value == 0:
-                v = 0
-            else:
-                v = int(round(1.0 / float(value) * self.norm))
+            v = 0 if value == 0 else int(round(1.0 / float(value) * self.norm))
         else:
             v = int(round(float(value) * self.norm))
             # make sure small float values are not rounded to zero
@@ -679,14 +674,10 @@ class FrequencyRegister(FloatRegister, FrequencyProperty):
     def from_python(self, obj, value):
         # make sure small float values are not rounded to zero
         value = abs(float(value) / obj._frequency_correction)
-        if value == epsilon:
-            value = 1
-        else:
-            # round and normalize
-            value = int(
-                round(value / self.CLOCK_FREQUENCY * 2**self.bits)
-            )  # Seems correct (should not be 2**bits -1): 125 MHz
-            # out of reach because 2**bits is out of reach
+        # round and normalize
+        value = 1 if value == epsilon else int(round(value / self.CLOCK_FREQUENCY * 2**self.bits))
+        # Seems correct (should not be 2**bits -1): 125 MHz
+        # out of reach because 2**bits is out of reach
         return value
 
     def to_python(self, obj, value):
@@ -906,10 +897,7 @@ class FilterRegister(BaseRegister, FilterProperty):
             v = list([value])[: self._FILTERSTAGES(obj)]
         filter_shifts = 0
         for i in range(self._FILTERSTAGES(obj)):
-            if len(v) <= i:
-                bandwidth = 0
-            else:
-                bandwidth = float(v[i])
+            bandwidth = 0 if len(v) <= i else float(v[i])
             if bandwidth == 0:
                 continue
             else:
@@ -1004,7 +992,9 @@ class AttributeList(list):
     def append(self, new=None):
         self.insert(self.__len__(), new)
 
-    def extend(self, iterable=[]):
+    def extend(self, iterable=None):
+        if iterable is None:
+            iterable = []
         for i in iterable:
             self.append(i)
 
@@ -1189,7 +1179,9 @@ class SelectProperty(BaseProperty):
     _widget_class = SelectAttributeWidget
     default = None
 
-    def __init__(self, options=[], **kwargs):
+    def __init__(self, options=None, **kwargs):
+        if options is None:
+            options = []
         self.default_options = options
         BaseProperty.__init__(self, **kwargs)
 
@@ -1323,7 +1315,9 @@ class SelectRegister(BaseRegister, SelectProperty):
     nevertheless distinguished (allows implementing aliases that may vary
     over time if options is a callable object)."""
 
-    def __init__(self, address, bitmask=None, options={}, **kwargs):
+    def __init__(self, address, bitmask=None, options=None, **kwargs):
+        if options is None:
+            options = {}
         BaseRegister.__init__(self, address=address, bitmask=bitmask)
         SelectProperty.__init__(self, options=options, **kwargs)
 

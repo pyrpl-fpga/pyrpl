@@ -2,6 +2,7 @@
 # tests
 
 import logging
+
 import pytest
 
 logger = logging.getLogger(name=__name__)

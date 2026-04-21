@@ -4,9 +4,10 @@ Defines a number of Loop modules to be used to perform periodically a task
 
 import numpy as np
 import pyqtgraph as pg
+from qtpy import QtCore
+
 from ..modules import Module
 from ..pyrpl_utils import time
-from qtpy import QtCore
 
 
 class Loop(Module):
@@ -42,7 +43,7 @@ class Loop(Module):
 
         self.timer.timeout.connect(self.main_loop)
         self.n = 0  # counter for the number of loops
-        self.time  # initialize start time in internal time format
+        _ = self.time  # initialize start time in internal time format
         # call custom initialization (excluded above)
         try:
             self.setup_loop()
@@ -160,7 +161,7 @@ class PlotWindow:
         # former, now almost deprecated version:
             append(0.5, 0.6)
         """
-        for k in kwargs.keys():
+        for k in kwargs:
             v = kwargs.pop(k)
             kwargs[k[0]] = v
         i = 0

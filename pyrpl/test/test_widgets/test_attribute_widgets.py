@@ -1,13 +1,14 @@
 import logging
+
 import numpy as np
-from pyrpl.async_utils import sleep
-from qtpy import QtCore
-from pyrpl.test.test_base import TestPyrpl
+from qtpy import QtCore, QtTest
+
 from pyrpl import APP
-from pyrpl.widgets.attribute_widgets import NumberAttributeWidget
+from pyrpl.async_utils import sleep
 from pyrpl.hardware_modules.iir import IIR
 from pyrpl.software_modules import NetworkAnalyzer
-from qtpy import QtTest
+from pyrpl.test.test_base import TestPyrpl
+from pyrpl.widgets.attribute_widgets import NumberAttributeWidget
 
 logger = logging.getLogger(name=__name__)
 

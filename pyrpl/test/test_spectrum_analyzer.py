@@ -1,11 +1,13 @@
-from scipy.optimize import least_squares
-import matplotlib.pyplot as plt
 import logging
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pytest
+from scipy.optimize import least_squares
+
+from pyrpl import APP
 from pyrpl.async_utils import sleep
 from pyrpl.test.test_base import TestPyrpl
-from pyrpl import APP
-import pytest
 
 logger = logging.getLogger(name=__name__)
 
@@ -43,7 +45,7 @@ class TestClass(TestPyrpl):
         self.pyrpl.spectrumanalyzer.continuous()
         sleep(0.1)
         old = self.pyrpl.c._save_counter
-        for i in range(10):
+        for _i in range(10):
             sleep(0.01)
             APP.processEvents()
         new = self.pyrpl.c._save_counter

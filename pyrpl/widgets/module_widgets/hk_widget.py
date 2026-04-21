@@ -3,8 +3,9 @@ The Hk widget allows to change port direction, set the value of output ports,
 get the value of input ports
 """
 
-from .base_module_widget import ModuleWidget
 from qtpy import QtWidgets
+
+from .base_module_widget import ModuleWidget
 
 
 class HkWidget(ModuleWidget):

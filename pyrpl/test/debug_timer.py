@@ -1,5 +1,7 @@
-from qtpy import QtCore
 import time
+
+from qtpy import QtCore
+
 from pyrpl.async_utils import sleep
 
 """ what is this file for? delete it? """

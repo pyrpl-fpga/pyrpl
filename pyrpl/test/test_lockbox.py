@@ -1,6 +1,8 @@
 import logging
+
 import pytest
-from ..async_utils import sleep, sleep_async, ensure_future
+
+from ..async_utils import ensure_future, sleep, sleep_async
 from .test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
@@ -19,8 +21,8 @@ def setup_fake_system_once(hardware_session):
     r = hardware_session.rp
     pyrpl = hardware_session.pyrpl
 
-    if pyrpl.lockbox.inputs is not None:
-        pyrpl.lockbox._clear  # make sure no old lockbox config exists
+    # if pyrpl.lockbox.inputs is not None:
+    #     pyrpl.lockbox._clear()  # make sure no old lockbox config exists
     pid = r.pid1
     pid.free()  # make sure pid is not used by another module
 
@@ -55,9 +57,9 @@ def setup_fake_system_once(hardware_session):
     print("Tearing down fake system for TestLockbox...")
     lockbox.auto_lock = False
     lockbox.unlock()
-    for key in lockbox.outputs.keys():
-        lockbox.outputs[key].pid.free()
-        lockbox.outputs[key].pid.output_direct = "off"
+    for output in lockbox.outputs:
+        output.pid.free()
+        output.pid.output_direct = "off"
     lockbox.asg.free()
 
     lockbox._clear()
