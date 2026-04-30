@@ -217,6 +217,11 @@ class FabryPerot(Interferometer):
         # linewidth (in m) = lambda/(2*finesse)
         # bandwidth = linewidth/2
         return self._linewidth_in_m / 2.0
+    
+class FabryPerotAnalogPdh(FabryPerot):
+    inputs = LockboxModuleDictProperty(
+        transmission=FPTransmission, reflection=FPReflection, pdh=FPAnalogPdh
+    )
 
 
 class HighFinesseInput(InputSignal):
@@ -391,3 +396,4 @@ class HighFinesseFabryPerot(FabryPerot):
         reflection=HighFinesseReflection,
         pdh=HighFinessePdh,
     )
+
