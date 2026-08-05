@@ -23,7 +23,7 @@ installation of Python (3.7 to 3.13). The easiest way to install the PyRPL pytho
 ```
 pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 ```
-This will pull the most recent code from Github and install the needed module. It is recommended to use a new environment. DO NOT USE `pip install pyrpl` ! The code hosted on pypi is outdated.
+This will pull the most recent development code from GitHub and install the needed module. It is recommended to use a new environment. Stable releases can instead be installed from PyPI with `pip install pyrpl`.
 
 If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
 ```
