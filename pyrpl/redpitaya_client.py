@@ -59,6 +59,11 @@ class MonitorClient:
         self._read_counter = 0  # For debugging and unittests
         self._write_counter = 0  # For debugging and unittests
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Register accesses use very small request/response packets. Without
+        # TCP_NODELAY, Windows and newer Linux TCP stacks can combine Nagle's
+        # algorithm with delayed ACKs and add roughly one scheduler tick to
+        # every access (commonly about 15-16 ms on Windows).
+        self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         # try to connect at least 5 times
         for i in range(5):
             if not self._port > 0:
