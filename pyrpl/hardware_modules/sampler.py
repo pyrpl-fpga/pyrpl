@@ -1,8 +1,11 @@
+import contextlib
+
 import numpy as np
-from ..pyrpl_utils import time
+
 from ..attributes import FloatRegister
 from ..modules import HardwareModule
-from . import DSP_INPUTS
+from ..pyrpl_utils import time
+from .dsp import DSP_INPUTS
 
 
 class Sampler(HardwareModule):
@@ -29,10 +32,11 @@ class Sampler(HardwareModule):
         mean, stddev, max, min: mean and standard deviation of all samples
 
         """
-        try:  # signal can be a string, or a module (whose name is the name of the signal we'll use)
+
+        # signal can be a string, or a module (whose name is the name of the signal we'll use)
+        with contextlib.suppress(AttributeError):
             signal = signal.name
-        except AttributeError:
-            pass
+
         nn = 0
         cum = 0
         cumsq = 0

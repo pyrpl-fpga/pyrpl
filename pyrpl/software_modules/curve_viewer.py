@@ -1,14 +1,15 @@
 import logging
+
 from ..attributes import (
-    StringProperty,
-    TextProperty,
     CurveProperty,
     CurveSelectListProperty,
+    StringProperty,
+    TextProperty,
 )
+from ..curvedb import CurveDB
 from ..memory import MemoryTree
 from ..modules import Module
 from ..widgets.module_widgets.curve_viewer_widget import CurveViewerWidget
-from ..curvedb import CurveDB
 
 logger = logging.getLogger(name=__name__)
 

@@ -9,9 +9,9 @@ a Pyrpl instance with the config file
 import sys
 
 try:
-    from pyrpl import Pyrpl, APP, help_message
+    from pyrpl import APP, Pyrpl, help_message
 except ImportError:
-    from . import Pyrpl, APP, help_message
+    from . import APP, Pyrpl, help_message
 
 if __name__ == "__main__":
     if len(sys.argv) > 3:
@@ -40,6 +40,6 @@ if __name__ == "__main__":
     if "--help" in kwargs:
         print(help_message)
     else:
-        print("Calling Pyrpl(**%s)" % str(kwargs))
+        print(f"Calling Pyrpl(**{str(kwargs)})")
         PYRPL = Pyrpl(**kwargs)
         APP.exec_()

@@ -16,31 +16,28 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
-from . import redpitaya_client
-from . import hardware_modules as rp
-from .sshshell import SshShell
-from .pyrpl_utils import (
-    get_unique_name_list_from_class_list,
-    update_with_typeconversion,
-)
-from .memory import MemoryTree
-from .errors import ExpectedPyrplError
-from .widgets.startup_widget import HostnameSelectorWidget
-
+import contextlib
 import logging
 import os
 import random
+import re
+import tempfile
+from collections import OrderedDict
 from time import sleep
 
 from paramiko import SSHException
 from scp import SCPException
-from collections import OrderedDict
 
-# input is the wrong function in python 2
-try:
-    raw_input
-except NameError:  # Python 3
-    raw_input = input
+from . import hardware_modules as rp
+from . import redpitaya_client
+from .errors import ExpectedPyrplError
+from .memory import MemoryTree
+from .pyrpl_utils import (
+    get_unique_name_list_from_class_list,
+    update_with_typeconversion,
+)
+from .sshshell import SshShell
+from .widgets.startup_widget import HostnameSelectorWidget
 
 # default parameters for redpitaya object creation
 defaultparameters = dict(
@@ -56,7 +53,7 @@ defaultparameters = dict(
     filename="fpga/red_pitaya.bin",  # default name of the binfile for the fpga
     dtbo_filename="fpga/red_pitaya.dtbo",  # default name of device tree file
     # name of the binfile on the server and in the device tree overlay file
-    serverbinfilename="fpga.bit.bin",
+    serverbinfilename="fpga.bin",
     serverdtbofilename="fpga.dtbo",  # name of the device tree overlay file on the server
     serverdirname="//opt//pyrpl//",  # server directory for server app and bitfile
     leds_off=True,  # turn off all GPIO lets at startup (improves analog performance)
@@ -68,7 +65,7 @@ defaultparameters = dict(
 )
 
 
-class RedPitaya(object):
+class RedPitaya:
     cls_modules = (
         [rp.HK, rp.AMS, rp.Scope, rp.Sampler, rp.Asg0, rp.Asg1]
         + [rp.Pwm] * 2
@@ -107,7 +104,7 @@ class RedPitaya(object):
             filename='fpga/red_pitaya.bin',  # name of the binfile for the fpga
             dtbo_filename='fpga/red_pitaya.dtbo', # name of device tree file
             # name of the binfile on the server and in the device tree overlay file
-            serverbinfilename='fpga.bit.bin',
+            serverbinfilename='fpga.bin',
             serverdtbofilename='fpga.dtbo',  # name of the device tree overlay file on the server
             serverdirname = "//opt//pyrpl//",  # server directory for server app and bitfile
             leds_off=True,  # turn off all GPIO lets at startup (improves analog performance)
@@ -139,7 +136,7 @@ class RedPitaya(object):
 
         # get parameters from os.environment variables
         if not self.parameters["silence_env"]:
-            for k in self.parameters.keys():
+            for k in self.parameters:
                 if "REDPITAYA_" + k.upper() in os.environ:
                     newvalue = os.environ["REDPITAYA_" + k.upper()]
                     oldvalue = self.parameters[k]
@@ -179,19 +176,19 @@ class RedPitaya(object):
                 startup_widget = HostnameSelectorWidget(config=self.parameters)
                 hostname_kwds = startup_widget.get_kwds()
             else:
-                hostname = raw_input("Enter hostname [192.168.1.100]: ")
+                hostname = input("Enter hostname [192.168.1.100]: ")
                 hostname = "192.168.1.100" if hostname == "" else hostname
                 hostname_kwds = dict(hostname=hostname)
                 if "sshport" not in kwargs:
-                    sshport = raw_input("Enter sshport [22]: ")
+                    sshport = input("Enter sshport [22]: ")
                     sshport = 22 if sshport == "" else int(sshport)
                     hostname_kwds["sshport"] = sshport
                 if "user" not in kwargs:
-                    user = raw_input("Enter username [root]: ")
+                    user = input("Enter username [root]: ")
                     user = "root" if user == "" else user
                     hostname_kwds["user"] = user
                 if "password" not in kwargs:
-                    password = raw_input("Enter password [root]: ")
+                    password = input("Enter password [root]: ")
                     password = "root" if password == "" else password
                     hostname_kwds["password"] = password
             self.parameters.update(hostname_kwds)
@@ -230,20 +227,54 @@ class RedPitaya(object):
         self.start_ssh()
         # start other stuff
         self.get_os_version()  # get os version for later use
+        self._configure_os_compatibility()
 
         # Handle reloadfpga with auto option
         should_reload_fpga = self._should_reload_fpga()
 
         if should_reload_fpga:  # flash fpga
             self._update_fpga()
-        if self.parameters["reloadserver"]:  # reinstall server app
+        if self._should_reload_server():  # install/reinstall server app
             self.installserver()
         if self.parameters["autostart"]:  # start client
             self.start()
-        self.logger.info(
-            "Successfully connected to Redpitaya with hostname %s." % self.ssh.hostname
-        )
+        self.logger.info(f"Successfully connected to Redpitaya with hostname {self.ssh.hostname}.")
         self.parent = self
+
+    def _configure_os_compatibility(self):
+        """Apply settings imposed by the detected Red Pitaya OS."""
+        if self.os_version.startswith("3."):
+            # OS 3 overlay.sh currently copies these fixed names from
+            # /opt/pyrpl, regardless of the paths passed on its command line.
+            required_binfilename = "fpga.bin"
+            if self.parameters["serverbinfilename"] != required_binfilename:
+                self.logger.info(
+                    "Red Pitaya OS 3 requires serverbinfilename=%s; overriding saved value %s",
+                    required_binfilename,
+                    self.parameters["serverbinfilename"],
+                )
+                self.parameters["serverbinfilename"] = required_binfilename
+                self.c["redpitaya"] = self.parameters
+
+    def _should_reload_server(self):
+        """Return whether the bundled monitor server must be installed."""
+        if self.parameters["reloadserver"]:
+            return True
+        if not self.os_version.startswith("3."):
+            return False
+
+        server_path = self.parameters["serverdirname"] + self.parameters["monitor_server_name"]
+        self.ssh.ask()
+        result = self.ssh.ask(f"readelf -l {server_path} 2>&1")
+        if "/lib/ld-linux-armhf.so.3" in result:
+            self.logger.debug("Compatible OS 3 monitor_server already installed")
+            return False
+
+        self.logger.info(
+            "Installing the OS 3 compatible hard-float monitor_server at %s",
+            server_path,
+        )
+        return True
 
     def _should_reload_fpga(self):
         """
@@ -287,8 +318,13 @@ class RedPitaya(object):
             result = self.ssh.ask("cat /tmp/loaded_fpga.inf")
             self.logger.debug("Current FPGA image: %s", result)
 
-            # If it says 'pyrpl', we consider it correct
-            if "pyrpl" in result.lower():
+            expected_image = "pyrpl" in result.lower()
+            if self.os_version.startswith("3."):
+                # OS 3 can leave a pyrpl marker behind even when overlay.sh
+                # failed. Also require the fixed filename used by that script.
+                expected_image = expected_image and "fpga.bin" in result.lower()
+
+            if expected_image:
                 self.logger.debug("FPGA already loaded with PyRPL image")
                 return True
             else:
@@ -306,11 +342,9 @@ class RedPitaya(object):
 
         returns True if a successful connection has been established
         """
-        try:
+        with contextlib.suppress(AttributeError, OSError, RuntimeError):
             # close pre-existing connection if necessary
             self.end_ssh()
-        except (AttributeError, OSError, RuntimeError):
-            pass
         if self.parameters["hostname"] == "_FAKE_REDPITAYA_":
             # simulation mode - start without connecting
             self.logger.warning("(Re-)starting client in dummy mode...")
@@ -337,21 +371,20 @@ class RedPitaya(object):
                     raise ExpectedPyrplError(
                         "\nCould not connect to the Red Pitaya device with "
                         "the following parameters: \n\n"
-                        "\thostname: %s\n"
-                        "\tssh port: %s\n"
-                        "\tusername: %s\n"
+                        "\thostname: {}\n"
+                        "\tssh port: {}\n"
+                        "\tusername: {}\n"
                         "\tpassword: ****\n\n"
                         "Please confirm that the device is reachable by typing "
                         "its hostname/ip address into a web browser and "
                         "checking that a page is displayed. \n\n"
-                        "Error message: %s"
-                        % (
+                        "Error message: {}".format(
                             self.parameters["hostname"],
                             self.parameters["sshport"],
                             self.parameters["user"],
                             e,
                         )
-                    )
+                    ) from e
             else:
                 # everything went well, connection is established
                 # also establish scp connection
@@ -363,39 +396,38 @@ class RedPitaya(object):
         sleep(self.parameters["delay"])
         self.ssh.ask("echo out > /sys/class/gpio/gpio" + str(gpiopin) + "/direction")
         sleep(self.parameters["delay"])
-        if state:
-            state = "1"
-        else:
-            state = "0"
+        state = "1" if state else "0"
         self.ssh.ask("echo " + state + " > /sys/class/gpio/gpio" + str(gpiopin) + "/value")
         sleep(self.parameters["delay"])
 
     def put_file(self, source, destination):
-        for i in range(3):
+        last_error = None
+        for _i in range(3):
             try:
                 self.ssh.scp.put(source, destination)
-            except (SCPException, SSHException):
+            except (SCPException, SSHException) as error:
+                last_error = error
                 # try again before failing
                 self.start_ssh()
                 sleep(self.parameters["delay"])
             else:
-                break
+                return
+        raise OSError(f"Could not upload {source!r} to {destination!r}") from last_error
 
     def get_os_version(self):
         self.ssh.ask()  # clear buffer
         result = self.ssh.ask("cat /root/.version")
-        self.logger.debug("cat /root/.version: {}".format(result))
+        self.logger.debug(f"cat /root/.version: {result}")
 
-        # Parse version from response
-        version = None
-        for line in result.strip().split("\r\n"):
-            line = line.strip()
-            if line and "cat" not in line and "@" not in line:
-                version = line
-                break
-        if version is None:
-            self.logger.warning("Could not parse OS version from response: {}".format(result))
+        # Interactive SSH output can contain CRLF, LF, prompts and invisible
+        # terminal control bytes on the same line. The command and prompt do
+        # not contain a dotted numeric token, so extract that token directly.
+        match = re.search(r"(?<![\d.])(\d+(?:\.\d+)+)(?![\d.])", result)
+        if match is None:
+            self.logger.warning(f"Could not parse OS version from response: {result}")
             version = "unknown"
+        else:
+            version = match.group(1)
         self.logger.debug("OS version: %s", version)
         self.os_version = version
 
@@ -443,7 +475,7 @@ class RedPitaya(object):
                 self.logger.error("FPGA binfile not found at: %s", source)
                 self.logger.error("Directory does not exist: %s", expected_dir)
 
-            raise IOError(
+            raise OSError(
                 "FPGA binfile not found",
                 "The fpga binfile was not found at: " + source + "\n"
                 "Please ensure the file exists or specify a different file with the filename "
@@ -490,15 +522,40 @@ class RedPitaya(object):
         )
         self.put_file(source, bin_file_path)
 
-        update_cmd = "/opt/redpitaya/sbin/overlay.sh pyrpl {}".format(bin_file_path)
+        update_cmd = f"/opt/redpitaya/sbin/overlay.sh pyrpl {bin_file_path}"
 
         # add dtbo file to command if it exists
         if dtbo_source is not None:
             dtbo_file_path = os.path.join(
                 self.parameters["serverdirname"], self.parameters["serverdtbofilename"]
             )
-            self.put_file(dtbo_source, dtbo_file_path)
-            update_cmd = "{} {}".format(update_cmd, dtbo_file_path)
+            dtbo_to_upload = dtbo_source
+            temporary_dtbo = None
+            if self.os_version.startswith("3."):
+                # fpgautil on OS 3 stages the image as fpga.bin. Keep the
+                # original DTBO for older systems, but update its fixed-width
+                # firmware-name string in the temporary upload copy.
+                old_name = b"fpga.bit.bin\x00"
+                new_name = b"fpga.bin\x00" + b"\x00" * (
+                    len(old_name) - len(b"fpga.bin\x00")
+                )
+                with open(dtbo_source, "rb") as source_file:
+                    dtbo_data = source_file.read()
+                if old_name not in dtbo_data:
+                    raise OSError(
+                        "OS 3 DTBO conversion failed: firmware-name "
+                        f"fpga.bit.bin was not found in {dtbo_source}"
+                    )
+                temporary_dtbo = tempfile.NamedTemporaryFile(suffix=".dtbo", delete=False)
+                temporary_dtbo.write(dtbo_data.replace(old_name, new_name, 1))
+                temporary_dtbo.close()
+                dtbo_to_upload = temporary_dtbo.name
+            try:
+                self.put_file(dtbo_to_upload, dtbo_file_path)
+            finally:
+                if temporary_dtbo is not None:
+                    os.unlink(temporary_dtbo.name)
+            update_cmd = f"{update_cmd} {dtbo_file_path}"
 
         # kill all other servers to prevent reading while fpga is flashed
         self.end()
@@ -506,11 +563,16 @@ class RedPitaya(object):
         self.ssh.ask("systemctl stop redpitaya_nginx")  # for 0.94 and higher
         sleep(3)  # sleep after stopping service
 
-        if self.os_version.find("2.") != -1:
-            self.ssh.ask(update_cmd)
+        overlay_error = None
+        if self.os_version.find("2.") != -1 or self.os_version.find("3.") != -1:  # for os >= 0.94
+            result = self.ssh.ask(update_cmd)
             sleep(1)
-            self.ssh.ask()
-            self.ssh.ask("cat /tmp/update_fpga.txt")  # check if fpga is loaded
+            result += self.ssh.ask()
+            result += self.ssh.ask("cat /tmp/update_fpga.txt")
+            if "failed" in result.lower() or "cannot stat" in result.lower():
+                diagnostics = self.ssh.ask("cat /sys/class/fpga_manager/fpga0/state 2>&1")
+                diagnostics += self.ssh.ask("dmesg | tail -50")
+                overlay_error = result + "\nFPGA manager and kernel diagnostics:\n" + diagnostics
         else:
             # Old OS version - use xdevcfg directly
             self.logger.info("Loading FPGA via xdevcfg (old OS version)")
@@ -526,20 +588,29 @@ class RedPitaya(object):
         sleep(3.0)  # wait a bit for the fpga to be programmed
         self.logger.debug("About to restart the redpitaya service")
 
-        # Clean up temporary files in serverdirname
-        self.ssh.ask(
-            "rm -f "
-            + os.path.join(self.parameters["serverdirname"], self.parameters["serverdtbofilename"])
-        )
-        self.ssh.ask(
-            "rm -f "
-            + os.path.join(self.parameters["serverdirname"], self.parameters["serverbinfilename"])
-        )
+        # Keep failed inputs on the board for manual fpgautil/dmesg
+        # diagnostics. Successful loads no longer need the temporary files.
+        if overlay_error is None:
+            self.ssh.ask(
+                "rm -f "
+                + os.path.join(
+                    self.parameters["serverdirname"], self.parameters["serverdtbofilename"]
+                )
+            )
+            self.ssh.ask(
+                "rm -f "
+                + os.path.join(
+                    self.parameters["serverdirname"], self.parameters["serverbinfilename"]
+                )
+            )
 
         self.ssh.ask("nginx -p //opt//www//")
         self.ssh.ask("systemctl start redpitaya_nginx")  # for 0.94 and higher
         sleep(self.parameters["delay"])
         self.ssh.ask("ro")
+
+        if overlay_error is not None:
+            raise OSError(f"FPGA overlay loading failed:\n{overlay_error}")
 
     def serverbinfileexists(self):
         self.ssh.ask()
@@ -551,7 +622,7 @@ class RedPitaya(object):
                 )
             )
         )
-        self.logger.debug("ls serverbinfilename result: {}".format(result))
+        self.logger.debug(f"ls serverbinfilename result: {result}")
 
         return result.find("No such file or directory") < 0
 
@@ -588,23 +659,26 @@ class RedPitaya(object):
         sleep(self.parameters["delay"])
         self.ssh.ask("rw")
         sleep(self.parameters["delay"])
-        self.ssh.ask("mkdir " + self.parameters["serverdirname"])
+        self.ssh.ask("mkdir -p " + self.parameters["serverdirname"])
         sleep(self.parameters["delay"])
         self.ssh.ask("cd " + self.parameters["serverdirname"])
         # try both versions
-        for serverfile in ["monitor_server", "monitor_server_0.95"]:
+
+        if self.os_version.startswith("3."):
+            serverfiles = ["monitor_server_0.95"]
+        else:
+            serverfiles = ["monitor_server", "monitor_server_0.95"]
+
+        for serverfile in serverfiles:
             sleep(self.parameters["delay"])
-            try:
-                self.ssh.scp.put(
-                    os.path.join(
-                        os.path.abspath(os.path.dirname(__file__)),
-                        "monitor_server",
-                        serverfile,
-                    ),
-                    self.parameters["serverdirname"] + self.parameters["monitor_server_name"],
-                )
-            except (SCPException, SSHException):
-                self.logger.exception("Upload error. Try again after rebooting your RedPitaya..")
+            self.put_file(
+                os.path.join(
+                    os.path.abspath(os.path.dirname(__file__)),
+                    "monitor_server",
+                    serverfile,
+                ),
+                self.parameters["serverdirname"] + self.parameters["monitor_server_name"],
+            )
             sleep(self.parameters["delay"])
             self.ssh.ask("chmod 755 ./" + self.parameters["monitor_server_name"])
             sleep(self.parameters["delay"])
@@ -658,6 +732,11 @@ class RedPitaya(object):
         return self.installserver()
 
     def endserver(self):
+        # Simulated RedPitaya instances have a dummy client but no SSH shell
+        # or remote monitor_server to stop.
+        if not hasattr(self, "ssh"):
+            self._serverrunning = False
+            return
         try:
             self.ssh.ask("\x03")  # exit running server application
         except (AttributeError, OSError, RuntimeError):
@@ -675,10 +754,12 @@ class RedPitaya(object):
 
     def start(self):
         if self.parameters["leds_off"]:
-            if self.os_version.find("2.") != -1:  # for os < 0.94
+            if (
+                self.os_version.find("2.") != -1 or self.os_version.find("3.") != -1
+            ):  # for os > 1.0x
                 self.ssh.ask("\x03")
                 self.ssh.ask("/opt/redpitaya/bin/led_control -y=Off -e=Off -r=Off")
-            else:  # for os > 0.94
+            else:  # for os <= 1.0x
                 self.switch_led(gpiopin=0, state=False)
                 self.switch_led(gpiopin=7, state=False)
         self.startserver()
@@ -690,7 +771,8 @@ class RedPitaya(object):
         self.endclient()
 
     def end_ssh(self):
-        self.ssh.channel.close()
+        if hasattr(self, "ssh"):
+            self.ssh.channel.close()
 
     def end_all(self):
         self.end()

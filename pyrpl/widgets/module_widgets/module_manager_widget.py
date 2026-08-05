@@ -3,10 +3,10 @@ ModuleManagerWidgets are just a frame containing several identical module widget
 or asgs
 """
 
-from .base_module_widget import ModuleWidget
-from .schematics import MyLabel, MyImage, Connection, MyFrame, MyFrameDrawing
+from qtpy import QtCore, QtGui, QtWidgets
 
-from qtpy import QtCore, QtWidgets, QtGui
+from .base_module_widget import ModuleWidget
+from .schematics import Connection, MyFrame, MyFrameDrawing, MyImage, MyLabel
 
 
 class ModuleManagerWidget(ModuleWidget):
@@ -24,7 +24,7 @@ class ModuleManagerWidget(ModuleWidget):
         self.main_layout = QtWidgets.QVBoxLayout()
         self.module_widgets = []
 
-        for index, mod in enumerate(self.module.all_modules):
+        for _index, mod in enumerate(self.module.all_modules):
             module_widget = mod._create_widget()
             # frames and titles visible only for sub-modules of Managers
             # module_widget.setStyleSheet("ModuleWidget{border: 1px dashed gray;color: black;}")
@@ -37,13 +37,12 @@ class ModuleManagerWidget(ModuleWidget):
 
     def contextMenuEvent(self, event):
         for widget in self.module_widgets:
-            if widget.geometry().contains(event.pos()):
-                if widget.module.owner is not None:
-                    act = QtWidgets.QAction("Free %s" % widget.module.name, self)
-                    act.triggered.connect(widget.module.free)
-                    menu = QtWidgets.QMenu()
-                    menu.addAction(act)
-                    menu.exec_(event.globalPos())
+            if widget.geometry().contains(event.pos()) and widget.module.owner is not None:
+                act = QtWidgets.QAction(f"Free {widget.module.name}", self)
+                act.triggered.connect(widget.module.free)
+                menu = QtWidgets.QMenu()
+                menu.addAction(act)
+                menu.exec_(event.globalPos())
 
 
 class PidManagerWidget(ModuleManagerWidget):
@@ -72,7 +71,7 @@ class IqManagerWidget(ModuleManagerWidget):
         In addition to the normal ModuleManagerWidget stacking of module attributes, the
         IqManagerWidget displays a schematic of the iq  module internal logic.
         """
-        super(IqManagerWidget, self).init_gui()
+        super().init_gui()
         self.button_hide = QtWidgets.QPushButton("^", parent=self)
         self.button_hide.setMaximumHeight(15)
         self.button_hide.clicked.connect(self.button_hide_clicked)
@@ -278,5 +277,5 @@ class IqManagerWidget(ModuleManagerWidget):
         call adjust_drawing upon resize.
         """
 
-        super(IqManagerWidget, self).resizeEvent(event)
+        super().resizeEvent(event)
         self.adjust_drawing()

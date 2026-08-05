@@ -3,9 +3,11 @@ This file contains a number of methods for asynchronous operations.
 """
 
 import logging
-from qtpy import QtCore
-from timeit import default_timer
 import sys
+from timeit import default_timer
+
+from qtpy import QtCore
+
 from . import APP  # APP is only created once at the startup of PyRPL
 
 logger = logging.getLogger(name=__name__)
@@ -15,14 +17,14 @@ MAIN_THREAD = APP.thread()
 
 try:
     from asyncio import (
-        Future,
         CancelledError,
-        set_event_loop,
+        Future,
         TimeoutError,
+        set_event_loop,
     )
 except ImportError:  # this occurs in python 2.7
     logger.debug("asyncio not found, we will use concurrent.futures instead of python 3.5 Futures.")
-    from concurrent.futures import Future, CancelledError, TimeoutError
+    from concurrent.futures import CancelledError, Future, TimeoutError
 else:
     import quamash
 
@@ -97,7 +99,7 @@ class MainThreadTimer(QtCore.QTimer):
     """
 
     def __init__(self, interval):
-        super(MainThreadTimer, self).__init__()
+        super().__init__()
         self.moveToThread(MAIN_THREAD)
         self.setSingleShot(True)
         self.setInterval(interval)
@@ -129,9 +131,9 @@ class PyrplFuture(Future):
     def __init__(self):
         if sys.version.startswith("3.7"):
             loop = quamash.QEventLoop()
-            super(PyrplFuture, self).__init__(loop=loop)
+            super().__init__(loop=loop)
         else:  # python 2.7, 3.5,3.6
-            super(PyrplFuture, self).__init__()
+            super().__init__()
         self._timer_timeout = None  # timer that will be instantiated if
         #  result(timeout) is called with a >0 value
 
@@ -143,9 +145,9 @@ class PyrplFuture(Future):
             The result of the future.
         """
         try:  #  concurrent.futures.Future (python 2)
-            return super(PyrplFuture, self).result(timeout=0)
+            return super().result(timeout=0)
         except TypeError:  #  asyncio.Future (python 3)
-            return super(PyrplFuture, self).result()
+            return super().result()
 
     def _exit_loop(self, x=None):
         """
@@ -243,7 +245,7 @@ class PyrplFuture(Future):
         """
         if self._timer_timeout is not None:
             self._timer_timeout.stop()
-        super(PyrplFuture, self).cancel()
+        super().cancel()
 
 
 def sleep(delay):

@@ -3,8 +3,9 @@ The Hk widget allows to change port direction, set the value of output ports,
 get the value of input ports
 """
 
-from .base_module_widget import ModuleWidget
 from qtpy import QtWidgets
+
+from .base_module_widget import ModuleWidget
 
 
 class HkWidget(ModuleWidget):
@@ -13,7 +14,7 @@ class HkWidget(ModuleWidget):
     """
 
     def init_gui(self):
-        super(HkWidget, self).init_gui()
+        super().init_gui()
         # Then remove properties from normal property layout
         # We will make one where buttons are stack on top of
         # each others by functional column blocks

@@ -1,9 +1,22 @@
-from .. import *
-from .interferometer import Interferometer
+import logging
+from collections import OrderedDict
+
+import numpy as np
+
 from pyrpl.async_utils import wait
+from pyrpl.attributes import FloatProperty, FrequencyProperty, SelectProperty
+
+from .. import (
+    InputDirect,
+    InputIq,
+    InputSignal,
+    InsufficientResourceError,
+    LockboxModuleDictProperty,
+)
+from .interferometer import Interferometer
 
 
-class Lorentz(object):
+class Lorentz:
     """base class for Lorentzian-like signals"""
 
     def _lorentz(self, x):
@@ -168,6 +181,12 @@ class FabryPerot(Interferometer):
     inputs = LockboxModuleDictProperty(
         transmission=FPTransmission, reflection=FPReflection, pdh=FPPdh
     )
+    _available_input_classes = OrderedDict(
+        [
+            ("FPAnalogPdh", FPAnalogPdh),
+            ("FPTilt", FPTilt),
+        ]
+    )
 
     finesse = FloatProperty(max=1e7, min=0, default=10000)
     # approximate length in m (not taking into account small variations of the
@@ -274,7 +293,7 @@ class HighFinesseInput(InputSignal):
 
     def calibrate(self, autosave=False):
         # take a first coarse calibration for trigger threshold estimation
-        curve0, _ = super(HighFinesseInput, self).sweep_acquire()
+        curve0, _ = super().sweep_acquire()
         if curve0 is None:
             self._logger.warning("Aborting calibration because no scope is available...")
             return None
@@ -390,4 +409,9 @@ class HighFinesseFabryPerot(FabryPerot):
         transmission=HighFinesseTransmission,
         reflection=HighFinesseReflection,
         pdh=HighFinessePdh,
+    )
+    _available_input_classes = OrderedDict(
+        [
+            ("HighFinesseAnalogPdh", HighFinesseAnalogPdh),
+        ]
     )

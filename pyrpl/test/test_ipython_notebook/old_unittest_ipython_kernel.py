@@ -5,14 +5,13 @@ Usage: `ipnbdoctest.py foo.ipynb [bar.ipynb [...]]`
 """
 # License: Public Domain, but credit is nice (Min RK).
 
-from glob import glob
 import os
 import sys
+from glob import glob
 
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 from nbconvert.preprocessors.execute import CellExecutionError
-
 
 NOTEBOOK_DIR = os.path.dirname(__file__)
 TUTORIAL_DIR = os.path.join(
@@ -20,11 +19,6 @@ TUTORIAL_DIR = os.path.join(
     "docs",
     "example-notebooks",
 )
-
-try:
-    TimeoutError  # builtin in python 3
-except NameError:
-    TimeoutError = RuntimeError  # a RunTimeError is launched in python 2.7
 
 
 class MyExecutePreprocessor(ExecutePreprocessor):
@@ -36,10 +30,10 @@ class MyExecutePreprocessor(ExecutePreprocessor):
             for key in ["hostname", "user", "password"]:
                 # if defaultparameters[key] is not None:
                 #    cell.source += '\n%s = "%s"'%(key.upper(), defaultparameters[key])
-                envvarname = "REDPITAYA_%s" % (key.upper())
+                envvarname = f"REDPITAYA_{key.upper()}"
                 if envvarname in os.environ:
-                    cell.source += '\n%s = "%s"' % (key.upper(), os.environ[envvarname])
-        return super(MyExecutePreprocessor, self).preprocess_cell(cell, resources, cell_index)
+                    cell.source += f'\n{key.upper()} = "{os.environ[envvarname]}"'
+        return super().preprocess_cell(cell, resources, cell_index)
 
 
 def _notebook_run(path):
@@ -47,7 +41,7 @@ def _notebook_run(path):
     Execute a notebook via nbconvert and collect output.
     :returns (parsed nb object, execution errors)
     """
-    kernel_name = "python%d" % sys.version_info[0]
+    kernel_name = f"python{sys.version_info[0]:d}"
     errors = []
 
     with open(path) as f:
@@ -77,8 +71,8 @@ def _notebook_run(path):
 ##############################################################################
 
 # testing for the transferability of environment variables
-os.environ["python_sys_version"] = sys.version
-os.environ["pyrpl_path"] = "C://Users//HQNOM//Documents//GitHub//pyrpl"
+os.environ["PYTHON_SYS_VERSION"] = sys.version
+os.environ["PYRPL_PATH"] = "C://Users//HQNOM//Documents//GitHub//pyrpl"
 
 # For some reason, the notebook preprocessor doesn't close
 # itself properly in python 3.7. I don't think it's worth the effort
@@ -91,5 +85,5 @@ if sys.version > "3.8":
         assert errors == []
         # Make sure the kernel is running the current python version...
         # assert nb['cells'][0]['outputs'][0]['text'].rstrip('\n')==sys.version
-        print("Finished testing notebook: %s" % notebook)
+        print(f"Finished testing notebook: {notebook}")
         sys.stdout.flush()

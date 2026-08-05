@@ -141,11 +141,11 @@ meters is implemented there. Another very often used model type is
 
 """
 
-from __future__ import print_function
-
+import importlib
 import logging
 import os
-from qtpy import QtWidgets, API_NAME
+
+from qtpy import API_NAME, QtWidgets
 
 if API_NAME is None:
     raise RuntimeError(
@@ -157,20 +157,18 @@ if API_NAME is None:
         "  pip install pyrpl[qt-pyside2]\n"
     )
 
-from .widgets.pyrpl_widget import PyrplWidget
+from . import pyrpl_utils
+from ._version import __version__
+from .async_utils import sleep
+from .directories import user_config_dir
 from .memory import MemoryTree
 from .redpitaya import RedPitaya
-from . import pyrpl_utils
 from .software_modules import get_module
-from .async_utils import sleep
+from .widgets.pyrpl_widget import PyrplWidget
 
 # it is important that Lockbox is loaded before the models
-from .software_modules.lockbox import *
-from .software_modules.lockbox.models import *  # make sure all models are
-
-# loaded when we get started
-from .directories import user_config_dir
-from ._version import __version__
+importlib.import_module(".software_modules.lockbox", package=__package__)
+importlib.import_module(".software_modules.lockbox.models", package=__package__)
 
 
 raw_input = input
@@ -195,8 +193,8 @@ default_pyrpl_config = {
     ],
 }
 
-help_message = """
-PyRPL version %s command-line help
+help_message = f"""
+PyRPL version {__version__} command-line help
 ==================================
 
 Syntax for launching PyRPL
@@ -227,10 +225,10 @@ port     port for redpitaya_client, default is 2222
 
 gui      one of [True, False], to en- or disable GUI
 loglevel logging level, one of [debug, info, warning, error]
-""" % (__version__)
+"""
 
 
-class Pyrpl(object):
+class Pyrpl:
     """
     Higher level object, in charge of loading the right hardware and software
     module, depending on the configuration described in a config file.
@@ -279,7 +277,7 @@ class Pyrpl(object):
                 configfiles = [name[:-4] if name.endswith(".yml") else name for name in configfiles]
                 print("Existing config files are:")
                 for name in configfiles:
-                    print("    %s" % name)
+                    print(f"    {name}")
                 config = raw_input("\nEnter an existing or new config file name: ")
         if config is None or config == "" or config.endswith("/.yml"):
             config = None

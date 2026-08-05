@@ -50,15 +50,15 @@ of the GUI.
 3) Installation
 ---------------
 
-Option 1: Install latest PyRPL from GitHub with pip (recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 1: Install the latest stable release from PyPI (recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The package published on PyPI is outdated. Install PyRPL from GitHub instead
-(preferably in a fresh environment):
+Install PyRPL with one of the supported Qt bindings (preferably in a fresh
+environment):
 
 .. code:: bash
 
-    pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
+    pip install "pyrpl[qt-pyqt5]"
 
 
 You can replace ``qt-pyqt5`` with ``qt-pyqt6``, ``qt-pyside2`` or
@@ -67,7 +67,7 @@ You can replace ``qt-pyqt5`` with ``qt-pyqt6``, ``qt-pyside2`` or
 .. code:: ipython3
 
     #no-test
-    !pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
+    !pip install "pyrpl[qt-pyqt5]"
 
 .. code:: ipython3
 
@@ -99,8 +99,8 @@ If you prefer conda, create and activate a dedicated environment first:
     conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
     conda activate pyrpl-env
 
-Then install PyRPL from GitHub as shown above. Do not use
-``pip install pyrpl`` because the PyPI package is outdated.
+Then install the stable PyRPL release from PyPI as shown above, or install the
+development checkout with ``pip install -e .[qt-pyqt5]``.
 
 Compiling the server application (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

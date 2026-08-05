@@ -17,11 +17,11 @@ Installing PyRPL
 
 The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable from the `PyRPL releases page <https://github.com/pyrpl-fpga/pyrpl/releases>`__.
 
-If you prefer an installation from source code, go to :ref:`installation_from_source`.
+For a Python installation with PyQt5, use::
 
-.. warning::
+   pip install "pyrpl[qt-pyqt5]"
 
-   Do **not** use ``pip install pyrpl``. The package on PyPI is outdated. Use the GitHub-based installation documented in :doc:`user_guide/installation/pyrpl_installation`.
+If you prefer the current development source, go to :ref:`installation_from_source`.
 
 
 Compiling the FPGA code (optional)

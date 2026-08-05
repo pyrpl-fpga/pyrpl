@@ -1,7 +1,8 @@
 import logging
-import pytest
+
 import numpy as np
-from pyrpl.attributes import *
+import pytest
+
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
 
@@ -336,14 +337,8 @@ class TestIir(TestPyrpl):
                     eth = error_threshold[kinds.index(kind)]
                 except (IndexError, TypeError, ValueError):
                     eth = error_threshold
-            if relative:
-                error = np.abs((data - theory) / theory)
-            else:
-                error = np.abs(data - theory)
-            if mean:
-                maxerror = np.mean(error)
-            else:
-                maxerror = np.max(error)
+            error = np.abs((data - theory) / theory) if relative else np.abs(data - theory)
+            maxerror = np.mean(error) if mean else np.max(error)
             if maxerror > eth:
                 c = CurveDB.create(
                     f,
@@ -361,4 +356,4 @@ class TestIir(TestPyrpl):
                 c.add_child(
                     CurveDB.create(f, error, name="test_" + module.name + "_na-failed-error")
                 )
-                assert False, (maxerror, setting)
+                raise AssertionError((maxerror, setting))

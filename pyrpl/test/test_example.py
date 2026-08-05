@@ -1,6 +1,8 @@
 import logging
-from .test_base import TestPyrpl
+
 import pytest
+
+from .test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
@@ -13,12 +15,12 @@ class TestExample(TestPyrpl):
     # you are welcome to change the following silly tests to something useful
     def test_example(self):
         if 1 > 2:
-            assert False
+            raise AssertionError()
 
     def test_example2(self):
         if self.asg.frequency < 0:
-            assert False
+            raise AssertionError()
 
     def test_example3(self):
         if not self.asg.frequency >= 0:
-            assert False
+            raise AssertionError()

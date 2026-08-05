@@ -38,13 +38,14 @@ output selected in :code:`output_direct`.
   (not implemented at the moment).
 """
 
-from .acquisition_module_widget import AcquisitionModuleWidget
-
-from qtpy import QtCore, QtWidgets
-import pyqtgraph as pg
-from time import time
-import numpy as np
 import sys
+from time import time
+
+import numpy as np
+import pyqtgraph as pg
+from qtpy import QtCore, QtWidgets
+
+from .acquisition_module_widget import AcquisitionModuleWidget
 
 
 class NaWidget(AcquisitionModuleWidget):
@@ -121,7 +122,7 @@ class NaWidget(AcquisitionModuleWidget):
         # self.button_layout.addWidget(aws["trace_average"])
         # self.button_layout.addWidget(aws["curve_name"])
 
-        super(NaWidget, self).init_gui()
+        super().init_gui()
         # self.button_layout.addWidget(self.button_single)
         # self.button_layout.addWidget(self.button_continuous)
         # self.button_layout.addWidget(self.button_stop)
@@ -213,7 +214,7 @@ class NaWidget(AcquisitionModuleWidget):
         rate = self.module.measured_time_per_point
         if not np.isnan(rate) and self._last_benchmark_value != rate:
             theory = self.module.time_per_point
-            self.set_benchmark_text("ms/pt: %.1f (theory: %.1f)" % (rate * 1000, theory * 1000))
+            self.set_benchmark_text(f"ms/pt: {rate * 1000:.1f} (theory: {theory * 1000:.1f})")
 
         if force or (time() - self.last_updated_time > self.update_period):
             # if last update time was a long time ago,
@@ -243,7 +244,7 @@ class NaWidget(AcquisitionModuleWidget):
         return np.angle(data, deg=True)
 
     def update_attribute_by_name(self, name, new_value_list):
-        super(NaWidget, self).update_attribute_by_name(name, new_value_list)
+        super().update_attribute_by_name(name, new_value_list)
         if name == "_running_state":
             # self.display_state(self.module.running_state)
             self.update_running_buttons()
@@ -382,5 +383,4 @@ class MyGraphicsWindow(pg.GraphicsLayoutWidget):
                 self.parent_widget.attribute_widgets["zeros"].set_selected(-1)
         except Exception as e:
             self.parent_widget.module._logger.error(e)
-        finally:
-            return super(pg.GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)
+        return super(pg.GraphicsLayoutWidget, self).mousePressEvent(*args, **kwds)

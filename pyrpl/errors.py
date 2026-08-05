@@ -19,7 +19,7 @@ class UnexpectedPyrplError(Exception):
 
     def __init__(self, message="", **kwargs):
         self.message = message + self.pyrpl_error_message
-        super(UnexpectedPyrplError, self).__init__(self.message, **kwargs)
+        super().__init__(self.message, **kwargs)
 
 
 class ExpectedPyrplError(Exception):
@@ -38,7 +38,7 @@ class ExpectedPyrplError(Exception):
 
     def __init__(self, message="", **kwargs):
         self.message = message + self.pyrpl_error_message
-        super(ExpectedPyrplError, self).__init__(self.message, **kwargs)
+        super().__init__(self.message, **kwargs)
 
 
 class NotReadyError(ValueError):

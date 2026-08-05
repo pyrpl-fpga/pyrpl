@@ -125,14 +125,27 @@ large an integrator gain will quickly saturate the outputs.
     print("First point in data buffer 1 [V]:", s.ch1_firstpoint)
 """
 
-from .dsp import all_inputs, dsp_addr_base, InputSelectRegister
+import logging
+
+import numpy as np
+
 from ..acquisition_module import AcquisitionModule
-from ..async_utils import wait, sleep_async
-from ..pyrpl_utils import sorted_dict
-from ..attributes import *
+from ..async_utils import sleep_async, wait
+from ..attributes import (
+    BoolProperty,
+    BoolRegister,
+    FloatProperty,
+    FloatRegister,
+    IntRegister,
+    LongRegister,
+    SelectProperty,
+    SelectRegister,
+    StringProperty,
+)
 from ..modules import HardwareModule
-from ..pyrpl_utils import time
+from ..pyrpl_utils import sorted_dict, time
 from ..widgets.module_widgets import ScopeWidget
+from .dsp import InputSelectRegister, all_inputs, dsp_addr_base
 
 logger = logging.getLogger(name=__name__)
 
@@ -613,7 +626,7 @@ class Scope(HardwareModule, AcquisitionModule):
     # ----------------------------------------------------
 
     def _prepare_averaging(self):
-        super(Scope, self)._prepare_averaging()
+        super()._prepare_averaging()
         self.data_x = np.copy(self.times)
         self.data_avg = np.zeros((2, len(self.times)))
         self.current_avg = 0
@@ -632,7 +645,7 @@ class Scope(HardwareModule, AcquisitionModule):
 
     async def _do_average_continuous_async(self):
         if not self._is_rolling_mode_active():
-            await super(Scope, self)._do_average_continuous_async()
+            await super()._do_average_continuous_async()
         else:  # no need to prepare averaging
             self._start_acquisition_rolling_mode()
             while self.running_state == "running_continuous":

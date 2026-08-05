@@ -1,13 +1,13 @@
 import logging
 import os
-from ..memory import MemoryTree, MemoryBranch
-from .. import *
+
 from ..async_utils import sleep
+from ..memory import MemoryBranch, MemoryTree
 
 logger = logging.getLogger(name=__name__)
 
 
-class TestMemory(object):
+class TestMemory:
     def test_load(self):
         mt = MemoryTree(filename="test", source="nosetests_source")
         assert mt is not None
@@ -129,7 +129,7 @@ class TestMemory(object):
         always up to date with the file.
         """
         filename = "test4"
-        print("Filename: %s" % filename)
+        print(f"Filename: {filename}")
         T1, T2 = 0, 0
         m1 = MemoryTree(filename, _loadsavedeadtime=T1)
         assert m1._loadsavedeadtime == T1

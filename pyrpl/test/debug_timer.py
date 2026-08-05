@@ -1,5 +1,7 @@
-from qtpy import QtCore
 import time
+
+from qtpy import QtCore
+
 from pyrpl.async_utils import sleep
 
 """ what is this file for? delete it? """
@@ -10,7 +12,7 @@ if False:
     pyrpl = Pyrpl(config="nosetests_source.yml", source="nosetests_config.yml")
     sleep(0.5)
 
-    class ToPasteInNotebook(object):
+    class ToPasteInNotebook:
         def coucou(self):
             self.count += 1
             if self.count < 1000:

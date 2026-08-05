@@ -1,4 +1,5 @@
 import logging
+
 from ..attributes import SelectProperty, StringProperty, TextProperty
 from ..memory import MemoryTree
 from ..modules import Module
@@ -18,7 +19,7 @@ class PyrplConfig(Module):
     configfile = StringProperty()
 
     def __init__(self, parent, name=None):
-        super(PyrplConfig, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         self.configfile = self.pyrpl.c._filename or ""
 
     text = TextProperty()
