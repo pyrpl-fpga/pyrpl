@@ -129,7 +129,11 @@ class ScopeWidget(AcquisitionModuleWidget):
         self.setWindowTitle("Scope")
         self.win = pg.GraphicsLayoutWidget(title="Scope")
         self.plot_item = self.win.addPlot(title="Scope")
-        self.plot_item.showGrid(y=True, alpha=1.0)
+        # A fully opaque horizontal grid hides constant traces that coincide
+        # with a grid line (most noticeably a signal at exactly zero).  Grid
+        # lines are painted by AxisItem, so raising a curve's Z value does not
+        # reliably resolve that overlap across pyqtgraph versions.
+        self.plot_item.showGrid(y=True, alpha=0.3)
 
         # self.button_single = QtWidgets.QPushButton("Run single")
         # self.button_continuous = QtWidgets.QPushButton("Run continuous")
@@ -137,15 +141,22 @@ class ScopeWidget(AcquisitionModuleWidget):
 
         self.curves = [
             self.plot_item.plot(
-                pen=(
-                    QtGui.QColor(color).red(),
-                    QtGui.QColor(color).green(),
-                    QtGui.QColor(color).blue(),
-                )
+                pen=pg.mkPen(
+                    color=(
+                        QtGui.QColor(color).red(),
+                        QtGui.QColor(color).green(),
+                        QtGui.QColor(color).blue(),
+                    ),
+                    width=2,
+                ),
             )
             # ,trans)) \
             for color, trans in zip(self.ch_color, self.ch_transparency)
         ]
+
+        for curve in self.curves:  # Display the curves above the grid
+            curve.setZValue(10)
+
         self.main_layout.addWidget(self.win, stretch=10)
 
         # self.button_layout.addWidget(self.button_single)
