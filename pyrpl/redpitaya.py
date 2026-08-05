@@ -249,8 +249,7 @@ class RedPitaya:
             required_binfilename = "fpga.bin"
             if self.parameters["serverbinfilename"] != required_binfilename:
                 self.logger.info(
-                    "Red Pitaya OS 3 requires serverbinfilename=%s; "
-                    "overriding saved value %s",
+                    "Red Pitaya OS 3 requires serverbinfilename=%s; overriding saved value %s",
                     required_binfilename,
                     self.parameters["serverbinfilename"],
                 )
@@ -413,27 +412,22 @@ class RedPitaya:
                 sleep(self.parameters["delay"])
             else:
                 return
-        raise OSError(
-            f"Could not upload {source!r} to {destination!r}"
-        ) from last_error
+        raise OSError(f"Could not upload {source!r} to {destination!r}") from last_error
 
     def get_os_version(self):
         self.ssh.ask()  # clear buffer
         result = self.ssh.ask("cat /root/.version")
         self.logger.debug(f"cat /root/.version: {result}")
 
-        # Parse version from response
-        version = None
-        for line in result.strip().split("\r\n"):
-            line = line.strip()
-            if line and "cat" not in line and "@" not in line:
-                version = line
-                break
-        if version is None:
+        # Interactive SSH output can contain CRLF, LF, prompts and invisible
+        # terminal control bytes on the same line. The command and prompt do
+        # not contain a dotted numeric token, so extract that token directly.
+        match = re.search(r"(?<![\d.])(\d+(?:\.\d+)+)(?![\d.])", result)
+        if match is None:
             self.logger.warning(f"Could not parse OS version from response: {result}")
             version = "unknown"
         else:
-            version = re.match.group(1)
+            version = match.group(1)
         self.logger.debug("OS version: %s", version)
         self.os_version = version
 
@@ -535,7 +529,32 @@ class RedPitaya:
             dtbo_file_path = os.path.join(
                 self.parameters["serverdirname"], self.parameters["serverdtbofilename"]
             )
-            self.put_file(dtbo_source, dtbo_file_path)
+            dtbo_to_upload = dtbo_source
+            temporary_dtbo = None
+            if self.os_version.startswith("3."):
+                # fpgautil on OS 3 stages the image as fpga.bin. Keep the
+                # original DTBO for older systems, but update its fixed-width
+                # firmware-name string in the temporary upload copy.
+                old_name = b"fpga.bit.bin\x00"
+                new_name = b"fpga.bin\x00" + b"\x00" * (
+                    len(old_name) - len(b"fpga.bin\x00")
+                )
+                with open(dtbo_source, "rb") as source_file:
+                    dtbo_data = source_file.read()
+                if old_name not in dtbo_data:
+                    raise OSError(
+                        "OS 3 DTBO conversion failed: firmware-name "
+                        f"fpga.bit.bin was not found in {dtbo_source}"
+                    )
+                temporary_dtbo = tempfile.NamedTemporaryFile(suffix=".dtbo", delete=False)
+                temporary_dtbo.write(dtbo_data.replace(old_name, new_name, 1))
+                temporary_dtbo.close()
+                dtbo_to_upload = temporary_dtbo.name
+            try:
+                self.put_file(dtbo_to_upload, dtbo_file_path)
+            finally:
+                if temporary_dtbo is not None:
+                    os.unlink(temporary_dtbo.name)
             update_cmd = f"{update_cmd} {dtbo_file_path}"
 
         # kill all other servers to prevent reading while fpga is flashed
@@ -713,6 +732,11 @@ class RedPitaya:
         return self.installserver()
 
     def endserver(self):
+        # Simulated RedPitaya instances have a dummy client but no SSH shell
+        # or remote monitor_server to stop.
+        if not hasattr(self, "ssh"):
+            self._serverrunning = False
+            return
         try:
             self.ssh.ask("\x03")  # exit running server application
         except (AttributeError, OSError, RuntimeError):
@@ -730,7 +754,9 @@ class RedPitaya:
 
     def start(self):
         if self.parameters["leds_off"]:
-            if self.os_version.find("2.") != -1 or self.os_version.find("3.") != -1: # for os > 1.0x
+            if (
+                self.os_version.find("2.") != -1 or self.os_version.find("3.") != -1
+            ):  # for os > 1.0x
                 self.ssh.ask("\x03")
                 self.ssh.ask("/opt/redpitaya/bin/led_control -y=Off -e=Off -r=Off")
             else:  # for os <= 1.0x
@@ -745,7 +771,8 @@ class RedPitaya:
         self.endclient()
 
     def end_ssh(self):
-        self.ssh.channel.close()
+        if hasattr(self, "ssh"):
+            self.ssh.channel.close()
 
     def end_all(self):
         self.end()

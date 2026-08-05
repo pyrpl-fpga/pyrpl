@@ -1,4 +1,5 @@
 import contextlib
+from collections import OrderedDict
 
 from .attributes import ModuleAttribute
 from .modules import Module
@@ -257,15 +258,21 @@ class ModuleDict(Module):
         self[key]._load_setup_attributes()
 
     def __delitem__(self, key):
-        self._module_attributes.pop(key)
-        self._setup_attributes.pop(key)
-        getattr(self, key)._clear()
-        delattr(self, key)
+        if key not in self._module_attributes:
+            raise KeyError(key)
+        module = getattr(self, key)
+        self._module_attributes.remove(key)
+        if key in self._setup_attributes:
+            self._setup_attributes.remove(key)
+        module._clear()
+        if self.c is not None and key in self.c:
+            self.c._pop(key)
+        delattr(self.__class__, key)
 
     def pop(self, key):
         """same as __delattr__ (does not return a value)"""
-        module = self._setup_attributes.pop(key)
-        delattr(self, key)
+        module = getattr(self, key)
+        self.__delitem__(key)
         return module
 
 
@@ -278,6 +285,7 @@ class ModuleDictProperty(ModuleProperty):
         name and class are specified in kwargs. module_cls is the base class for the module
         container (typically SoftwareModule)
         """
+        self.module_classes = OrderedDict(kwargs)
         # get default base class to inherit from
         if module_cls is None:
             module_cls = self.default_module_cls

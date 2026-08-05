@@ -166,8 +166,10 @@ class OutputSignal(Signal):
         """
         Free up resources associated with the output
         """
-        self.pyrpl.pids.free(self.pid)
-        self._pid = None
+
+        if hasattr(self, "_pid") and self._pid is not None:
+            self.pyrpl.pids.free(self._pid)
+            self._pid = None
         super()._clear()
 
     def unlock(self, reset_offset=False):

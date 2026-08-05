@@ -96,6 +96,63 @@ from ...pyrpl_utils import get_base_module_class
 from .base_module_widget import ModuleWidget, ReducedModuleWidget
 
 
+class AddSignalDialog(QtWidgets.QDialog):
+    """Dialog to choose the name and type of input or output to add."""
+
+    def __init__(self, parent, signal_type, options, suggested_name, existing_names, callback):
+        """
+        callback: called with (name, selected class) when the user clicks Ok,
+                  or with (None, None) if cancelled.
+        """
+        super().__init__(parent)
+        self.setWindowTitle(f"Add {signal_type}")
+        self.signal_type = signal_type
+        self.existing_names = set(existing_names)
+        self.callback = callback
+
+        layout = QtWidgets.QVBoxLayout(self)
+
+        layout.addWidget(QtWidgets.QLabel(f"{signal_type.capitalize()} name:"))
+        self.name_edit = QtWidgets.QLineEdit(suggested_name)
+        self.name_edit.selectAll()
+        layout.addWidget(self.name_edit)
+
+        layout.addWidget(QtWidgets.QLabel(f"Choose {signal_type} type:"))
+
+        self.combo = QtWidgets.QComboBox()
+        for name, cls in options.items():
+            self.combo.addItem(name, cls)
+        layout.addWidget(self.combo)
+
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
+        buttons.accepted.connect(self._on_accept)
+        buttons.rejected.connect(self._on_reject)
+        layout.addWidget(buttons)
+
+    def _on_accept(self):
+        name = str(self.name_edit.text()).strip()
+        if not name:
+            QtWidgets.QMessageBox.warning(
+                self, "Invalid name", f"Please enter a {self.signal_type} name."
+            )
+            return
+        if name in self.existing_names:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Name already exists",
+                f"A {self.signal_type} named '{name}' already exists.",
+            )
+            return
+        self.callback(name, self.combo.currentData())
+        self.accept()
+
+    def _on_reject(self):
+        self.callback(None, None)
+        self.reject()
+
+
 class AnalogTfDialog(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -542,24 +599,43 @@ class InputsWidget(QtWidgets.QWidget):
         super().__init__(all_sig_widget)
         self.layout = QtWidgets.QHBoxLayout(self)
         self.input_widgets = dict()
+        self.input_containers = dict()
         # self.layout.addStretch(1)
         for signal in self.lb_widget.module.inputs:
             self.add_input(signal)
         # self.layout.addStretch(1)
 
     def remove_input(self, input):
-        widget = self.input_widgets.pop(input.name)
-        widget.hide()
-        widget.deleteLater()
+        container = self.input_containers.pop(input.name, None)
+        self.input_widgets.pop(input.name, None)
+        if container:
+            container.hide()
+            container.deleteLater()
 
     def add_input(self, input):
         widget = input._create_widget()
         self.input_widgets[input.name] = widget
-        self.layout.addWidget(widget, stretch=3)
+        # wrap in a container with a remove button at the top
+        container = QtWidgets.QWidget()
+        vlay = QtWidgets.QVBoxLayout(container)
+        vlay.setContentsMargins(0, 0, 0, 0)
+
+        btn_remove = QtWidgets.QPushButton(f"x Remove {input.name}")
+        btn_remove.setMaximumHeight(20)
+        # capture input by default arg to avoid closure issues
+        btn_remove.clicked.connect(
+            lambda checked, inp=input: self.lb_widget.module._remove_input(inp)
+        )
+
+        vlay.addWidget(btn_remove)
+        vlay.addWidget(widget)
+        self.input_containers[input.name] = container
+        self.layout.addWidget(container, stretch=3)
 
     def input_calibrated(self, inputs):
         for input in inputs:
-            self.input_widgets[input.name].input_calibrated()
+            if input.name in self.input_widgets:
+                self.input_widgets[input.name].input_calibrated()
 
 
 class PlusTab(QtWidgets.QWidget):
@@ -594,21 +670,56 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
         # removing previous tab
         self.output_widgets = []
         self.lb_widget = lockbox_widget
+        # QTabWidget can deliver currentChanged asynchronously while the
+        # initial tabs are being populated.  Keep the guard available from
+        # the very beginning of construction.
+        self._tab_changing = False
+
+        # --- Inputs tab with its own add/remove buttons ---
         self.inputs_widget = InputsWidget(self)
-        self.addTab(self.inputs_widget, "inputs")
+        self.inputs_tab_container = QtWidgets.QWidget()
+        inputs_layout = QtWidgets.QVBoxLayout(self.inputs_tab_container)
+
+        self.button_add_input = QtWidgets.QPushButton("+ Add input")
+        self.button_add_input.clicked.connect(self._add_input_clicked)
+        inputs_layout.addWidget(self.button_add_input)
+        inputs_layout.addWidget(self.inputs_widget)
+
+        self.addTab(self.inputs_tab_container, "inputs")
+        # Hide the close button on the inputs tab
         tab_button = self.tabBar().tabButton(0, QtWidgets.QTabBar.RightSide)
-        if tab_button is not None:  # On MAC OS there is no tab button ?
-            tab_button.resize(0, 0)  # hide "close" for "inputs" tab
-        self.tab_plus = PlusTab()  # dummy widget that will never be displayed
+        if tab_button is not None:
+            tab_button.resize(0, 0)
+
+        # --- "+" tab to add outputs ---
+        self.tab_plus = PlusTab()
         self.addTab(self.tab_plus, "+")
         button = self.tabBar().tabButton(self.count() - 1, QtWidgets.QTabBar.RightSide)
-        if button is not None:  # Problem with MAC ?
-            button.resize(0, 0)  # hide "close" for "+" tab
+        if button is not None:
+            button.resize(0, 0)
+
         for signal in self.lb_widget.module.outputs:
             self.add_output(signal)
+
         self.currentChanged.connect(self.tab_changed)
         self.tabCloseRequested.connect(self.close_tab)
         self.update_output_names()
+
+    def _add_input_clicked(self):
+        options = self._get_input_types()
+        existing = list(self.lb_widget.module.inputs.keys())
+        suggested = self.lb_widget.module._next_signal_name("input", existing)
+
+        def on_done(name, cls):
+            if cls is not None:
+                try:
+                    self.lb_widget.module._add_input(cls, name=name)
+                except ValueError as e:
+                    QtWidgets.QMessageBox.warning(self, "Cannot add input", str(e))
+
+        dialog = AddSignalDialog(self, "input", options, suggested, existing, callback=on_done)
+        self._add_signal_dialog = dialog
+        dialog.open()  # non-blocking
 
     def update_gain_color(self, output, p_or_i, color):
         output_widget = self.get_output_widget_by_name(output.name)
@@ -616,13 +727,21 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
         button.widget.setStyleSheet(f"background-color:{color}")
 
     def tab_changed(self, index):
-        if index == self.count() - 1:  # tab "+" clicked
-            self.lb_widget.module._add_output()
-            self.setCurrentIndex(self.count() - 2)  # bring created output tab on top
+        if self._tab_changing:
+            return
+        if index == self.count() - 1:  # "+" tab clicked
+            self._tab_changing = True
+            self.setCurrentIndex(max(0, self.count() - 2))  # leave "+" immediately
+            self._tab_changing = False
+            self._add_output_clicked()  # open dialog after tab is already switched
 
     def close_tab(self, index):
         lockbox = self.lb_widget.module
-        lockbox._remove_output(lockbox.outputs[index - 1])
+        output_index = index - 1
+        output_keys = list(lockbox.outputs.keys())
+        if 0 <= output_index < len(output_keys):
+            output = getattr(lockbox.outputs, output_keys[output_index])
+            lockbox._remove_output(output)
 
     ## Output Management
     def add_output(self, signal):
@@ -633,6 +752,22 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
         self.output_widgets.append(widget)
         self.insertTab(self.count() - 1, widget, widget.name)
 
+    def _add_output_clicked(self):
+        options = self._get_output_types()
+        existing = list(self.lb_widget.module.outputs.keys())
+        suggested = self.lb_widget.module._next_signal_name("output", existing)
+
+        def on_done(name, cls):
+            if cls is not None:
+                try:
+                    self.lb_widget.module._add_output(cls, name=name)
+                except ValueError as e:
+                    QtWidgets.QMessageBox.warning(self, "Cannot add output", str(e))
+
+        dialog = AddSignalDialog(self, "output", options, suggested, existing, callback=on_done)
+        self._add_signal_dialog = dialog
+        dialog.open()  # non-blocking
+
     def output_widget_names(self):
         return [widget.name for widget in self.output_widgets]
 
@@ -640,7 +775,11 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
         for widget in self.output_widgets:
             if widget.module == output:
                 self.output_widgets.remove(widget)
+                index = self.indexOf(widget)
+                if index >= 0:
+                    self.removeTab(index)
                 widget.deleteLater()
+                break
 
     def update_output_names(self):
         for index in range(self.count()):
@@ -673,6 +812,14 @@ class AllSignalsWidget(QtWidgets.QTabWidget):
         for widget in self.output_widgets:
             if widget.module.name == name:
                 return widget
+
+    def _get_input_types(self):
+        """Build options dict from the input classes supported by this lockbox."""
+        return self.lb_widget.module.available_input_classes
+
+    def _get_output_types(self):
+        """Build options dict from the output classes supported by this lockbox."""
+        return self.lb_widget.module.available_output_classes
 
 
 class MyCloseButton(QtWidgets.QPushButton):
@@ -779,6 +926,24 @@ class LockboxStageWidget(ReducedModuleWidget):
         self.button_goto.clicked.connect(self.module.execute_async)
         self.main_layout.addWidget(self.button_goto)
 
+    def output_created(self, outputs):
+        output = outputs[0]
+        if output.name not in self.module.outputs:
+            return
+        widget = self.module.outputs[output.name]._create_widget()
+        self.output_widgets.append(widget)
+        self.lay_h2.addWidget(widget)
+
+    def output_deleted(self, outputs):
+        output = outputs[0]
+        for widget in self.output_widgets:
+            if widget.module.name == output.name:
+                self.output_widgets.remove(widget)
+                self.lay_h2.removeWidget(widget)
+                widget.hide()
+                widget.deleteLater()
+                break
+
     def create_title_bar(self):
         super().create_title_bar()
         self.close_button = MyCloseButton(self)
@@ -856,6 +1021,14 @@ class LockboxSequenceWidget(ModuleWidget):
         for widget in self.stage_widgets:
             widget.set_title(widget.name)
 
+    def output_created(self, outputs):
+        for widget in self.stage_widgets:
+            widget.output_created(outputs)
+
+    def output_deleted(self, outputs):
+        for widget in self.stage_widgets:
+            widget.output_deleted(outputs)
+
     def show_widget(self):
         super().show_widget()
         minimumsizehint = (
@@ -882,8 +1055,18 @@ class LockboxWidget(ModuleWidget):
         self.init_main_layout("vertical")
         self.init_attribute_layout()
         # move all custom attributes to the second GUI line (spares place)
+        self.custom_attribute_widget = QtWidgets.QWidget()
         self.custom_attribute_layout = QtWidgets.QHBoxLayout()
-        self.main_layout.addLayout(self.custom_attribute_layout)
+        self.custom_attribute_layout.setContentsMargins(0, 0, 0, 0)
+        self.custom_attribute_widget.setLayout(self.custom_attribute_layout)
+        self.custom_attribute_widget.setMaximumWidth(520)
+        self.custom_attribute_widget.setSizePolicy(
+            QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Preferred
+        )
+        self.custom_attribute_row = QtWidgets.QHBoxLayout()
+        self.main_layout.addLayout(self.custom_attribute_row)
+        self.custom_attribute_row.addWidget(self.custom_attribute_widget)
+        self.custom_attribute_row.addStretch(1)
         lockbox_base_class = get_base_module_class(self.module)
         for attr_name in self.module._gui_attributes:
             if attr_name not in lockbox_base_class._gui_attributes:
@@ -1024,12 +1207,14 @@ class LockboxWidget(ModuleWidget):
         Adds an output to the widget,  outputs is a singleton [outpout]
         """
         self.all_sig_widget.add_output(outputs[0])
+        self.sequence_widget.output_created(outputs)
 
     def output_deleted(self, outputs):
         """
         SLOT: don't change name unless you know what you are doing
         Removes an output to the widget, outputs is a singleton [outpout]
         """
+        self.sequence_widget.output_deleted(outputs)
         self.all_sig_widget.remove_output(outputs[0])
 
     def input_calibrated(self, inputs):

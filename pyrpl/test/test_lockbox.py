@@ -25,6 +25,11 @@ def setup_fake_system_once(hardware_session):
     #     pyrpl.lockbox._clear()  # make sure no old lockbox config exists
     pid = r.pid1
     pid.free()  # make sure pid is not used by another module
+    # The hardware session is shared by the complete pytest run. Preserve the
+    # PID state so this class-scoped fixture cannot leave a dynamic lockbox
+    # signal in pid1.input after the corresponding lockbox output is deleted.
+    original_pid_setup = pid.setup_attributes.copy()
+    original_pid_ival = pid.ival
 
     print("Setting up fake system for TestLockbox...")
     pyrpl.lockbox.classname = "Interferometer"
@@ -62,11 +67,15 @@ def setup_fake_system_once(hardware_session):
         output.pid.output_direct = "off"
     lockbox.asg.free()
 
-    lockbox._clear()
+    # Restore the PID while the dynamic lockbox signals still exist. Clearing
+    # the outputs first would leave pid.input temporarily pointing at an
+    # invalid SelectAttribute option and pollute both the object and YAML.
+    pid.setup_attributes = original_pid_setup
+    pid.ival = original_pid_ival
+    assert pid.input == original_pid_setup["input"]
 
-    pid.p = 0
-    pid.i = 0
-    pid.ival = 0
+    lockbox._clear()
+    lockbox.outputs._clear()
 
 
 class TestLockbox(TestPyrpl):

@@ -509,12 +509,35 @@ class InputFromOutput(InputDirect):
         doc="lockbox signal used as input",
     )
 
+    def _selected_output(self):
+        """Return the configured output, or None while it is unavailable."""
+        if not self.input_signal:
+            return None
+        output_name = self.input_signal.rsplit(".", 1)[-1]
+        try:
+            return self.lockbox.signals[output_name]
+        except (AttributeError, KeyError, TypeError):
+            self._logger.warning(
+                "Input signal %r of %s does not refer to an available lockbox output.",
+                self.input_signal,
+                self.name,
+            )
+            return None
+
     def is_locked(self, loglevel=logging.INFO):
         """this is mainly used for coarse locking where significant
         effective deviations from the setpoint (in units of setpoint_variable)
         may occur. We therefore issue a warning and return True if is_locked is
         based on this output."""
-        inputdsp = self.lockbox.signals[self.input_signal.split(".")[-1]].pid.input
+        output = self._selected_output()
+        if output is None:
+            self._logger.log(
+                loglevel,
+                "InputFromOutput %s is not configured; it cannot be locked.",
+                self.name,
+            )
+            return False
+        inputdsp = output.pid.input
         forwarded_input = None
         for inp in self.lockbox.inputs:
             if inp.signal() == inputdsp:
@@ -549,7 +572,12 @@ class InputFromOutput(InputDirect):
         # Therefore, the output voltage corresponding to a change of
         # one linewidth is given (in V) by:
         # lockbox._setpopint_unit_in_unit('nm')/output.dc_gain
-        output = self.lockbox.signals[self.input_signal.split(".")[-1]]
+        output = self._selected_output()
+        if output is None:
+            # The widget asks for a complete curve during construction. NaNs
+            # represent an unconfigured signal without inventing a physical
+            # response or crashing on input_signal=None.
+            return np.full_like(setpoint, np.nan, dtype=float)
         output_unit = output.unit.split("/")[0]
         setpoint_in_output_unit = setpoint * self.lockbox._setpoint_unit_in_unit(output_unit)
         return setpoint_in_output_unit / output.dc_gain
@@ -632,8 +660,9 @@ class InputIq(InputSignal):
         return self.iq.name
 
     def _clear(self):
-        self.pyrpl.iqs.free(self.iq)
-        self._iq = None
+        if hasattr(self, "_iq") and self._iq is not None:
+            self.pyrpl.iqs.free(self._iq)
+            self._iq = None
         super()._clear()
 
     def _setup(self):

@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 
 import numpy as np
 
@@ -179,6 +180,12 @@ class FabryPerot(Interferometer):
 
     inputs = LockboxModuleDictProperty(
         transmission=FPTransmission, reflection=FPReflection, pdh=FPPdh
+    )
+    _available_input_classes = OrderedDict(
+        [
+            ("FPAnalogPdh", FPAnalogPdh),
+            ("FPTilt", FPTilt),
+        ]
     )
 
     finesse = FloatProperty(max=1e7, min=0, default=10000)
@@ -402,4 +409,9 @@ class HighFinesseFabryPerot(FabryPerot):
         transmission=HighFinesseTransmission,
         reflection=HighFinesseReflection,
         pdh=HighFinessePdh,
+    )
+    _available_input_classes = OrderedDict(
+        [
+            ("HighFinesseAnalogPdh", HighFinesseAnalogPdh),
+        ]
     )

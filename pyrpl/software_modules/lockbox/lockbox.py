@@ -1,20 +1,21 @@
 import contextlib
 import logging
+import re
 from collections import OrderedDict
 
 from qtpy import QtCore
 
 from ...async_utils import Event, ensure_future, sleep_async, wait
-from ...attributes import BoolProperty, FloatProperty, SelectProperty
+from ...attributes import BaseProperty, BoolProperty, FloatProperty, SelectProperty
 from ...module_attributes import ModuleListProperty
 from ...modules import SignalLauncher
 from ...pyrpl_utils import all_subclasses, recursive_getattr, time
 from ...widgets.module_widgets import LockboxWidget
 from ...widgets.module_widgets.lockbox_widget import LockboxSequenceWidget
 from . import LockboxModule, LockboxModuleDictProperty
-from .input import InputFromOutput, InputSignal
+from .input import InputDirect, InputFromOutput, InputSignal
 from .output import OutputSignal
-from .stage import Stage
+from .stage import Stage, StageOutput
 
 
 def all_classnames():
@@ -62,6 +63,25 @@ class StateSelectProperty(SelectProperty):
         obj._signal_launcher.state_changed.emit([val])
 
 
+class SignalClassMapProperty(BaseProperty):
+    def __init__(self, signal_type, **kwargs):
+        super().__init__(default=OrderedDict(), **kwargs)
+        self.signal_type = signal_type
+
+    def get_value(self, obj):
+        return obj._signal_class_map(self.signal_type)
+
+    def set_value(self, obj, value):
+        if value is None:
+            value = OrderedDict()
+        obj._apply_signal_class_map(self.signal_type, value)
+        if self.signal_type == "output":
+            obj._refresh_output_options()
+        elif self.signal_type == "input":
+            obj._refresh_stage_input_options()
+        setattr(obj, "_" + self.name, obj._signal_class_map(self.signal_type))
+
+
 class SignalLauncherLockbox(SignalLauncher):
     """
     A SignalLauncher for the lockbox
@@ -103,6 +123,8 @@ class Lockbox(LockboxModule):
     ]
     _setup_attributes = _gui_attributes + [  # "auto_lock_interval",
         "lockstatus_interval",
+        "input_classes",
+        "output_classes",
     ]
     # "_auto_lock_timeout"]
 
@@ -123,6 +145,92 @@ class Lockbox(LockboxModule):
     setpoint_unit = SelectProperty(options=["V"], default="V", ignore_errors=True)
     # output gain comes in units of '_output_unit'/V of analog redpitaya output
     _output_units = ["V", "mV"]
+
+    @classmethod
+    def _default_signal_map(cls, signal_dict_name):
+        """Return signal names/classes declared by the closest matching dict descriptor."""
+        for klass in cls.mro():
+            descriptor = klass.__dict__.get(signal_dict_name)
+            signal_map = getattr(descriptor, "module_classes", None)
+            if signal_map is None:
+                continue
+            return OrderedDict(signal_map)
+        return OrderedDict()
+
+    @classmethod
+    def _default_signal_classes(cls, signal_dict_name):
+        classes = OrderedDict()
+        for signal_cls in cls._default_signal_map(signal_dict_name).values():
+            classes[signal_cls.__name__] = signal_cls
+        return classes
+
+    @classmethod
+    def _extra_signal_classes(cls, attribute_name):
+        classes = OrderedDict()
+        for klass in reversed(cls.mro()):
+            classes.update(getattr(klass, attribute_name, OrderedDict()))
+        return classes
+
+    @property
+    def available_input_classes(self):
+        classes = self.__class__._default_signal_classes("inputs")
+        classes.update(self.__class__._extra_signal_classes("_available_input_classes"))
+        return classes
+
+    @property
+    def available_output_classes(self):
+        classes = self.__class__._default_signal_classes("outputs")
+        classes.update(self.__class__._extra_signal_classes("_available_output_classes"))
+        return classes
+
+    def _signal_container(self, signal_type):
+        return getattr(self, signal_type + "s")
+
+    def _available_signal_classes(self, signal_type):
+        return getattr(self, "available_" + signal_type + "_classes")
+
+    def _signal_class_map(self, signal_type):
+        container = self._signal_container(signal_type)
+        class_map = OrderedDict()
+        for name in self.__class__._default_signal_map(signal_type + "s"):
+            if name in container:
+                class_map[name] = type(container[name]).__name__
+            else:
+                class_map[name] = "off"
+        # ModuleDict iteration yields module instances (for historical
+        # ``for module in container`` usage), not dictionary keys.
+        for name in container.keys():
+            if name not in class_map:
+                class_map[name] = type(container[name]).__name__
+        return class_map
+
+    def _signal_class_from_name(self, signal_type, class_name):
+        classes = self._available_signal_classes(signal_type)
+        if class_name in classes:
+            return classes[class_name]
+        raise ValueError(
+            f"{signal_type.capitalize()} class '{class_name}' is not available for lockbox class "
+            f"'{self.classname}'. Available classes are: {', '.join(classes.keys())}"
+        )
+
+    def _apply_signal_class_map(self, signal_type, class_map):
+        container = self._signal_container(signal_type)
+        add_method = getattr(self, "_add_" + signal_type)
+        class_map = OrderedDict(class_map)
+        for name, class_name in class_map.items():
+            if class_name in [None, False, "off", "Off", "OFF"]:
+                if name in container:
+                    container.pop(name)
+                    if signal_type == "output":
+                        self._sync_stage_output_removed(name)
+                continue
+            signal_class = self._signal_class_from_name(signal_type, class_name)
+            if name in container:
+                current_signal = container[name]
+                if isinstance(current_signal, signal_class):
+                    continue
+                container.pop(name)
+            add_method(signal_class, name=name, emit_signal=False)
 
     # each _output_unit must come with a function that allows conversion from
     # output_unit to setpoint_unit
@@ -206,8 +314,17 @@ class Lockbox(LockboxModule):
 
     # logical inputs and outputs of the lockbox are accessible as
     # lockbox.outputs.output1
-    inputs = LockboxModuleDictProperty(input_from_output=InputFromOutput)
+    inputs = LockboxModuleDictProperty(input1=InputDirect, input_from_output=InputFromOutput)
     outputs = LockboxModuleDictProperty(output1=OutputSignal)
+    input_classes = SignalClassMapProperty("input")
+    output_classes = SignalClassMapProperty("output")
+    _available_input_classes = OrderedDict(
+        [
+            ("InputDirect", InputDirect),
+            ("InputFromOutput", InputFromOutput),
+        ]
+    )
+    _available_output_classes = OrderedDict([("OutputSignal", OutputSignal)])
 
     # Sequence is a list of stage modules. By default the first stage is created
     sequence = ModuleListProperty(Stage, default=[{}])
@@ -552,3 +669,116 @@ class Lockbox(LockboxModule):
         for k in d:
             dd[self.pyrpl.name + "_" + k] = d[k]
         return dd
+
+    def _validate_signal_name(self, name, existing_names, signal_type):
+        name = str(name).strip()
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", name):
+            raise ValueError(
+                f"{signal_type} name must be a valid identifier: letters, numbers, "
+                "and underscores only, and not starting with a number."
+            )
+        if name in existing_names:
+            raise ValueError(f"{signal_type} '{name}' already exists.")
+        if hasattr(type(getattr(self, signal_type + "s")), name):
+            raise ValueError(f"{signal_type} '{name}' conflicts with an existing attribute.")
+        return name
+
+    def _next_signal_name(self, prefix, existing_names):
+        i = 1
+        while f"{prefix}{i}" in existing_names:
+            i += 1
+        return f"{prefix}{i}"
+
+    def _save_signal_class_map(self, signal_type):
+        if self._autosave_active:
+            getattr(type(self), signal_type + "_classes").save_attribute(
+                self, self._signal_class_map(signal_type)
+            )
+            self.c._root._save(deadtime=0)
+
+    def _sync_stage_output_added(self, name):
+        if not hasattr(self, "_sequence"):
+            return
+        for stage in self.sequence:
+            if name not in stage.outputs:
+                stage.outputs[name] = StageOutput
+
+    def _sync_stage_output_removed(self, name):
+        if not hasattr(self, "_sequence"):
+            return
+        for stage in self.sequence:
+            if name in stage.outputs:
+                stage.outputs.pop(name)
+
+    def _refresh_output_options(self):
+        output_names = list(self.outputs.keys())
+        if len(output_names) > 0:
+            try:
+                current_output = self.default_sweep_output
+            except (IndexError, ValueError):
+                current_output = None
+            if current_output not in output_names:
+                self.default_sweep_output = output_names[0]
+        self._signal_launcher.change_options.emit("default_sweep_output", output_names)
+
+    def _refresh_stage_input_options(self):
+        input_names = list(self.inputs.keys())
+        if not hasattr(self, "_sequence"):
+            return
+        for stage in self.sequence:
+            if len(input_names) > 0:
+                try:
+                    current_input = stage.input
+                except (IndexError, ValueError):
+                    current_input = None
+                if current_input not in input_names:
+                    stage.input = input_names[0]
+            stage._signal_launcher.change_options.emit("input", input_names)
+
+    def _add_output(self, output_class=None, name=None, emit_signal=True):
+        """Add a new output to the lockbox."""
+        if output_class is None:
+            output_class = OutputSignal
+        existing = list(self.outputs.keys())
+        if name is None:
+            name = self._next_signal_name("output", existing)
+        name = self._validate_signal_name(name, existing, "output")
+        self.outputs[name] = output_class
+        self._sync_stage_output_added(name)
+        self._save_signal_class_map("output")
+        self._refresh_output_options()
+        if emit_signal:
+            self._signal_launcher.output_created.emit([self.outputs[name]])
+        return self.outputs[name]
+
+    def _remove_output(self, output):
+        """Remove an output from the lockbox."""
+        name = output.name
+        self._signal_launcher.output_deleted.emit([output])
+        self._sync_stage_output_removed(name)
+        self.outputs.pop(name)
+        self._save_signal_class_map("output")
+        self._refresh_output_options()
+
+    def _add_input(self, input_class=None, name=None, emit_signal=True):
+        """Add a new input to the lockbox."""
+        if input_class is None:
+            input_class = InputDirect
+        existing = list(self.inputs.keys())
+        if name is None:
+            name = self._next_signal_name("input", existing)
+        name = self._validate_signal_name(name, existing, "input")
+        self.inputs[name] = input_class
+        self._save_signal_class_map("input")
+        self._refresh_stage_input_options()
+        if emit_signal:
+            self._signal_launcher.add_input.emit([self.inputs[name]])
+        return self.inputs[name]
+
+    def _remove_input(self, input):
+        """Remove an input from the lockbox."""
+        name = input.name
+        self._signal_launcher.remove_input.emit([input])
+        self.inputs.pop(name)
+        self._save_signal_class_map("input")
+        self._refresh_stage_input_options()
