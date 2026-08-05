@@ -3,10 +3,15 @@ name: Manual Binary Build
 on:
   workflow_dispatch:
     inputs:
-      ref:
+      source_ref:
         description: "Git ref to build (branch, tag, or commit SHA)"
         required: true
         default: "main"
+
+      release_tag:
+        description: "Existing version tag used when publishing (for example 0.9.9.0)"
+        required: false
+        default: ""
 
       build_linux:
         description: "Build Linux binary"
@@ -14,7 +19,7 @@ on:
         default: true
 
       build_macos:
-        description: "Build macOS universal binary (Intel + Apple Silicon)"
+        description: "Build separate macOS Intel and Apple Silicon binaries"
         type: boolean
         default: true
 
@@ -43,11 +48,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        ref: ${{ inputs.ref }}
+        ref: ${{ inputs.source_ref }}
 
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Read package version
+      shell: bash
+      run: |
+        version=$(python -c "import runpy; print(runpy.run_path('pyrpl/_version.py')['__version__'])")
+        echo "PACKAGE_VERSION=$version" >> "$GITHUB_ENV"
 
     - name: Install system dependencies
       run: |
@@ -65,7 +76,8 @@ jobs:
         pyinstaller pyrpl.spec
         # PyInstaller creates a directory, so we need to archive it
         cd dist
-        tar -czf pyrpl-linux-${{ inputs.ref }}.tar.gz pyrpl
+        mv pyrpl "pyrpl-${PACKAGE_VERSION}-linux-x86_64"
+        tar -czf "pyrpl-${PACKAGE_VERSION}-linux-x86_64.tar.gz" "pyrpl-${PACKAGE_VERSION}-linux-x86_64"
         cd ..
       env:
         QT_QPA_PLATFORM: offscreen
@@ -73,7 +85,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: pyrpl-linux
-        path: dist/pyrpl-linux-${{ inputs.ref }}.tar.gz
+        path: dist/pyrpl-*-linux-x86_64.tar.gz
 
   build-macos:
     if: inputs.build_macos
@@ -83,7 +95,7 @@ jobs:
           - name: arm64
             runner: macos-14
           - name: x86_64
-            runner: macos-14
+            runner: macos-15-intel
 
     runs-on: ${{ matrix.arch.runner }}
 
@@ -91,12 +103,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ inputs.source_ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Read package version
+        shell: bash
+        run: |
+          version=$(python -c "import runpy; print(runpy.run_path('pyrpl/_version.py')['__version__'])")
+          echo "PACKAGE_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: |
@@ -109,17 +127,18 @@ jobs:
           pyinstaller pyrpl.spec
           # Create a zip archive of the directory
           cd dist
-          zip -r pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}.zip pyrpl
+          mv pyrpl "pyrpl-${PACKAGE_VERSION}-macos-${{ matrix.arch.name }}"
+          zip -r "pyrpl-${PACKAGE_VERSION}-macos-${{ matrix.arch.name }}.zip" "pyrpl-${PACKAGE_VERSION}-macos-${{ matrix.arch.name }}"
           cd ..
 
       - name: Verify build
         run: |
-          file dist/pyrpl/pyrpl
+          file dist/pyrpl-${PACKAGE_VERSION}-macos-${{ matrix.arch.name }}/pyrpl
           
       - uses: actions/upload-artifact@v4
         with:
             name: pyrpl-macos-${{ matrix.arch.name }}
-            path: dist/pyrpl-macos-${{ matrix.arch.name }}-${{ inputs.ref }}.zip
+            path: dist/pyrpl-*-macos-${{ matrix.arch.name }}.zip
 
   build-windows:
     if: inputs.build_windows
@@ -128,11 +147,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        ref: ${{ inputs.ref }}
+        ref: ${{ inputs.source_ref }}
 
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Read package version
+      shell: powershell
+      run: |
+        $version = python -c "import runpy; print(runpy.run_path('pyrpl/_version.py')['__version__'])"
+        "PACKAGE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Install Python dependencies
       run: |
@@ -159,12 +184,15 @@ jobs:
         # Check if it's a directory or single file
         if (Test-Path "dist\pyrpl" -PathType Container) {
           Write-Host "`nFound pyrpl directory, creating zip..."
-          Compress-Archive -Path dist\pyrpl -DestinationPath dist\pyrpl-windows-${{ inputs.ref }}.zip
+          $archiveRoot = "dist\pyrpl-$env:PACKAGE_VERSION-windows-x86_64"
+          Move-Item -Path "dist\pyrpl" -Destination $archiveRoot
+          Compress-Archive -Path $archiveRoot -DestinationPath "dist\pyrpl-$env:PACKAGE_VERSION-windows-x86_64.zip"
         } elseif (Test-Path "dist\pyrpl.exe" -PathType Leaf) {
           Write-Host "`nWARNING: Found single pyrpl.exe file instead of directory!"
           Write-Host "The spec file should create a directory, but PyInstaller created a single file."
           Write-Host "Creating zip of single exe file..."
-          Compress-Archive -Path dist\pyrpl.exe -DestinationPath dist\pyrpl-windows-${{ inputs.ref }}.zip
+          Move-Item -Path "dist\pyrpl.exe" -Destination "dist\pyrpl-$env:PACKAGE_VERSION-windows-x86_64.exe"
+          Compress-Archive -Path "dist\pyrpl-$env:PACKAGE_VERSION-windows-x86_64.exe" -DestinationPath "dist\pyrpl-$env:PACKAGE_VERSION-windows-x86_64.zip"
         } else {
           Write-Host "`nERROR: Could not find dist\pyrpl or dist\pyrpl.exe"
           exit 1
@@ -175,70 +203,76 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: pyrpl-windows
-        path: dist/pyrpl-windows-${{ inputs.ref }}.zip
+        path: dist/pyrpl-*-windows-x86_64.zip
 
   publish-release:
-    if: inputs.publish_release
+    if: always() && inputs.publish_release && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
     needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
+    - name: Check out requested source with tags
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.source_ref }}
+        fetch-depth: 0
+
+    - name: Validate release tag
+      shell: bash
+      env:
+        RELEASE_TAG: ${{ inputs.release_tag }}
+      run: |
+        if [[ -z "$RELEASE_TAG" ]]; then
+          echo "release_tag is required when publish_release is enabled."
+          exit 1
+        fi
+        if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z]+)*$ ]]; then
+          echo "Invalid release tag '$RELEASE_TAG'; expected a version such as 0.9.9.0."
+          exit 1
+        fi
+        if ! git rev-parse --verify --quiet "refs/tags/$RELEASE_TAG^{commit}" >/dev/null; then
+          echo "Tag '$RELEASE_TAG' does not exist. Create and push it before running this workflow."
+          exit 1
+        fi
+        tag_commit=$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")
+        source_commit=$(git rev-parse HEAD)
+        if [[ "$tag_commit" != "$source_commit" ]]; then
+          echo "Tag '$RELEASE_TAG' points to $tag_commit, but source_ref points to $source_commit."
+          exit 1
+        fi
+        package_version=$(python -c "import runpy; print(runpy.run_path('pyrpl/_version.py')['__version__'])")
+        tag_version=${RELEASE_TAG#v}
+        if [[ "$tag_version" != "$package_version" ]]; then
+          echo "Tag '$RELEASE_TAG' does not match package version '$package_version'."
+          exit 1
+        fi
+
     - name: Download artifacts
       uses: actions/download-artifact@v4
       with:
         path: release-assets
 
-    - name: Create GitHub Release (if needed)
-      id: release
-      uses: actions/create-release@v1
-      with:
-        tag_name: ${{ inputs.ref }}
-        release_name: Release ${{ inputs.ref }}
+    - name: Create GitHub Release if needed
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ inputs.release_tag }}
+      run: |
+        if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+          gh release create "$RELEASE_TAG" --verify-tag --title "PyRPL $RELEASE_TAG" --generate-notes
+        fi
 
-    - name: Upload Linux binary
-      if: inputs.build_linux
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-linux/pyrpl-linux-${{ inputs.ref }}.tar.gz
-        asset_name: pyrpl-linux.tar.gz
-        asset_content_type: application/gzip
+    - name: Upload binaries with versioned filenames
+      shell: bash
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload macOS arm64 binary
-      if: inputs.build_macos
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-macos-arm64/pyrpl-macos-arm64-${{ inputs.ref }}.zip
-        asset_name: pyrpl-macos-arm64.zip
-        asset_content_type: application/zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload macOS x86_64 binary
-      if: inputs.build_macos
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-macos-x86_64/pyrpl-macos-x86_64-${{ inputs.ref }}.zip
-        asset_name: pyrpl-macos-x86_64.zip
-        asset_content_type: application/zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Windows binary
-      if: inputs.build_windows
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ steps.release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-windows/pyrpl-windows-${{ inputs.ref }}.zip
-        asset_name: pyrpl-windows.zip
-        asset_content_type: application/zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        RELEASE_TAG: ${{ inputs.release_tag }}
+      run: |
+        mapfile -t assets < <(find release-assets -type f \( -name '*.zip' -o -name '*.tar.gz' \))
+        if [[ ${#assets[@]} -eq 0 ]]; then
+          echo "No binary assets were downloaded."
+          exit 1
+        fi
+        gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
