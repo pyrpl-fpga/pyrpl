@@ -3,10 +3,25 @@ name: Publish Python package to PyPI
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Existing release tag to publish (for example 0.9.9.1)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      release_tag:
+        description: "Existing release tag to publish"
+        required: true
+        type: string
 
 concurrency:
-  group: publish-pypi-${{ github.event.release.tag_name }}
+  group: publish-pypi-${{ inputs.release_tag || github.event.release.tag_name }}
   cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.release_tag || github.event.release.tag_name }}
 
 jobs:
   build:
@@ -19,7 +34,7 @@ jobs:
       - name: Check out release tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,8 +43,6 @@ jobs:
 
       - name: Verify release tag matches package version
         shell: bash
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           package_version=$(python -c "import runpy; print(runpy.run_path('pyrpl/_version.py')['__version__'])")
           tag_version=${RELEASE_TAG#v}
@@ -60,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/pyrpl/${{ github.event.release.tag_name }}/
+      url: https://pypi.org/project/pyrpl/${{ env.RELEASE_TAG }}/
     permissions:
       id-token: write
 

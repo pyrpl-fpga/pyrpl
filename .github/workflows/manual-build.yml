@@ -295,3 +295,13 @@ jobs:
           exit 1
         fi
         gh release upload "$RELEASE_TAG" "${assets[@]}" --clobber
+
+  publish-pypi:
+    if: inputs.publish_release
+    needs: publish-release
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish-pypi.yml
+    with:
+      release_tag: ${{ inputs.release_tag }}
