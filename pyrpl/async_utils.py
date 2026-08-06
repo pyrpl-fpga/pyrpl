@@ -37,20 +37,66 @@ the background loop
 import logging
 from qtpy import QtWidgets, QtCore
 import asyncio
-from asyncio import TimeoutError, futures, coroutines
-from asyncio.tasks import __sleep0, _wait
-from pyrpl_utils import isnotebook
-import qasync
-import math
 import concurrent.futures
+import threading
+from asyncio import TimeoutError
+import qasync
 
 logger = logging.getLogger(name=__name__)
-
 
 APP = QtWidgets.QApplication.instance()
 if APP is None:
     # logger.debug('Creating new QApplication instance "pyrpl"')
     APP = QtWidgets.QApplication(["pyrpl"])
+
+
+def _ipython_shell_name():
+    try:
+        from IPython import get_ipython
+    except Exception:
+        return None
+    ip = get_ipython()
+    if ip is None:
+        return None
+    return ip.__class__.__name__
+
+
+IPYTHON_SHELL = _ipython_shell_name()
+INTERACTIVE = IPYTHON_SHELL == "ZMQInteractiveShell"
+TERMINAL_IPYTHON = IPYTHON_SHELL == "TerminalInteractiveShell"
+ZMQ_IPYTHON = IPYTHON_SHELL == "ZMQInteractiveShell"
+
+_NOTEBOOK_LOOP = None
+_NOTEBOOK_LOOP_READY = threading.Event()
+_NOTEBOOK_LOOP_LOCK = threading.Lock()
+
+
+def _notebook_loop_main(loop):
+    asyncio.set_event_loop(loop)
+    _NOTEBOOK_LOOP_READY.set()
+    loop.run_forever()
+
+
+def _get_notebook_loop():
+    """Return the persistent asyncio loop used by notebook background jobs."""
+    global _NOTEBOOK_LOOP
+    if _NOTEBOOK_LOOP is None:
+        with _NOTEBOOK_LOOP_LOCK:
+            if _NOTEBOOK_LOOP is None:
+                _NOTEBOOK_LOOP_READY.clear()
+                _NOTEBOOK_LOOP = asyncio.new_event_loop()
+                threading.Thread(
+                    target=_notebook_loop_main,
+                    args=(_NOTEBOOK_LOOP,),
+                    name="pyrpl-notebook",
+                    daemon=True,
+                ).start()
+                _NOTEBOOK_LOOP_READY.wait()
+    return _NOTEBOOK_LOOP
+
+
+def _submit_notebook(coroutine):
+    return asyncio.run_coroutine_threadsafe(coroutine, _get_notebook_loop())
 
 # Design note (Python 3.14+):
 # `asyncio.get_event_loop()` no longer creates a loop implicitly in the main
@@ -60,31 +106,29 @@ if APP is None:
 # running/current asyncio loop is available (for example plain python.exe).
 # Important: do not install it globally at import time because that can clash
 # with loops created later by IPython/prompt_toolkit.
-LOOP = qasync.QEventLoop(already_running=True)
+#
+# Keep a dedicated qasync loop fallback for synchronous call paths.
+# In plain python (non-IPython), Qt callbacks often rely on a loop that acts
+# as already-running while Qt is pumping events.
+# In IPython shells, forcing already_running=True is harmful (prompt_toolkit
+# in terminal IPython; kernel message flow in notebooks), so keep it False.
+if IPYTHON_SHELL is None:
+    LOOP = qasync.QEventLoop(already_running=True)
+else:
+    LOOP = qasync.QEventLoop(already_running=False)
 
-FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
-FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
-ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
-
-
-INTERACTIVE = isnotebook()  # True if we are in an interactive IPython session
-
-if INTERACTIVE:
-    from IPython import get_ipython
-
-    IPYTHON = get_ipython()
-    # Make sure Qt events are integrated with the interactive shell event loop.
-    # This avoids having to call `%gui qt` manually in normal notebook usage.
-    IPYTHON.run_line_magic("gui", "qt")
-
+FIRST_COMPLETED = asyncio.FIRST_COMPLETED
+FIRST_EXCEPTION = asyncio.FIRST_EXCEPTION
+ALL_COMPLETED = asyncio.ALL_COMPLETED
 
 def _get_preferred_loop():
     """
     Return the loop that should own newly-created tasks/futures.
 
     Priority:
-    1. current running loop (strongest signal of loop ownership)
-    2. module-level qasync loop fallback (for sync/slot code paths)
+    1. Current running loop (strongest ownership signal)
+    2. Current event loop when available and suitable
+    3. Module-level qasync fallback (sync/Qt-slot code paths)
     """
     try:
         return asyncio.get_running_loop()
@@ -94,6 +138,9 @@ def _get_preferred_loop():
             loop = asyncio.get_event_loop()
         except RuntimeError:
             # Python 3.14+: no implicit loop in this thread.
+            # In interactive kernels, do not globally replace the shell loop.
+            if INTERACTIVE:
+                return LOOP
             asyncio.set_event_loop(LOOP)
             return LOOP
         # Plain python.exe commonly returns a non-qasync default loop here.
@@ -102,6 +149,9 @@ def _get_preferred_loop():
         if isinstance(loop, qasync.QEventLoop):
             return loop
         if not loop.is_running():
+            # Avoid clobbering IPython kernel loop ownership.
+            if INTERACTIVE:
+                return LOOP
             asyncio.set_event_loop(LOOP)
             return LOOP
         return loop
@@ -115,30 +165,31 @@ async def sleep_async(delay, result=None):
     IPython.
     """
 
-    if delay <= 0:
-        await __sleep0()
-        return result
-
-    if math.isnan(delay):
-        raise ValueError("Invalid delay: NaN (not a number)")
-
-    # Create the timer future on the same loop used by the caller/task.
-    # Cross-loop futures are the main source of "attached to a different loop"
-    # runtime errors.
-    loop = _get_preferred_loop()
-    future = loop.create_future()
-    h = loop.call_later(delay, futures._set_result_unless_cancelled, future, result)
-    try:
-        return await future
-    finally:
-        h.cancel()
+    # asyncio.sleep binds its timer to the caller's running loop. Reimplementing
+    # it with private asyncio internals caused loop-affinity problems and broke
+    # whenever those internals changed.
+    return await asyncio.sleep(delay, result)
 
 
-def ensure_future(coroutine):
+def ensure_future(coroutine, force_background=False):
     """
     Schedules the task described by the coroutine. Deals properly with
     IPython kernel integration.
     """
+    if ZMQ_IPYTHON:
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        notebook_loop = _get_notebook_loop()
+        if running_loop is notebook_loop:
+            return asyncio.ensure_future(coroutine, loop=notebook_loop)
+        concurrent_future = _submit_notebook(coroutine)
+        if running_loop is not None and not force_background:
+            # Preserve support for `await module.method_async()` in cells.
+            return asyncio.wrap_future(concurrent_future, loop=running_loop)
+        return concurrent_future
+
     # Always bind new tasks to the selected loop explicitly so task creation
     # from synchronous callbacks cannot accidentally bind to another loop.
     return asyncio.ensure_future(coroutine, loop=_get_preferred_loop())
@@ -161,7 +212,7 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     Note: This does not raise TimeoutError! Futures that aren't done
     when the timeout occurs are returned in the second set.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
+    if asyncio.isfuture(fs) or asyncio.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
         raise ValueError("Set of Tasks/Futures is empty.")
@@ -170,20 +221,10 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
 
     fs = set(fs)
 
-    if any(coroutines.iscoroutine(f) for f in fs):
+    if any(asyncio.iscoroutine(f) for f in fs):
         raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
 
-    # Run asyncio.wait on the same loop as the futures.
-    # If we let asyncio pick implicitly, it may pick the wrong loop in mixed
-    # Qt/IPython contexts and trigger cross-loop errors.
-    loop = None
-    for f in fs:
-        if asyncio.isfuture(f):
-            loop = f.get_loop()
-            break
-    if loop is None:
-        loop = _get_preferred_loop()
-    return await _wait(fs, timeout, return_when, loop)
+    return await asyncio.wait(fs, timeout=timeout, return_when=return_when)
 
 
 def wait(future, timeout=None):
@@ -196,16 +237,56 @@ def wait(future, timeout=None):
       running (typical in Qt/IPython), otherwise nested-loop/runtime errors can
       appear.
     """
-    if coroutines.iscoroutine(future):
+    if isinstance(future, concurrent.futures.Future):
+        try:
+            return future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            raise TimeoutError("Timeout exceeded") from None
+
+    if asyncio.iscoroutine(future):
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        if ZMQ_IPYTHON and running_loop is not None:
+            worker_future = _submit_notebook(future)
+            try:
+                return worker_future.result(timeout=timeout)
+            except concurrent.futures.TimeoutError:
+                worker_future.cancel()
+                raise TimeoutError("Timeout exceeded") from None
         future = ensure_future(future)
 
     if INTERACTIVE:
-        # Interactive (IPython/Jupyter) path:
-        # Use a nested Qt event loop as a local waiter. This keeps GUI events
-        # flowing while the caller blocks, and avoids `run_until_complete` on a
-        # loop that may already be integrated/running under IPython.
+        if not asyncio.isfuture(future):
+            raise TypeError("wait() expects a Future/Task or coroutine.")
+        # Interactive path. Never recursively drive ipykernel's running loop:
+        # Python 3.14 rejects re-entering its currently executing shell task.
+        target_loop = future.get_loop()
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        if ZMQ_IPYTHON and running_loop is target_loop:
+            raise RuntimeError(
+                "Cannot synchronously wait for a task explicitly created on "
+                "the notebook kernel loop. Use pyrpl.async_utils.ensure_future "
+                "so the task is owned by PyRPL's Qt loop."
+            )
+
+        # Fallback:
+        # Use a nested Qt event loop as a local waiter while the async task is
+        # executed by its owning asyncio loop.
+        #
+        # In modern ipykernel/Python, calling run_until_complete from inside
+        # the kernel task can trigger loop re-entry failures such as:
+        # "Cannot enter into task ... while another task ... is being executed."
+        # Therefore, do not call run_until_complete in this branch.
         # assert isinstance(future, Future) or iscoroutine(future)
-        new_future = ensure_future(asyncio_wait({future}, timeout=timeout))
+        new_future = asyncio.ensure_future(
+            asyncio_wait({future}, timeout=timeout), loop=target_loop
+        )
         # if sys.version>='3.7':
         # # this way, it was not possible to execute wait behind a qt slot !!!
 
@@ -213,18 +294,11 @@ def wait(future, timeout=None):
         #   done, pending = new_future.result()
         # else:
 
-        # Keep waiting local to this call by running a short-lived nested Qt
-        # loop that exits when the waiter finishes.
         loop = QtCore.QEventLoop()
-
-        def quit(*args):
-            loop.quit()
-
-        new_future.add_done_callback(quit)
+        new_future.add_done_callback(lambda *args: loop.quit())
         timed_out = [False]
         timeout_timer = None
         if timeout is not None:
-            timeout_ms = max(0, int(float(timeout) * 1000))
             timeout_timer = QtCore.QTimer(loop)
             timeout_timer.setSingleShot(True)
 
@@ -233,7 +307,7 @@ def wait(future, timeout=None):
                 loop.quit()
 
             timeout_timer.timeout.connect(on_timeout)
-            timeout_timer.start(timeout_ms)
+            timeout_timer.start(max(0, int(float(timeout) * 1000)))
 
         while not new_future.done() and not timed_out[0]:
             loop.exec_()
@@ -320,7 +394,7 @@ def sleep(time_s):
     eventloop while executing.
     BEWARE: never sleep in a coroutine (use await sleep_async(time_s) instead)
     """
-    wait(ensure_future(sleep_async(time_s)))
+    wait(sleep_async(time_s))
 
 
 class Event(asyncio.Event):
@@ -344,8 +418,3 @@ class Event(asyncio.Event):
 
     def __init__(self):
         super(Event, self).__init__()
-
-    def _get_loop(self):
-        # Keep Event internals on the same preferred loop as the rest of this
-        # module helpers.
-        return _get_preferred_loop()

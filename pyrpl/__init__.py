@@ -26,7 +26,6 @@ except AttributeError:
 
 # set up loggers
 import logging
-from pyrpl_utils import isnotebook
 from qtpy import QtCore, QtWidgets
 from .pyrpl_utils import setloglevel
 from .directories import (
@@ -44,14 +43,42 @@ logger = logging.getLogger(name=__name__)
 logger.setLevel(logging.INFO)
 
 # enable ipython QtGui support if needed
+def _ipython_shell_name():
+    try:
+        from IPython import get_ipython
+    except Exception:
+        return None
+    ip = get_ipython()
+    if ip is None:
+        return None
+    return ip.__class__.__name__
 
-INTERACTIVE = isnotebook()  # True if we are in an interactive IPython session
 
-if INTERACTIVE:
-    from IPython import get_ipython
+IPYTHON_SHELL = _ipython_shell_name()
+INTERACTIVE = IPYTHON_SHELL in ("ZMQInteractiveShell", "TerminalInteractiveShell")
+TERMINAL_IPYTHON = IPYTHON_SHELL == "TerminalInteractiveShell"
+ZMQ_IPYTHON = IPYTHON_SHELL == "ZMQInteractiveShell"
 
-    IPYTHON = get_ipython()
-    IPYTHON.run_line_magic("gui", "qt")
+# Ensure Qt integration is active in IPython. In a notebook, changing the GUI
+# integration while the import cell's kernel task is still executing can stall
+# that task on Python 3.14, so perform it once at the post-cell boundary.
+if INTERACTIVE and os.environ.get("PYRPL_AUTO_GUI_QT", "1") != "0":
+    try:
+        from IPython import get_ipython
+
+        ip = get_ipython()
+        if ip is not None:
+            if ZMQ_IPYTHON:
+                def _enable_notebook_qt(*args, **kwargs):
+                    ip.events.unregister("post_run_cell", _enable_notebook_qt)
+                    ip.run_line_magic("gui", "qt")
+
+                ip.events.register("post_run_cell", _enable_notebook_qt)
+            else:
+                ip.run_line_magic("gui", "qt")
+    except Exception:
+        # Keep import robust even if GUI magic is unavailable in this session.
+        logger.debug("Could not auto-enable %%gui qt in IPython shell.", exc_info=True)
 
 # get QApplication instance
 

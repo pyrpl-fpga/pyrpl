@@ -658,6 +658,10 @@ class RedPitaya(object):
         return self.installserver()
 
     def endserver(self):
+        # Simulated RedPitaya instances have no SSH shell or remote server.
+        if not hasattr(self, "ssh"):
+            self._serverrunning = False
+            return
         try:
             self.ssh.ask("\x03")  # exit running server application
         except (AttributeError, OSError, RuntimeError):
@@ -690,7 +694,8 @@ class RedPitaya(object):
         self.endclient()
 
     def end_ssh(self):
-        self.ssh.channel.close()
+        if hasattr(self, "ssh"):
+            self.ssh.channel.close()
 
     def end_all(self):
         self.end()
