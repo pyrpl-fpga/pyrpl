@@ -8,10 +8,7 @@ a Pyrpl instance with the config file
 
 import sys
 
-try:
-    from pyrpl import APP, Pyrpl, help_message
-except ImportError:
-    from . import APP, Pyrpl, help_message
+from pyrpl import APP, Pyrpl, help_message
 
 if __name__ == "__main__":
     if len(sys.argv) > 3:

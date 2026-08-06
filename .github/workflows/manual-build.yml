@@ -173,6 +173,25 @@ jobs:
         
         # Build with verbose output
         pyinstaller --clean pyrpl.spec
+
+        # Start the frozen application with fake hardware. A healthy GUI stays
+        # alive in the Qt event loop; an import/packaging error exits early.
+        $executable = if (Test-Path "dist\pyrpl\pyrpl.exe") {
+          "dist\pyrpl\pyrpl.exe"
+        } elseif (Test-Path "dist\pyrpl.exe") {
+          "dist\pyrpl.exe"
+        } else {
+          Write-Error "PyInstaller did not create pyrpl.exe"
+          exit 1
+        }
+        $process = Start-Process -FilePath $executable `
+          -ArgumentList "config=build_smoke_test", "hostname=_FAKE_" `
+          -PassThru -NoNewWindow
+        if ($process.WaitForExit(15000)) {
+          Write-Error "Frozen application exited during startup with code $($process.ExitCode)"
+          exit 1
+        }
+        Stop-Process -Id $process.Id -Force
         
         # Debug: List what's in dist
         Write-Host "`nContents of dist directory:"

@@ -1,6 +1,16 @@
 # PyRPL changelog
 
 
+## 0.9.9.1 (August 6, 2026)
+
+- include dynamically imported lockbox models in PyInstaller executables
+- prevent frozen-app import failures from being obscured by an invalid fallback
+  import
+- make PyQt5 selection deterministic when other Qt bindings are installed in
+  the build environment
+- smoke-test the Windows executable before publishing a binary release
+
+
 ## 0.9.9.0 (August 5, 2026)
 
 - add compatibility with Red Pitaya OS 3, including FPGA overlay loading and
