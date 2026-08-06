@@ -11,6 +11,14 @@ from ..async_utils import sleep
 
 logger = logging.getLogger(name=__name__)
 
+
+def pytest_report_header(config):
+    """Make Qt/NumPy differences visible in hardware-test diagnostics."""
+    import numpy as np
+    import qtpy
+
+    return f"PyRPL runtime: Qt={qtpy.API_NAME}, NumPy={np.__version__}"
+
 # Global state to determine what we need to build
 _source_config_file = "nosetests_source.yml"
 _require_full_pyrpl = False
