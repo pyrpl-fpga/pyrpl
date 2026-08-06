@@ -9,13 +9,6 @@ on:
         description: "Existing release tag to publish (for example 0.9.9.1)"
         required: true
         type: string
-  workflow_call:
-    inputs:
-      release_tag:
-        description: "Existing release tag to publish"
-        required: true
-        type: string
-
 concurrency:
   group: publish-pypi-${{ inputs.release_tag || github.event.release.tag_name }}
   cancel-in-progress: false
