@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import sys
 from traceback import format_exception, format_exception_only
@@ -79,10 +80,8 @@ class LogHandler(QtCore.QObject, logging.Handler):
             self.handleError(record)
 
     def close(self):
-        try:
+        with contextlib.suppress(Exception):
             self.show_log.disconnect()
-        except Exception:
-            pass
         logging.Handler.close(self)
 
 
@@ -196,7 +195,7 @@ class PyrplWidget(QtWidgets.QMainWindow):
             self.handler.close()
         except Exception:
             pass
-        return super(PyrplWidget, self).closeEvent(event)
+        return super().closeEvent(event)
 
     def click_menu_modules(self):
         self.menu_modules.popup(self.mapToGlobal(QtCore.QPoint(10, 10)))

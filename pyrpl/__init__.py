@@ -47,6 +47,7 @@ logger = logging.getLogger(name=__name__)
 # only show errors or warnings until userdefine log level is set up
 logger.setLevel(logging.INFO)
 
+
 # enable ipython QtGui support if needed
 def _ipython_shell_name():
     try:
@@ -74,6 +75,7 @@ if INTERACTIVE and os.environ.get("PYRPL_AUTO_GUI_QT", "1") != "0":
         ip = get_ipython()
         if ip is not None:
             if ZMQ_IPYTHON:
+
                 def _enable_notebook_qt(*args, **kwargs):
                     ip.events.unregister("post_run_cell", _enable_notebook_qt)
                     ip.run_line_magic("gui", "qt")

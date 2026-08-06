@@ -144,7 +144,8 @@ meters is implemented there. Another very often used model type is
 import importlib
 import logging
 import os
-from qtpy import QtCore, QtWidgets, API_NAME
+
+from qtpy import API_NAME, QtCore, QtWidgets
 
 if API_NAME is None:
     raise RuntimeError(

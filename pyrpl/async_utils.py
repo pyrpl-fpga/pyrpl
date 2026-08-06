@@ -37,11 +37,11 @@ the background loop
 import asyncio
 import concurrent.futures
 import logging
+import threading
 from asyncio import TimeoutError
 
 import qasync
 from qtpy import QtCore, QtWidgets
-import threading
 
 logger = logging.getLogger(name=__name__)
 
@@ -99,6 +99,7 @@ def _get_notebook_loop():
 def _submit_notebook(coroutine):
     return asyncio.run_coroutine_threadsafe(coroutine, _get_notebook_loop())
 
+
 # Design note (Python 3.14+):
 # `asyncio.get_event_loop()` no longer creates a loop implicitly in the main
 # thread. Older PyRPL code relied on that behavior.
@@ -121,6 +122,7 @@ else:
 FIRST_COMPLETED = asyncio.FIRST_COMPLETED
 FIRST_EXCEPTION = asyncio.FIRST_EXCEPTION
 ALL_COMPLETED = asyncio.ALL_COMPLETED
+
 
 def _get_preferred_loop():
     """
@@ -382,9 +384,7 @@ def wait(future, timeout=None):
             if timeout is None:
                 # Owning loop is not running: we can drive it directly.
                 return target_loop.run_until_complete(future)
-            return target_loop.run_until_complete(
-                asyncio.wait_for(asyncio.shield(future), timeout)
-            )
+            return target_loop.run_until_complete(asyncio.wait_for(asyncio.shield(future), timeout))
 
         raise TypeError("wait() expects a Future/Task or coroutine.")
 

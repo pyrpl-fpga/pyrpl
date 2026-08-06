@@ -199,7 +199,7 @@ class Lockbox(LockboxModule):
                 class_map[name] = "off"
         # ModuleDict iteration yields module instances (for historical
         # ``for module in container`` usage), not dictionary keys.
-        for name in container.keys():
+        for name in container:
             if name not in class_map:
                 class_map[name] = type(container[name]).__name__
         return class_map

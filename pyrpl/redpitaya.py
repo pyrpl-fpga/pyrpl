@@ -536,9 +536,7 @@ class RedPitaya:
                 # original DTBO for older systems, but update its fixed-width
                 # firmware-name string in the temporary upload copy.
                 old_name = b"fpga.bit.bin\x00"
-                new_name = b"fpga.bin\x00" + b"\x00" * (
-                    len(old_name) - len(b"fpga.bin\x00")
-                )
+                new_name = b"fpga.bin\x00" + b"\x00" * (len(old_name) - len(b"fpga.bin\x00"))
                 with open(dtbo_source, "rb") as source_file:
                     dtbo_data = source_file.read()
                 if old_name not in dtbo_data:
@@ -546,10 +544,10 @@ class RedPitaya:
                         "OS 3 DTBO conversion failed: firmware-name "
                         f"fpga.bit.bin was not found in {dtbo_source}"
                     )
-                temporary_dtbo = tempfile.NamedTemporaryFile(suffix=".dtbo", delete=False)
-                temporary_dtbo.write(dtbo_data.replace(old_name, new_name, 1))
-                temporary_dtbo.close()
-                dtbo_to_upload = temporary_dtbo.name
+                with tempfile.NamedTemporaryFile(suffix=".dtbo", delete=False) as temporary_dtbo:
+                    temporary_dtbo.write(dtbo_data.replace(old_name, new_name, 1))
+                    temporary_dtbo.close()
+                    dtbo_to_upload = temporary_dtbo.name
             try:
                 self.put_file(dtbo_to_upload, dtbo_file_path)
             finally:

@@ -1,10 +1,10 @@
-from __future__ import division
 import asyncio
 import contextlib
 import logging
 
 import numpy as np
 
+from ...async_utils import wait
 from ...attributes import (
     FilterProperty,
     FloatProperty,
@@ -19,7 +19,6 @@ from ...modules import SignalModule
 from ...pyrpl_utils import recursive_getattr, time
 from ...software_modules.lockbox import LockboxModule
 from ...software_modules.module_managers import InsufficientResourceError
-from ...async_utils import wait
 from ...widgets.module_widgets import LockboxInputWidget
 
 logger = logging.getLogger(__name__)

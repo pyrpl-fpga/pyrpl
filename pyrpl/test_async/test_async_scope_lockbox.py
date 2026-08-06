@@ -1,3 +1,4 @@
+import contextlib
 import logging
 import time
 
@@ -27,9 +28,7 @@ def _wait_until(predicate, timeout_s=5.0):
 
 
 def _click_button(button):
-    QtCore.QTimer.singleShot(
-        0, lambda: QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton)
-    )
+    QtCore.QTimer.singleShot(0, lambda: QtTest.QTest.mouseClick(button, QtCore.Qt.LeftButton))
     _pump_events(0.2)
 
 
@@ -49,10 +48,8 @@ def pyrpl_instance():
     finally:
         # Keep teardown best-effort to avoid masking test assertions with
         # unrelated config-file lock issues.
-        try:
+        with contextlib.suppress(Exception):
             p._clear()
-        except Exception:
-            pass
 
 
 @pytest.fixture
@@ -69,9 +66,7 @@ def qt_messages():
         QtCore.qInstallMessageHandler(previous)
 
 
-def test_scope_and_lockbox_buttons_work_without_loop_errors(
-    pyrpl_instance, caplog, qt_messages
-):
+def test_scope_and_lockbox_buttons_work_without_loop_errors(pyrpl_instance, caplog, qt_messages):
     p = pyrpl_instance
 
     caplog.set_level(logging.INFO)
@@ -149,10 +144,7 @@ def test_scope_and_lockbox_buttons_work_without_loop_errors(
         for rec in caplog.records
         if rec.name == "pyrpl.modules"
         and rec.levelno >= logging.ERROR
-        and (
-            "Calibration failed" in rec.getMessage()
-            or "Timeout exceeded" in rec.getMessage()
-        )
+        and ("Calibration failed" in rec.getMessage() or "Timeout exceeded" in rec.getMessage())
     ]
     assert not module_failures, module_failures
 

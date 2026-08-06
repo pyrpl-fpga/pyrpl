@@ -30,8 +30,9 @@ The different buttons in the acquisition module control panel below the plot are
   :attr:`~.AcquisitionModule.curve_name`.
 """
 
-from qtpy import QtCore, QtWidgets
 import asyncio
+
+from qtpy import QtCore, QtWidgets
 
 from . import ModuleWidget
 

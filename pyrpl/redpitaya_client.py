@@ -18,8 +18,8 @@
 
 
 import logging
-import threading
 import socket
+import threading
 
 import numpy as np
 
@@ -101,7 +101,7 @@ class MonitorClient:
             try:
                 self.socket.send(b"c" + bytes(bytearray([0, 0, 0, 0, 0, 0, 0])))
                 self.socket.close()
-            except socket.error:
+            except OSError:
                 return
 
     def __del__(self):

@@ -56,11 +56,10 @@ Example:
 """
 
 from copy import copy
-from .async_utils import ensure_future, sleep_async, wait, Event, ZMQ_IPYTHON
 
 from qtpy import QtCore
 
-from .async_utils import Event, ensure_future, sleep_async, wait
+from .async_utils import ZMQ_IPYTHON, Event, ensure_future, sleep_async, wait
 from .attributes import BoolProperty, IntProperty, SelectProperty, StringProperty
 from .modules import Module, SignalLauncher
 

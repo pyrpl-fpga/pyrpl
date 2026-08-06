@@ -87,7 +87,6 @@ in the information as good as possible. Critical fields are:
 
 """
 
-
 import asyncio
 
 import numpy as np
@@ -95,6 +94,7 @@ import pyqtgraph as pg
 from qtpy import QtCore, QtWidgets
 
 from ... import APP
+from ...async_utils import ensure_future
 from ...pyrpl_utils import get_base_module_class
 from .base_module_widget import ModuleWidget, ReducedModuleWidget
 
@@ -589,9 +589,7 @@ class LockboxInputWidget(ModuleWidget):
             finally:
                 self.button_calibrate.setEnabled(True)
             return
-        self._calibrate_future = ensure_future(
-            self.module.calibrate_async(), force_background=True
-        )
+        self._calibrate_future = ensure_future(self.module.calibrate_async(), force_background=True)
         self._calibrate_future.add_done_callback(self._calibrate_done)
 
     def _calibrate_done(self, future):
