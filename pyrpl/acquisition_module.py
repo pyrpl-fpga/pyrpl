@@ -58,7 +58,11 @@ Example:
 from copy import copy
 from .async_utils import ensure_future, sleep_async, wait, Event, ZMQ_IPYTHON
 
-from .module_attributes import *
+from qtpy import QtCore
+
+from .async_utils import Event, ensure_future, sleep_async, wait
+from .attributes import BoolProperty, IntProperty, SelectProperty, StringProperty
+from .modules import Module, SignalLauncher
 
 
 class AcquisitionError(ValueError):
@@ -68,13 +72,7 @@ class AcquisitionError(ValueError):
 class RunningStateProperty(SelectProperty):
     def __init__(
         self,
-        options=[
-            "running_single",
-            "running_continuous",
-            "paused_single",
-            "paused_continuous",
-            "stopped",
-        ],
+        options=None,
         **kwargs,
     ):
         """
@@ -96,10 +94,18 @@ class RunningStateProperty(SelectProperty):
         continuous(), stop(), pause(), resume(). However, a boolean attribute
         run_continuous can be used to switch between continuous() and stopped()
         """
-        super(RunningStateProperty, self).__init__(options=options, **kwargs)
+        if options is None:
+            options = [
+                "running_single",
+                "running_continuous",
+                "paused_single",
+                "paused_continuous",
+                "stopped",
+            ]
+        super().__init__(options=options, **kwargs)
 
     def set_value(self, obj, value):
-        super(RunningStateProperty, self).set_value(obj, value)
+        super().set_value(obj, value)
         new_value = value == "running_continuous"
         if obj.run_continuous != new_value:
             obj._run_continuous = new_value  # we don't want to trigger setup()
@@ -219,7 +225,7 @@ class AcquisitionModule(Module):
     )
 
     def __init__(self, parent, name=None):
-        super(AcquisitionModule, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         self._last_run = None
         self.curve_name = self.name + " curve"
         self.current_avg = 0
@@ -407,7 +413,7 @@ class AcquisitionModule(Module):
         return curve
 
     def _clear(self):
-        super(AcquisitionModule, self)._clear()
+        super()._clear()
         if self._last_run:
             self._last_run.cancel()
 

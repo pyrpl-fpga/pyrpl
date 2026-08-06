@@ -1,14 +1,14 @@
-from ..attributes import IntRegister, SelectRegister, IORegister, BoolProperty
+from ..attributes import BoolProperty, IntRegister, IORegister, SelectRegister
 from ..modules import HardwareModule
 from ..widgets.module_widgets.hk_widget import HkWidget
 
 
 class ExpansionDirection(BoolProperty):
     def set_value(self, obj, val):
-        obj._set_expansion_direction(self.name.strip("_output"), val)
+        obj._set_expansion_direction(self.name.removesuffix("_output"), val)
 
     def get_value(self, obj):
-        return obj._get_expansion_direction(self.name.strip("_output"))
+        return obj._get_expansion_direction(self.name.removesuffix("_output"))
 
 
 class HK(HardwareModule):

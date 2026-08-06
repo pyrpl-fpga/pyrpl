@@ -34,13 +34,14 @@ the background loop
 
 """
 
-import logging
-from qtpy import QtWidgets, QtCore
 import asyncio
 import concurrent.futures
-import threading
+import logging
 from asyncio import TimeoutError
+
 import qasync
+from qtpy import QtCore, QtWidgets
+import threading
 
 logger = logging.getLogger(name=__name__)
 
@@ -417,4 +418,7 @@ class Event(asyncio.Event):
     """
 
     def __init__(self):
-        super(Event, self).__init__()
+        super().__init__()
+
+    def _get_loop(self):
+        return LOOP

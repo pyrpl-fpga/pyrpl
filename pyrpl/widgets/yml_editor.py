@@ -6,7 +6,7 @@ class YmlEditor(QtWidgets.QWidget):
         self.module = module
         self.state = state
 
-        super(YmlEditor, self).__init__()
+        super().__init__()
         if state is None:
             state = "current"
         self.setWindowTitle(

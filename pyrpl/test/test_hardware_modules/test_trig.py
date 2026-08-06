@@ -1,6 +1,8 @@
 import logging
-from pyrpl.test.test_base import TestPyrpl
+
 import pytest
+
+from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
@@ -56,7 +58,7 @@ class TestScope(TestPyrpl):
         # trigger should be armed most of the time (except for the cycle
         # after triggering)
         armed = 0
-        for i in range(100):
+        for _i in range(100):
             if self.t.armed:
                 armed += 1
         assert armed >= 99, armed

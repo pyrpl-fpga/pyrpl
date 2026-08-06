@@ -16,14 +16,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ###############################################################################
 
+import contextlib
+import logging
+from time import sleep, time
 
 import paramiko
-from time import sleep, time
 from scp import SCPClient
-import logging
 
 
-class SshShell(object):
+class SshShell:
     """This is a wrapper around paramiko.SSHClient and scp.SCPClient
     It provides an ssh connection with the ability to transfer files over it"""
 
@@ -64,7 +65,7 @@ class SshShell(object):
         self.scp = SCPClient(self.ssh.get_transport())
 
     def write(self, text):
-        if self.channel.send_ready() and not text == "":
+        if self.channel.send_ready() and text != "":
             return self.channel.send(text)
         else:
             return -1
@@ -121,10 +122,8 @@ class SshShell(object):
 
     def __del__(self):
         self.endapp()
-        try:
+        with contextlib.suppress(AttributeError):  # already broken
             self.channel.close()
-        except AttributeError:
-            pass  # already broken
         self.ssh.close()
 
     def endapp(self):
@@ -150,17 +149,11 @@ class SshShell(object):
         for token in self.ask("ifconfig | grep HWaddr").split():
             if nextgood and len(token.split(":")) == 6:
                 macs.append(token)
-            if token == "HWaddr":
-                nextgood = True
-            else:
-                nextgood = False
+            nextgood = token == "HWaddr"
         if macs == []:  # problem on more recent redpitaya os
             nextgood = False
             for token in self.ask("ip address").split():
                 if nextgood and len(token.split(":")) == 6:
                     macs.append(token)
-                if token == "link/ether":
-                    nextgood = True
-                else:
-                    nextgood = False
+                nextgood = token == "link/ether"
         return macs

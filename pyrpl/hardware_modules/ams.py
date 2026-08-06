@@ -1,5 +1,5 @@
-from ..modules import HardwareModule
 from ..attributes import PWMRegister
+from ..modules import HardwareModule
 
 
 class AMS(HardwareModule):

@@ -1,9 +1,10 @@
-from qtpy import QtWidgets, QtCore
-import socket
 import logging
+import socket
 
+from qtpy import QtCore, QtWidgets
+
+from ..async_utils import ensure_future, sleep_async
 from ..sshshell import SshShell
-from ..async_utils import sleep_async, ensure_future
 
 
 class HostnameSelectorWidget(QtWidgets.QDialog):
@@ -12,12 +13,14 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
     _SCAN_TIMEOUT = 0.05
     _CONNECT_TIMEOUT = 1.0
 
-    def __init__(self, parent=None, config={"user": None, "password": None, "sshport": None}):
+    def __init__(self, parent=None, config=None):
+        if config is None:
+            config = {"user": None, "password": None, "sshport": None}
         self.parent = parent
         self.items = []
         self.ips_and_macs = []
         self._logger = logging.getLogger(__name__)
-        super(HostnameSelectorWidget, self).__init__()
+        super().__init__()
         self.setWindowTitle("Red Pitaya connection - find a valid hostname")
         self.layout = QtWidgets.QVBoxLayout()
         self.setLayout(self.layout)
@@ -96,7 +99,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
                 getattr(textbox, signalname).connect(self.countdown_cancel)
 
     def showEvent(self, QShowEvent):
-        ret = super(HostnameSelectorWidget, self).showEvent(QShowEvent)
+        ret = super().showEvent(QShowEvent)
         if not self.ips_and_macs:
             # launch autoscan at first startup with 10 ms delay
             # self._aux_timer = QtCore.QTimer.singleShot(10, self.scan)
@@ -175,7 +178,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         else:
             self.progressbar.hide()
 
-    def _get_all_own_ip_addresses(self, exclude=["127.0.0.1"]):
+    def _get_all_own_ip_addresses(self, exclude=None):
         """
         Returns a list of all ip addresses of the running computer
 
@@ -185,6 +188,8 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         Returns:
             list: list of internal ip addresses of all ipv4-able adapters of the computer
         """
+        if exclude is None:
+            exclude = ["127.0.0.1"]
         addr_list = []
         try:
             import netifaces
@@ -315,7 +320,7 @@ class HostnameSelectorWidget(QtWidgets.QDialog):
         if self.countdown_cancelled:
             return
         self.countdown_remaining -= 1
-        self.ok_button.setText("OK (auto-clicked in %d s)" % self.countdown_remaining)
+        self.ok_button.setText(f"OK (auto-clicked in {self.countdown_remaining} s)")
         if self.countdown_remaining >= 0:
             self.countown_timer = QtCore.QTimer.singleShot(1000, self.countdown_iteration)
         else:

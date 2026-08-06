@@ -2,13 +2,16 @@
 The Iir widget allows to dynamically select zeros and poles of the iir filter
 """
 
-from .base_module_widget import ModuleWidget
-from collections import OrderedDict
-from qtpy import QtCore, QtWidgets
-import pyqtgraph as pg
-import numpy as np
+import contextlib
 import sys
+from collections import OrderedDict
+
+import numpy as np
+import pyqtgraph as pg
+from qtpy import QtCore, QtWidgets
+
 from ... import APP
+from .base_module_widget import ModuleWidget
 
 
 class MyGraphicsWindow(pg.GraphicsLayoutWidget):
@@ -337,10 +340,8 @@ class IirWidget(ModuleWidget):
         # plot product
         plot["data_x_design"] = []
         if self.module.plot_data_times_filter:
-            try:
+            with contextlib.suppress(ValueError):
                 plot["data_x_design"] = plot["data"] * plot["filter_design"]
-            except ValueError:
-                pass
         # disable data plot if this is desired
         if not self.module.plot_data:
             plot["data"] = []

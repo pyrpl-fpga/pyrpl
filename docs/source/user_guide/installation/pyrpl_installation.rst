@@ -74,6 +74,6 @@ If you do not need a local clone, install directly from GitHub::
 
     pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
 
-.. warning::
+Stable releases are also available from PyPI::
 
-    Do **not** use ``pip install pyrpl``. The PyPI package is outdated.
+    pip install "pyrpl[qt-pyqt5]"

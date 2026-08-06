@@ -4,9 +4,10 @@ Defines a number of Loop modules to be used to perform periodically a task
 
 import numpy as np
 import pyqtgraph as pg
+from qtpy import QtCore
+
 from ..modules import Module
 from ..pyrpl_utils import time
-from qtpy import QtCore
 
 
 class Loop(Module):
@@ -27,7 +28,7 @@ class Loop(Module):
         # name is important for the right config file section name
         # optionally, init_function, loop_function, and clear_function can be passed
         # as arguments
-        super(Loop, self).__init__(parent, name=name)
+        super().__init__(parent, name=name)
         self.kwargs = kwargs  # allows using kwargs in setup_loop
         if setup_function is not None:
             self.setup_loop = setup_function
@@ -42,7 +43,7 @@ class Loop(Module):
 
         self.timer.timeout.connect(self.main_loop)
         self.n = 0  # counter for the number of loops
-        self.time  # initialize start time in internal time format
+        _ = self.time  # initialize start time in internal time format
         # call custom initialization (excluded above)
         try:
             self.setup_loop()
@@ -77,7 +78,7 @@ class Loop(Module):
         except TypeError:
             # allows to pass instance functions of the parent module as arguments as well
             self.teardown_loop(self.parent, self)
-        super(Loop, self)._clear()
+        super()._clear()
 
     def main_loop(self):
         try:
@@ -136,7 +137,7 @@ class Loop(Module):
         )
 
 
-class PlotWindow(object):
+class PlotWindow:
     """makes a plot window where the x-axis is time since startup.
 
     append(color=value) adds new data to the plot for
@@ -160,7 +161,7 @@ class PlotWindow(object):
         # former, now almost deprecated version:
             append(0.5, 0.6)
         """
-        for k in kwargs.keys():
+        for k in kwargs:
             v = kwargs.pop(k)
             kwargs[k[0]] = v
         i = 0
@@ -197,7 +198,7 @@ class PlotLoop(Loop):
             self.plotter = None
         if self.plot and self.plotter is None:
             self.plot = PlotWindow(title=self.name)
-        super(PlotLoop, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def plotappend(self, *args, **kwargs):
         if self.plot:
@@ -210,6 +211,6 @@ class PlotLoop(Loop):
                     self._logger.error("Error occured during plotting in Loop %s: %s", self.name, e)
 
     def _clear(self):
-        super(PlotLoop, self)._clear()
+        super()._clear()
         if hasattr(self, "plot") and hasattr(self.plot, "close"):
             self.plot.close()

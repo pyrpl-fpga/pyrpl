@@ -23,22 +23,24 @@ Let's set up the ASG to output a sawtooth signal of amplitude 0.8 V
               trigger_source='immediately')
 """
 
-import numpy as np
 from collections import OrderedDict
+
+import numpy as np
+
 from ..attributes import (
     BoolRegister,
+    FloatProperty,
     FloatRegister,
-    SelectRegister,
-    SelectProperty,
+    FrequencyRegister,
     IntRegister,
     LongRegister,
     PhaseRegister,
-    FrequencyRegister,
-    FloatProperty,
+    SelectProperty,
+    SelectRegister,
 )
 from ..modules import HardwareModule, SignalModule
 from ..widgets.module_widgets import AsgWidget
-from . import all_output_directs, dsp_addr_base
+from .dsp import all_output_directs, dsp_addr_base
 
 
 class WaveformAttribute(SelectProperty):
@@ -85,7 +87,7 @@ class WaveformAttribute(SelectProperty):
             else:
                 y = instance.data
                 instance._logger.error(
-                    "Waveform name %s not recognized. Specify waveform manually" % waveform
+                    f"Waveform name {waveform} not recognized. Specify waveform manually"
                 )
             instance.data = y
             instance._waveform = waveform
@@ -99,7 +101,7 @@ class AsgAmplitudeAttribute(FloatRegister):
         if obj.waveform == "noise":
             return obj._rmsamplitude
         else:
-            return super(AsgAmplitudeAttribute, self).get_value(obj)
+            return super().get_value(obj)
 
     def set_value(self, obj, val):
         if obj.waveform == "noise":
@@ -109,14 +111,14 @@ class AsgAmplitudeAttribute(FloatRegister):
             # fill normal-distributed data into data memory
             obj.data = obj._noise_distribution()
             # multiplier set to 1.0 to benefit from full available resolution
-            super(AsgAmplitudeAttribute, self).set_value(obj, 1.0)
+            super().set_value(obj, 1.0)
         else:
-            super(AsgAmplitudeAttribute, self).set_value(obj, val)
+            super().set_value(obj, val)
 
 
 class AsgOffsetAttribute(FloatProperty):
     def __init__(self, **kwargs):
-        super(AsgOffsetAttribute, self).__init__(**kwargs)
+        super().__init__(**kwargs)
 
     def set_value(self, instance, val):
         instance._offset_masked = val
@@ -163,7 +165,7 @@ def make_asg(channel=0):
         addr_base = 0x40200000
 
         def __init__(self, parent, name=None):
-            super(Asg, self).__init__(parent, name=name)
+            super().__init__(parent, name=name)
             self._counter_wrap = self._default_counter_wrap
             self._writtendata = np.zeros(self.data_length)
 

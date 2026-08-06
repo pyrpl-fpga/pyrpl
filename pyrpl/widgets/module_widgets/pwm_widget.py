@@ -7,11 +7,11 @@ class PwmWidget(ModuleWidget):
     """
 
     def init_gui(self):
-        super(PwmWidget, self).init_gui()
+        super().init_gui()
         # Then remove properties from normal property layout
         # We will make one where buttons are stack on top
         # of each others by functional column blocks
-        for key, widget in self.attribute_widgets.items():
+        for _key, widget in self.attribute_widgets.items():
             self.attribute_layout.removeWidget(widget)
 
         self.attribute_layout.addWidget(self.attribute_widgets["input"])

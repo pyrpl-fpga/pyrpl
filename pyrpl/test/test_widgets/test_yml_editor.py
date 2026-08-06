@@ -1,7 +1,8 @@
 import logging
+
+from pyrpl.software_modules.module_managers import ModuleManager
 from pyrpl.test.test_base import TestPyrpl
 from pyrpl.widgets.yml_editor import YmlEditor
-from pyrpl.software_modules.module_managers import ModuleManager
 
 logger = logging.getLogger(name=__name__)
 

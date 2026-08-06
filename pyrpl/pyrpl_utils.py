@@ -1,6 +1,6 @@
-from timeit import default_timer
 import logging
 from collections import OrderedDict
+from timeit import default_timer
 
 logger = logging.getLogger(__file__)
 
@@ -165,21 +165,21 @@ class Bijection(dict):
     'inverse' which contains the inverted {value: key} dict."""
 
     def __init__(self, *args, **kwargs):
-        super(Bijection, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.inverse = {v: k for k, v in self.items()}
 
     def __setitem__(self, key, value):
-        super(Bijection, self).__setitem__(key, value)
+        super().__setitem__(key, value)
         self.inverse[value] = key
 
     def __delitem__(self, key):
         self.inverse.__delitem__(self.__getitem__(key))
-        super(Bijection, self).__delitem__(key)
+        super().__delitem__(key)
 
     def pop(self, key):
         self.inverse.pop(self.__getitem__(key))
-        super(Bijection, self).pop(key)
+        super().pop(key)
 
     def update(self, *args, **kwargs):
-        super(Bijection, self).update(*args, **kwargs)
+        super().update(*args, **kwargs)
         self.inverse = {v: k for k, v in self.items()}

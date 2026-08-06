@@ -19,23 +19,23 @@
 """All modules are extensively discussed in the Tutorial. Please refer to
 there for more information."""
 
+from .ams import AMS
+from .asg import Asg0, Asg1
 from .dsp import (
-    DspModule,
     DSP_INPUTS,
+    DspModule,
+    InputSelectProperty,
+    InputSelectRegister,
     all_inputs,
     all_output_directs,
     dsp_addr_base,
-    InputSelectProperty,
-    InputSelectRegister,
 )
 from .filter import FilterModule
 from .hk import HK
-from .scope import Scope
-from .asg import Asg0, Asg1
-from .pid import Pid
-from .sampler import Sampler
-from .pwm import Pwm
-from .iq import Iq
 from .iir import IIR
-from .ams import AMS
+from .iq import Iq
+from .pid import Pid
+from .pwm import Pwm
+from .sampler import Sampler
+from .scope import Scope
 from .trig import Trig

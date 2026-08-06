@@ -30,15 +30,15 @@ The different buttons in the acquisition module control panel below the plot are
   :attr:`~.AcquisitionModule.curve_name`.
 """
 
-from . import ModuleWidget
-
 from qtpy import QtCore, QtWidgets
 import asyncio
+
+from . import ModuleWidget
 
 
 class CurrentAvgLabel(QtWidgets.QWidget):
     def __init__(self, parent=None):
-        super(CurrentAvgLabel, self).__init__(parent)
+        super().__init__(parent)
         self.main_lay = QtWidgets.QVBoxLayout()
         self.setLayout(self.main_lay)
         self.label = QtWidgets.QLabel("current_avg")

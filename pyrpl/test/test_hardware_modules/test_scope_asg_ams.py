@@ -1,9 +1,11 @@
 import logging
 import time
+
 import numpy as np
+import pytest
+
 from pyrpl import CurveDB
 from pyrpl.test.test_base import TestPyrpl
-import pytest
 
 logger = logging.getLogger(name=__name__)
 
@@ -27,7 +29,7 @@ class TestScopeAsgAms(TestPyrpl):
             )
             diff = np.max(np.abs(expect - asg.data))
             if diff > 2**-12:
-                assert False, "diff = " + str(diff)
+                raise AssertionError("diff = " + str(diff))
 
     def test_asg_to_scope(self):
         if self.r is None:
@@ -61,7 +63,7 @@ class TestScopeAsgAms(TestPyrpl):
                     measured,
                     name="failed test asg_to_scope: measured trace vs expected one",
                 )
-                assert False, "diff = " + str(diff)
+                raise AssertionError("diff = " + str(diff))
 
     def test_scope_trigger_immediately(self):
         if self.r is None:

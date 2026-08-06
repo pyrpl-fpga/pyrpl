@@ -2,6 +2,12 @@
 block_cipher = None
 import os
 import sys
+from PyInstaller.utils.hooks import collect_submodules
+
+
+# These modules are loaded through importlib in pyrpl.pyrpl. PyInstaller's
+# static import analysis cannot discover them without an explicit hint.
+hiddenimports = collect_submodules('pyrpl.software_modules.lockbox.models')
 
 a = Analysis(['pyrpl/__main__.py'],
              pathex=['.'],
@@ -10,7 +16,7 @@ a = Analysis(['pyrpl/__main__.py'],
                     ('pyrpl/fpga/red_pitaya.dtbo', 'pyrpl/fpga'),
                     ('pyrpl/monitor_server/monitor_server*',
                      'pyrpl/monitor_server')],
-             hiddenimports=[],
+             hiddenimports=hiddenimports,
              hookspath=[],
              runtime_hooks=[],
              excludes=[
@@ -28,6 +34,12 @@ a = Analysis(['pyrpl/__main__.py'],
                  'IPython',
                  'matplotlib',
                  'mpl_toolkits',
+                 # The release builds install PyQt5. Exclude any other Qt
+                 # bindings that happen to be present in the build environment;
+                 # PyInstaller cannot freeze multiple bindings together.
+                 'PyQt6',
+                 'PySide2',
+                 'PySide6',
              ],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
@@ -46,7 +58,9 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    # Do not pack the executable. Packed binaries are harder for antivirus
+    # engines to inspect and are more prone to heuristic false positives.
+    upx=False,
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -61,7 +75,7 @@ coll = COLLECT(
     a.zipfiles,
     a.datas,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     name='pyrpl',
 )
