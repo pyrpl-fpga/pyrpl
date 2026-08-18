@@ -45,6 +45,12 @@ from qtpy import QtCore, QtWidgets
 
 logger = logging.getLogger(name=__name__)
 
+# The nested Qt-loop paths below already give asyncio the requested timeout.
+# Their QTimer is only a deadlock watchdog, so it must expire later than the
+# asyncio timeout.  Giving both timers the same deadline was racy on Python
+# 3.9: the watchdog could fire first and leave the asyncio waiter pending.
+_QT_WAIT_WATCHDOG_GRACE_MS = 250
+
 APP = QtWidgets.QApplication.instance()
 if APP is None:
     # logger.debug('Creating new QApplication instance "pyrpl"')
@@ -310,7 +316,9 @@ def wait(future, timeout=None):
                 loop.quit()
 
             timeout_timer.timeout.connect(on_timeout)
-            timeout_timer.start(max(0, int(float(timeout) * 1000)))
+            timeout_timer.start(
+                max(0, int(float(timeout) * 1000)) + _QT_WAIT_WATCHDOG_GRACE_MS
+            )
 
         while not new_future.done() and not timed_out[0]:
             loop.exec_()
@@ -364,7 +372,7 @@ def wait(future, timeout=None):
                         qloop.quit()
 
                     timeout_timer.timeout.connect(on_timeout)
-                    timeout_timer.start(timeout_ms)
+                    timeout_timer.start(timeout_ms + _QT_WAIT_WATCHDOG_GRACE_MS)
 
                 while not waiter.done() and not timed_out[0]:
                     qloop.exec_()
@@ -396,6 +404,10 @@ def sleep(time_s):
     BEWARE: never sleep in a coroutine (use await sleep_async(time_s) instead)
     """
     wait(sleep_async(time_s))
+    # A Qt timer can become due at almost the same instant as the asyncio
+    # sleep. Process that queued timeout before returning to synchronous code.
+    # This is especially important for MemoryTree's delayed-save QTimer.
+    APP.processEvents()
 
 
 class Event(asyncio.Event):
