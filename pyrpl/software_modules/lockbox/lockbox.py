@@ -5,7 +5,7 @@ from collections import OrderedDict
 
 from qtpy import QtCore
 
-from ...async_utils import Event, ensure_future, sleep_async, wait
+from ...async_utils import Event, TimeoutError, ensure_future, sleep_async, wait
 from ...attributes import BaseProperty, BoolProperty, FloatProperty, SelectProperty
 from ...module_attributes import ModuleListProperty
 from ...modules import SignalLauncher
