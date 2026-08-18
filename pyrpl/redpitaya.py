@@ -247,14 +247,22 @@ class RedPitaya:
             # OS 3 overlay.sh currently copies these fixed names from
             # /opt/pyrpl, regardless of the paths passed on its command line.
             required_binfilename = "fpga.bin"
-            if self.parameters["serverbinfilename"] != required_binfilename:
-                self.logger.info(
-                    "Red Pitaya OS 3 requires serverbinfilename=%s; overriding saved value %s",
-                    required_binfilename,
-                    self.parameters["serverbinfilename"],
-                )
-                self.parameters["serverbinfilename"] = required_binfilename
-                self.c["redpitaya"] = self.parameters
+        elif self.os_version.startswith("2."):
+            # OS 2 overlay.sh ignores the image path passed on its command
+            # line and requests this fixed firmware name from /opt/pyrpl.
+            required_binfilename = "fpga.bit.bin"
+        else:
+            return
+
+        if self.parameters["serverbinfilename"] != required_binfilename:
+            self.logger.info(
+                "Red Pitaya OS %s requires serverbinfilename=%s; overriding saved value %s",
+                self.os_version,
+                required_binfilename,
+                self.parameters["serverbinfilename"],
+            )
+            self.parameters["serverbinfilename"] = required_binfilename
+            self.c["redpitaya"] = self.parameters
 
     def _should_reload_server(self):
         """Return whether the bundled monitor server must be installed."""
