@@ -145,7 +145,7 @@ import importlib
 import logging
 import os
 
-from qtpy import API_NAME, QtWidgets
+from qtpy import API_NAME, QtCore, QtWidgets
 
 if API_NAME is None:
     raise RuntimeError(
@@ -174,6 +174,17 @@ importlib.import_module(".software_modules.lockbox.models", package=__package__)
 raw_input = input
 
 basestring = (str, bytes)
+
+
+def _ipython_shell_name():
+    try:
+        from IPython import get_ipython
+    except Exception:
+        return None
+    ip = get_ipython()
+    if ip is None:
+        return None
+    return ip.__class__.__name__
 
 
 default_pyrpl_config = {
@@ -340,7 +351,16 @@ class Pyrpl:
                 #     raise e
         # make the gui if applicable
         if self.c.redpitaya.gui:
-            self.show_gui()
+            # In notebook kernels, creating/showing Qt windows synchronously
+            # from the currently executing cell can block the cell reply path.
+            # Defer GUI creation to the next Qt tick so __init__ can return.
+            if _ipython_shell_name() == "ZMQInteractiveShell":
+                QtCore.QTimer.singleShot(0, self.show_gui)
+                app = QtWidgets.QApplication.instance()
+                if app is not None:
+                    app.processEvents(QtCore.QEventLoop.AllEvents, 50)
+            else:
+                self.show_gui()
 
     def show_gui(self):
         if len(self.widgets) == 0:

@@ -46,11 +46,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         ref: ${{ inputs.source_ref }}
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
@@ -74,6 +74,19 @@ jobs:
     - name: Build Linux binary
       run: |
         pyinstaller pyrpl.spec
+        # A healthy GUI remains alive in the Qt event loop. Fail when the
+        # frozen application exits during startup due to a packaging error.
+        ./dist/pyrpl/pyrpl config=build_smoke_test hostname=_FAKE_ &
+        app_pid=$!
+        sleep 15
+        if ! kill -0 "$app_pid" 2>/dev/null; then
+          wait "$app_pid"
+          echo "Frozen Linux application exited during startup."
+          exit 1
+        fi
+        kill "$app_pid"
+        wait "$app_pid" 2>/dev/null || true
+
         # PyInstaller creates a directory, so we need to archive it
         cd dist
         mv pyrpl "pyrpl-${PACKAGE_VERSION}-linux-x86_64"
@@ -82,7 +95,7 @@ jobs:
       env:
         QT_QPA_PLATFORM: offscreen
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: pyrpl-linux
         path: dist/pyrpl-*-linux-x86_64.tar.gz
@@ -101,12 +114,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.source_ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
@@ -134,8 +147,21 @@ jobs:
       - name: Verify build
         run: |
           file dist/pyrpl-${PACKAGE_VERSION}-macos-${{ matrix.arch.name }}/pyrpl
+          dist/pyrpl-${PACKAGE_VERSION}-macos-${{ matrix.arch.name }}/pyrpl \
+            config=build_smoke_test hostname=_FAKE_ &
+          app_pid=$!
+          sleep 15
+          if ! kill -0 "$app_pid" 2>/dev/null; then
+            wait "$app_pid"
+            echo "Frozen macOS application exited during startup."
+            exit 1
+          fi
+          kill "$app_pid"
+          wait "$app_pid" 2>/dev/null || true
+        env:
+          QT_QPA_PLATFORM: offscreen
           
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
             name: pyrpl-macos-${{ matrix.arch.name }}
             path: dist/pyrpl-*-macos-${{ matrix.arch.name }}.zip
@@ -145,11 +171,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         ref: ${{ inputs.source_ref }}
 
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
@@ -188,7 +214,7 @@ jobs:
           -ArgumentList "config=build_smoke_test", "hostname=_FAKE_" `
           -PassThru -NoNewWindow
         if ($process.WaitForExit(15000)) {
-          Write-Error "Frozen application exited during startup with code $($process.ExitCode)"
+          Write-Error "Frozen Windows application exited during startup with code $($process.ExitCode)"
           exit 1
         }
         Stop-Process -Id $process.Id -Force
@@ -219,7 +245,7 @@ jobs:
       env:
         QT_QPA_PLATFORM_PLUGIN_PATH: ${{ env.Python_ROOT_DIR }}\Lib\site-packages\PyQt5\Qt5\plugins\platforms
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v6
       with:
         name: pyrpl-windows
         path: dist/pyrpl-*-windows-x86_64.zip
@@ -233,7 +259,7 @@ jobs:
 
     steps:
     - name: Check out requested source with tags
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.source_ref }}
         fetch-depth: 0
@@ -269,7 +295,7 @@ jobs:
         fi
 
     - name: Download artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v6
       with:
         path: release-assets
 

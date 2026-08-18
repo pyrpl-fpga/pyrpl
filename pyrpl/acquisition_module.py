@@ -59,7 +59,7 @@ from copy import copy
 
 from qtpy import QtCore
 
-from .async_utils import Event, ensure_future, sleep_async, wait
+from .async_utils import ZMQ_IPYTHON, Event, ensure_future, sleep_async, wait
 from .attributes import BoolProperty, IntProperty, SelectProperty, StringProperty
 from .modules import Module, SignalLauncher
 
@@ -290,14 +290,14 @@ class AcquisitionModule(Module):
         self._prepare_averaging()  # initializes the table self.data_avg,
         return await self._do_average_single_async()
 
-    def _renew_run(self, coro):
+    def _renew_run(self, coro, force_background=False):
         """
         Takes care of cancelling the execution of the previous run if any,
         before scheduling the new one.
         """
         if self._last_run is not None:
             self._last_run.cancel()
-        self._last_run = ensure_future(coro)
+        self._last_run = ensure_future(coro, force_background=force_background)
         return self._last_run
 
     def single(self, timeout=None):
@@ -306,6 +306,9 @@ class AcquisitionModule(Module):
             - the function will not return until the averaged curve is ready or timeout occurs.
             - the function directly returns an array with the curve instead of a future object.
         """
+        if ZMQ_IPYTHON:
+            self._renew_run(self._single_async(), force_background=True)
+            return wait(self._last_run, timeout=timeout)
         return wait(self._renew_run(self._single_async()), timeout=timeout)
 
     async def _do_average_continuous_async(self):

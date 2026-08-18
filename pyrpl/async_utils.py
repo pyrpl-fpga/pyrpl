@@ -37,40 +37,133 @@ the background loop
 import asyncio
 import concurrent.futures
 import logging
-import math
-from asyncio import TimeoutError, coroutines, futures
-from asyncio.tasks import __sleep0, _wait
+import threading
+from asyncio import TimeoutError
 
 import qasync
-from pyrpl_utils import isnotebook
 from qtpy import QtCore, QtWidgets
 
 logger = logging.getLogger(name=__name__)
 
+# The nested Qt-loop paths below already give asyncio the requested timeout.
+# Their QTimer is only a deadlock watchdog, so it must expire later than the
+# asyncio timeout.  Giving both timers the same deadline was racy on Python
+# 3.9: the watchdog could fire first and leave the asyncio waiter pending.
+_QT_WAIT_WATCHDOG_GRACE_MS = 250
 
 APP = QtWidgets.QApplication.instance()
 if APP is None:
     # logger.debug('Creating new QApplication instance "pyrpl"')
     APP = QtWidgets.QApplication(["pyrpl"])
 
-LOOP = qasync.QEventLoop(already_running=False)  # Since tasks scheduled in this loop seem to
-# fall in the standard QEventLoop, and we never explicitly ask to run this
-# loop, it might seem useless to send all tasks to LOOP, however, a task
-# scheduled in the default loop seem to never get executed with IPython
-# kernel integration.
 
-FIRST_COMPLETED = concurrent.futures.FIRST_COMPLETED
-FIRST_EXCEPTION = concurrent.futures.FIRST_EXCEPTION
-ALL_COMPLETED = concurrent.futures.ALL_COMPLETED
+def _ipython_shell_name():
+    try:
+        from IPython import get_ipython
+    except Exception:
+        return None
+    ip = get_ipython()
+    if ip is None:
+        return None
+    return ip.__class__.__name__
 
 
-INTERACTIVE = isnotebook()  # True if we are in an interactive IPython session
+IPYTHON_SHELL = _ipython_shell_name()
+INTERACTIVE = IPYTHON_SHELL == "ZMQInteractiveShell"
+TERMINAL_IPYTHON = IPYTHON_SHELL == "TerminalInteractiveShell"
+ZMQ_IPYTHON = IPYTHON_SHELL == "ZMQInteractiveShell"
 
-if INTERACTIVE:
-    from IPython import get_ipython
+_NOTEBOOK_LOOP = None
+_NOTEBOOK_LOOP_READY = threading.Event()
+_NOTEBOOK_LOOP_LOCK = threading.Lock()
 
-    IPYTHON = get_ipython()
-    IPYTHON.run_line_magic("gui", "qt")
+
+def _notebook_loop_main(loop):
+    asyncio.set_event_loop(loop)
+    _NOTEBOOK_LOOP_READY.set()
+    loop.run_forever()
+
+
+def _get_notebook_loop():
+    """Return the persistent asyncio loop used by notebook background jobs."""
+    global _NOTEBOOK_LOOP
+    if _NOTEBOOK_LOOP is None:
+        with _NOTEBOOK_LOOP_LOCK:
+            if _NOTEBOOK_LOOP is None:
+                _NOTEBOOK_LOOP_READY.clear()
+                _NOTEBOOK_LOOP = asyncio.new_event_loop()
+                threading.Thread(
+                    target=_notebook_loop_main,
+                    args=(_NOTEBOOK_LOOP,),
+                    name="pyrpl-notebook",
+                    daemon=True,
+                ).start()
+                _NOTEBOOK_LOOP_READY.wait()
+    return _NOTEBOOK_LOOP
+
+
+def _submit_notebook(coroutine):
+    return asyncio.run_coroutine_threadsafe(coroutine, _get_notebook_loop())
+
+
+# Design note (Python 3.14+):
+# `asyncio.get_event_loop()` no longer creates a loop implicitly in the main
+# thread. Older PyRPL code relied on that behavior.
+#
+# Keep one module-level qasync loop as a fallback for code paths where no
+# running/current asyncio loop is available (for example plain python.exe).
+# Important: do not install it globally at import time because that can clash
+# with loops created later by IPython/prompt_toolkit.
+#
+# Keep a dedicated qasync loop fallback for synchronous call paths.
+# In plain python (non-IPython), Qt callbacks often rely on a loop that acts
+# as already-running while Qt is pumping events.
+# In IPython shells, forcing already_running=True is harmful (prompt_toolkit
+# in terminal IPython; kernel message flow in notebooks), so keep it False.
+if IPYTHON_SHELL is None:
+    LOOP = qasync.QEventLoop(already_running=True)
+else:
+    LOOP = qasync.QEventLoop(already_running=False)
+
+FIRST_COMPLETED = asyncio.FIRST_COMPLETED
+FIRST_EXCEPTION = asyncio.FIRST_EXCEPTION
+ALL_COMPLETED = asyncio.ALL_COMPLETED
+
+
+def _get_preferred_loop():
+    """
+    Return the loop that should own newly-created tasks/futures.
+
+    Priority:
+    1. Current running loop (strongest ownership signal)
+    2. Current event loop when available and suitable
+    3. Module-level qasync fallback (sync/Qt-slot code paths)
+    """
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        try:
+            # In IPython/QtConsole, this may return a shell-owned loop.
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            # Python 3.14+: no implicit loop in this thread.
+            # In interactive kernels, do not globally replace the shell loop.
+            if INTERACTIVE:
+                return LOOP
+            asyncio.set_event_loop(LOOP)
+            return LOOP
+        # Plain python.exe commonly returns a non-qasync default loop here.
+        # For PyRPL Qt callbacks we prefer the qasync fallback loop in that
+        # case to keep timer/future ownership consistent with Qt integration.
+        if isinstance(loop, qasync.QEventLoop):
+            return loop
+        if not loop.is_running():
+            # Avoid clobbering IPython kernel loop ownership.
+            if INTERACTIVE:
+                return LOOP
+            asyncio.set_event_loop(LOOP)
+            return LOOP
+        return loop
 
 
 async def sleep_async(delay, result=None):
@@ -81,27 +174,34 @@ async def sleep_async(delay, result=None):
     IPython.
     """
 
-    if delay <= 0:
-        await __sleep0()
-        return result
-
-    if math.isnan(delay):
-        raise ValueError("Invalid delay: NaN (not a number)")
-
-    future = LOOP.create_future()
-    h = LOOP.call_later(delay, futures._set_result_unless_cancelled, future, result)
-    try:
-        return await future
-    finally:
-        h.cancel()
+    # asyncio.sleep binds its timer to the caller's running loop. Reimplementing
+    # it with private asyncio internals caused loop-affinity problems and broke
+    # whenever those internals changed.
+    return await asyncio.sleep(delay, result)
 
 
-def ensure_future(coroutine):
+def ensure_future(coroutine, force_background=False):
     """
     Schedules the task described by the coroutine. Deals properly with
     IPython kernel integration.
     """
-    return asyncio.ensure_future(coroutine, loop=LOOP)
+    if ZMQ_IPYTHON:
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        notebook_loop = _get_notebook_loop()
+        if running_loop is notebook_loop:
+            return asyncio.ensure_future(coroutine, loop=notebook_loop)
+        concurrent_future = _submit_notebook(coroutine)
+        if running_loop is not None and not force_background:
+            # Preserve support for `await module.method_async()` in cells.
+            return asyncio.wrap_future(concurrent_future, loop=running_loop)
+        return concurrent_future
+
+    # Always bind new tasks to the selected loop explicitly so task creation
+    # from synchronous callbacks cannot accidentally bind to another loop.
+    return asyncio.ensure_future(coroutine, loop=_get_preferred_loop())
 
 
 async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
@@ -121,7 +221,7 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
     Note: This does not raise TimeoutError! Futures that aren't done
     when the timeout occurs are returned in the second set.
     """
-    if futures.isfuture(fs) or coroutines.iscoroutine(fs):
+    if asyncio.isfuture(fs) or asyncio.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
     if not fs:
         raise ValueError("Set of Tasks/Futures is empty.")
@@ -130,29 +230,72 @@ async def asyncio_wait(fs, *, timeout=None, return_when=ALL_COMPLETED):
 
     fs = set(fs)
 
-    if any(coroutines.iscoroutine(f) for f in fs):
+    if any(asyncio.iscoroutine(f) for f in fs):
         raise TypeError("Passing coroutines is forbidden, use tasks explicitly.")
 
-    # loop = events.get_running_loop()
-    # Here we send the right qasync LOOP
-    return await _wait(fs, timeout, return_when, LOOP)
+    return await asyncio.wait(fs, timeout=timeout, return_when=return_when)
 
 
 def wait(future, timeout=None):
-    if INTERACTIVE:
-        """
-           This function is used to turn async coroutines into blocking functions:
-           Returns the result of the future only once it is ready. This function
-           won't block the eventloop while waiting for other events.
-           ex:
-           def single(self):
-               curve = scope.single_async()
-               return wait(curve)
+    """
+    Bridge async futures/coroutines to synchronous call sites.
 
-           BEWARE: never use wait in a coroutine (use builtin await instead)
-           """
+    Important constraint:
+    - `future` must be awaited on its owning loop.
+    - We must not blindly call `run_until_complete` on a loop that is already
+      running (typical in Qt/IPython), otherwise nested-loop/runtime errors can
+      appear.
+    """
+    if isinstance(future, concurrent.futures.Future):
+        try:
+            return future.result(timeout=timeout)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            raise TimeoutError("Timeout exceeded") from None
+
+    if asyncio.iscoroutine(future):
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        if ZMQ_IPYTHON and running_loop is not None:
+            worker_future = _submit_notebook(future)
+            try:
+                return worker_future.result(timeout=timeout)
+            except concurrent.futures.TimeoutError:
+                worker_future.cancel()
+                raise TimeoutError("Timeout exceeded") from None
+        future = ensure_future(future)
+
+    if INTERACTIVE:
+        if not asyncio.isfuture(future):
+            raise TypeError("wait() expects a Future/Task or coroutine.")
+        # Interactive path. Never recursively drive ipykernel's running loop:
+        # Python 3.14 rejects re-entering its currently executing shell task.
+        target_loop = future.get_loop()
+        try:
+            running_loop = asyncio.get_running_loop()
+        except RuntimeError:
+            running_loop = None
+        if ZMQ_IPYTHON and running_loop is target_loop:
+            raise RuntimeError(
+                "Cannot synchronously wait for a task explicitly created on "
+                "the notebook kernel loop. Use pyrpl.async_utils.ensure_future "
+                "so the task is owned by PyRPL's Qt loop."
+            )
+
+        # Fallback:
+        # Use a nested Qt event loop as a local waiter while the async task is
+        # executed by its owning asyncio loop.
+        #
+        # In modern ipykernel/Python, calling run_until_complete from inside
+        # the kernel task can trigger loop re-entry failures such as:
+        # "Cannot enter into task ... while another task ... is being executed."
+        # Therefore, do not call run_until_complete in this branch.
         # assert isinstance(future, Future) or iscoroutine(future)
-        new_future = ensure_future(asyncio_wait({future}, timeout=timeout))
+        new_future = asyncio.ensure_future(
+            asyncio_wait({future}, timeout=timeout), loop=target_loop
+        )
         # if sys.version>='3.7':
         # # this way, it was not possible to execute wait behind a qt slot !!!
 
@@ -160,48 +303,109 @@ def wait(future, timeout=None):
         #   done, pending = new_future.result()
         # else:
 
-        # This routine makes sure that the loop from the qt slot and the future don't interfere
         loop = QtCore.QEventLoop()
+        new_future.add_done_callback(lambda *args: loop.quit())
+        timed_out = [False]
+        timeout_timer = None
+        if timeout is not None:
+            timeout_timer = QtCore.QTimer(loop)
+            timeout_timer.setSingleShot(True)
 
-        def quit(*args):
-            loop.quit()
+            def on_timeout():
+                timed_out[0] = True
+                loop.quit()
 
-        new_future.add_done_callback(quit)
-        loop.exec_()
+            timeout_timer.timeout.connect(on_timeout)
+            timeout_timer.start(
+                max(0, int(float(timeout) * 1000)) + _QT_WAIT_WATCHDOG_GRACE_MS
+            )
+
+        while not new_future.done() and not timed_out[0]:
+            loop.exec_()
+
+        if timeout_timer is not None and timeout_timer.isActive():
+            timeout_timer.stop()
+
+        if not new_future.done():
+            new_future.cancel()
+            future.cancel()
+            APP.processEvents()
+            raise TimeoutError("Timeout exceeded")
+
         done, pending = new_future.result()
         if future in done:
             return future.result()
+        # asyncio.wait() does not cancel pending futures on timeout.  This is
+        # a synchronous wait API, so leaving its private waiter alive leaks a
+        # task until qasync shuts down (particularly visible on Python 3.9).
+        future.cancel()
+        APP.processEvents()
+        raise TimeoutError("Timeout exceeded")
     else:
-        loop = asyncio.get_event_loop()
-        if asyncio.iscoroutine(future):
-            future = asyncio.ensure_future(future, loop=loop)
+        # Non-interactive mode:
+        # - coroutine objects are normalized to Task/Future above.
+        # - Task/Future objects must be awaited on their owning loop.
+        if asyncio.isfuture(future):
+            target_loop = future.get_loop()
+            if target_loop.is_running():
+                # Future belongs to a loop that is already running. We cannot
+                # call `run_until_complete` on it here.
+                #
+                # Instead, schedule a small waiter task *on that same loop* and
+                # block this sync caller with a nested Qt loop until the waiter
+                # completes or timeout fires.
+                waiter = asyncio.ensure_future(
+                    asyncio_wait({future}, timeout=timeout),
+                    loop=target_loop,
+                )
+                qloop = QtCore.QEventLoop()
+                timed_out = [False]
+                timeout_timer = None
 
-        app = QtCore.QCoreApplication.instance()
-        deadline = loop.time() + timeout if timeout is not None else None
+                def quit_wait(*args):
+                    qloop.quit()
 
-        if app is None:
-            loop.run_until_complete(future)
-        else:
-            iteration = 0
-            while not future.done():
-                iteration += 1
+                waiter.add_done_callback(quit_wait)
 
-                # pump Qt
-                app.processEvents(QtCore.QEventLoop.AllEvents, 50)
+                if timeout is not None:
+                    timeout_ms = max(0, int(float(timeout) * 1000))
+                    # Single dedicated timer avoids accumulating many transient
+                    # timers in repeated wait calls.
+                    timeout_timer = QtCore.QTimer(qloop)
+                    timeout_timer.setSingleShot(True)
 
-                # pump asyncio
-                loop.call_soon(loop.stop)
-                loop.run_forever()
+                    def on_timeout():
+                        timed_out[0] = True
+                        qloop.quit()
 
-                if deadline is not None:
-                    remaining = deadline - loop.time()
-                    if remaining <= 0:
-                        break
+                    timeout_timer.timeout.connect(on_timeout)
+                    timeout_timer.start(timeout_ms + _QT_WAIT_WATCHDOG_GRACE_MS)
 
-        if not future.done():
-            raise TimeoutError("Timeout exceeded")
+                while not waiter.done() and not timed_out[0]:
+                    qloop.exec_()
 
-        return future.result()
+                if timeout_timer is not None and timeout_timer.isActive():
+                    timeout_timer.stop()
+
+                if not waiter.done():
+                    waiter.cancel()
+                    future.cancel()
+                    APP.processEvents()
+                    raise TimeoutError("Timeout exceeded")
+
+                done, pending = waiter.result()
+                if future in done:
+                    return future.result()
+                future.cancel()
+                APP.processEvents()
+                raise TimeoutError("Timeout exceeded")
+
+            if timeout is None:
+                # Owning loop is not running: we can drive it directly.
+                return target_loop.run_until_complete(future)
+            return target_loop.run_until_complete(asyncio.wait_for(asyncio.shield(future), timeout))
+
+        raise TypeError("wait() expects a Future/Task or coroutine.")
 
 
 def sleep(time_s):
@@ -210,7 +414,11 @@ def sleep(time_s):
     eventloop while executing.
     BEWARE: never sleep in a coroutine (use await sleep_async(time_s) instead)
     """
-    wait(ensure_future(sleep_async(time_s)))
+    wait(sleep_async(time_s))
+    # A Qt timer can become due at almost the same instant as the asyncio
+    # sleep. Process that queued timeout before returning to synchronous code.
+    # This is especially important for MemoryTree's delayed-save QTimer.
+    APP.processEvents()
 
 
 class Event(asyncio.Event):

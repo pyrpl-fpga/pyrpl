@@ -30,6 +30,8 @@ The different buttons in the acquisition module control panel below the plot are
   :attr:`~.AcquisitionModule.curve_name`.
 """
 
+import asyncio
+
 from qtpy import QtCore, QtWidgets
 
 from . import ModuleWidget
@@ -93,7 +95,12 @@ class AcquisitionModuleWidget(ModuleWidget):
 
     def run_single_clicked(self):
         if str(self.button_single.text()).startswith("Run single"):
-            self.module.single_async()
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                self.module.single()
+            else:
+                self.module.single_async()
         else:
             if str(self.button_single.text()).startswith("Resume single"):
                 if self.module.running_state == "paused_single":

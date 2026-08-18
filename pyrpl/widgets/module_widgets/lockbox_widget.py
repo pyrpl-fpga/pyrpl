@@ -87,11 +87,14 @@ in the information as good as possible. Critical fields are:
 
 """
 
+import asyncio
+
 import numpy as np
 import pyqtgraph as pg
-from qtpy import QtWidgets
+from qtpy import QtCore, QtWidgets
 
 from ... import APP
+from ...async_utils import ensure_future
 from ...pyrpl_utils import get_base_module_class
 from .base_module_widget import ModuleWidget, ReducedModuleWidget
 
@@ -539,6 +542,8 @@ class LockboxInputWidget(ModuleWidget):
     A widget to represent a single lockbox input
     """
 
+    calibration_finished = QtCore.Signal(object)
+
     def init_gui(self):
         # self.main_layout = QtWidgets.QVBoxLayout(self)
         self.init_main_layout(orientation="vertical")
@@ -553,8 +558,56 @@ class LockboxInputWidget(ModuleWidget):
         self.main_layout.addWidget(self.win)
         self.button_calibrate = QtWidgets.QPushButton("Calibrate")
         self.main_layout.addWidget(self.button_calibrate)
-        self.button_calibrate.clicked.connect(lambda: self.module.calibrate())
+        self.button_calibrate.clicked.connect(self._run_calibrate)
+        self.calibration_finished.connect(self._finish_calibration)
+        self._calibrate_future = None
         self.input_calibrated()
+
+    def _run_calibrate(self):
+        """
+        Run calibration from a Qt slot as an async task to avoid blocking
+        nested event loops in click callbacks.
+        """
+        if self._calibrate_future is not None and not self._calibrate_future.done():
+            self.module._logger.warning(
+                "Calibration already running for lockbox input '%s'. Ignoring click.",
+                self.module.name,
+            )
+            return
+        self.button_calibrate.setEnabled(False)
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            try:
+                self.module.calibrate()
+            except Exception as exc:
+                self.module._logger.error(
+                    "Calibration failed for lockbox input '%s'.",
+                    self.module.name,
+                    exc_info=(type(exc), exc, exc.__traceback__),
+                )
+            finally:
+                self.button_calibrate.setEnabled(True)
+            return
+        self._calibrate_future = ensure_future(self.module.calibrate_async(), force_background=True)
+        self._calibrate_future.add_done_callback(self._calibrate_done)
+
+    def _calibrate_done(self, future):
+        # concurrent.futures callbacks run in the notebook worker. A Qt signal
+        # safely queues the UI update onto the widget's owning thread.
+        self.calibration_finished.emit(future)
+
+    def _finish_calibration(self, future):
+        self.button_calibrate.setEnabled(True)
+        if future.cancelled():
+            return
+        exc = future.exception()
+        if exc is not None:
+            self.module._logger.error(
+                "Calibration failed for lockbox input '%s'.",
+                self.module.name,
+                exc_info=(type(exc), exc, exc.__traceback__),
+            )
 
     def hide_lock(self):
         self.curve_slope.setData([], [])

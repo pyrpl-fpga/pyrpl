@@ -19,6 +19,7 @@
 
 import logging
 import socket
+import threading
 
 import numpy as np
 
@@ -58,6 +59,12 @@ class MonitorClient:
         self._port = port
         self._read_counter = 0  # For debugging and unittests
         self._write_counter = 0  # For debugging and unittests
+        # One monitor-server connection is a request/response byte stream.
+        # A complete transaction must remain atomic when notebook acquisitions
+        # run in a worker thread while the GUI reads registers in the Qt thread.
+        # Keep the same re-entrant lock when __init__ is called by restart().
+        if not hasattr(self, "_socket_lock"):
+            self._socket_lock = threading.RLock()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # Register accesses use very small request/response packets. Without
         # TCP_NODELAY, Windows and newer Linux TCP stacks can combine Nagle's
@@ -90,27 +97,30 @@ class MonitorClient:
         self.socket.settimeout(1.0)  # 1 second timeout for socket operations
 
     def close(self):
-        try:
-            self.socket.send(b"c" + bytes(bytearray([0, 0, 0, 0, 0, 0, 0])))
-            self.socket.close()
-        except OSError:
-            return
+        with self._socket_lock:
+            try:
+                self.socket.send(b"c" + bytes(bytearray([0, 0, 0, 0, 0, 0, 0])))
+                self.socket.close()
+            except OSError:
+                return
 
     def __del__(self):
         self.close()
 
     # the public methods to use which will recover from connection problems
     def reads(self, addr, length):
-        self._read_counter += 1
-        if hasattr(self, "_sound_debug") and self._sound_debug:
-            sine(440, 0.05)
-        return self.try_n_times(self._reads, addr, length)
+        with self._socket_lock:
+            self._read_counter += 1
+            if hasattr(self, "_sound_debug") and self._sound_debug:
+                sine(440, 0.05)
+            return self.try_n_times(self._reads, addr, length)
 
     def writes(self, addr, values):
-        self._write_counter += 1
-        if hasattr(self, "_sound_debug") and self._sound_debug:
-            sine(880, 0.05)
-        return self.try_n_times(self._writes, addr, values)
+        with self._socket_lock:
+            self._write_counter += 1
+            if hasattr(self, "_sound_debug") and self._sound_debug:
+                sine(880, 0.05)
+            return self.try_n_times(self._writes, addr, values)
 
     # the actual code
     def _reads(self, addr, length):
