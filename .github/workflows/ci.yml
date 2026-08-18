@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Hardware CI
 
 concurrency:
   group: redpitaya-hardware
@@ -9,19 +9,18 @@ on:
     branches: [ main, master, develop ]
   pull_request:
     branches: [ main, master ]
-  release:
-    types: [published]
   workflow_dispatch:  # Allows manual triggering from GitHub UI
-
-env:
-  PYPI_PSW: ${{ secrets.PYPI_PSW }}
 
 jobs:
   # Hardware-in-the-loop tests against the real RedPitaya, run on the
   # self-hosted Oracle runner so its IP can stay allowlisted on the Freebox
   # (GitHub-hosted runners have rotating IPs and can't be pinned like this).
   test:
+    name: Hardware tests (Python ${{ matrix.python-version }})
     runs-on: [self-hosted]
+    permissions:
+      contents: read
+      id-token: write
     env:
       # PyRPL maps constructor arguments directly to REDPITAYA_<NAME>:
       # sshport -> REDPITAYA_SSHPORT, port -> REDPITAYA_PORT.
@@ -31,15 +30,16 @@ jobs:
       REDPITAYA_USER: ${{ secrets.REDPITAYA_USER }}
       REDPITAYA_PASSWORD: ${{ secrets.REDPITAYA_PASSWORD }}
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.13']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
       max-parallel: 1   # only one job talks to the physical RP at a time
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -63,26 +63,42 @@ jobs:
 
     - name: Test RedPitaya connection
       run: |
-        python -c "
+        python - <<'PY'
         import os
         import paramiko
+        import socket
         import sys
+
+        hostname = os.environ["REDPITAYA_HOSTNAME"]
+        sshport = int(os.environ["REDPITAYA_SSHPORT"])
+
         try:
+            # Test the forwarded TCP endpoint separately so a routing/firewall
+            # failure is distinguishable from SSH authentication failure.
+            with socket.create_connection((hostname, sshport), timeout=10):
+                print("RedPitaya SSH TCP endpoint is reachable")
+
             ssh = paramiko.SSHClient()
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            ssh.connect(os.environ['REDPITAYA_HOSTNAME'],
-                       port=int(os.environ['REDPITAYA_SSHPORT']),
-                       username=os.environ['REDPITAYA_USER'],
-                       password=os.environ['REDPITAYA_PASSWORD'],
-                       timeout=10)
-            stdin, stdout, stderr = ssh.exec_command('echo RedPitaya connected successfully')
+            ssh.connect(
+                hostname,
+                port=sshport,
+                username=os.environ["REDPITAYA_USER"],
+                password=os.environ["REDPITAYA_PASSWORD"],
+                timeout=10,
+                banner_timeout=30,
+                auth_timeout=30,
+            )
+            _stdin, stdout, _stderr = ssh.exec_command(
+                "echo RedPitaya connected successfully"
+            )
             print(stdout.read().decode().strip())
             ssh.close()
-            print('RedPitaya connection test passed')
-        except Exception as e:
-            print(f'RedPitaya connection failed: {e}')
+            print("RedPitaya connection test passed")
+        except (OSError, paramiko.SSHException) as error:
+            print(f"RedPitaya connection failed: {type(error).__name__}: {error}")
             sys.exit(1)
-        "
+        PY
 
     - name: Run tests with retries
       shell: bash
@@ -117,213 +133,25 @@ jobs:
         QT_QPA_PLATFORM: offscreen
 
     - name: Upload coverage to Codecov
-      if: matrix.python-version == '3.13'
-      uses: codecov/codecov-action@v3
+      if: matrix.python-version == '3.14'
+      uses: codecov/codecov-action@v6
       with:
-        file: ./coverage.xml
-
-  # Build Linux binary
-  build-linux:
-    runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push' || github.event_name == 'release'
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-
-    - name: Set up display
-      run: |
-        export DISPLAY=:99
-        sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y qtbase5-dev qt5-qmake psmisc
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-
-    - name: Install package
-      run: pip install -e .[qt-pyqt5]
-
-    - name: Build binary
-      run: |
-        pyinstaller pyrpl.spec
-        mv dist/pyrpl ./pyrpl-linux-${{ github.ref_name }}
-        chmod +x pyrpl-linux-${{ github.ref_name }}
-      env:
-        QT_QPA_PLATFORM: offscreen
-
-    - name: Test binary
-      run: |
-        timeout 30s ./pyrpl-linux-${{ github.ref_name }} config=test_linux hostname=_FAKE_ || true
-        sleep 5
-        pkill -f pyrpl-linux || true
-
-    - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: pyrpl-linux-binary
-        path: pyrpl-linux-${{ github.ref_name }}
-
-  # Build Windows binary
-  build-windows:
-    runs-on: windows-latest
-    needs: test
-    if: github.event_name == 'push' || github.event_name == 'release'
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-
-    - name: Install package
-      run: pip install -e .[qt-pyqt5]
-
-    - name: Build binary
-      run: |
-        pyinstaller pyrpl.spec
-        move dist\pyrpl.exe .\pyrpl-windows-${{ github.ref_name }}.exe
-      env:
-        QT_QPA_PLATFORM_PLUGIN_PATH: ${{ env.Python_ROOT_DIR }}\Lib\site-packages\PyQt5\Qt5\plugins\platforms
-
-    - name: Test binary
-      run: |
-        Start-Process -FilePath ".\pyrpl-windows-${{ github.ref_name }}.exe" -ArgumentList "config=test_windows hostname=_FAKE_" -NoNewWindow
-        Start-Sleep -Seconds 20
-        Get-Process -Name "pyrpl-windows-*" -ErrorAction SilentlyContinue | Stop-Process -Force
-      shell: powershell
-
-    - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: pyrpl-windows-binary
-        path: pyrpl-windows-${{ github.ref_name }}.exe
-
-  # Build macOS binary
-  build-macos:
-    runs-on: macos-latest
-    needs: test
-    if: github.event_name == 'push' || github.event_name == 'release'
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'
-
-    - name: Install system dependencies
-      run: brew install qt5
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
-
-    - name: Install package
-      run: pip install -e .[qt-pyqt5]
-
-    - name: Build binary
-      run: |
-        pyinstaller pyrpl.spec
-        mv dist/pyrpl ./pyrpl-macos-${{ github.ref_name }}
-        chmod +x pyrpl-macos-${{ github.ref_name }}
-
-    - name: Test binary
-      run: |
-        timeout 30s ./pyrpl-macos-${{ github.ref_name }} config=test_osx hostname=_FAKE_ || true
-        sleep 5
-        pkill -f pyrpl-macos || true
-
-    - name: Upload binary artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: pyrpl-macos-binary
-        path: pyrpl-macos-${{ github.ref_name }}
-
-  # Publish compiled binaries to a GitHub Release
-  publish-release:
-    runs-on: ubuntu-latest
-    needs: [build-linux, build-windows, build-macos]
-    if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
-
-    steps:
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: release-assets
-
-    - name: Create GitHub Release (if not already created)
-      id: create_release
-      uses: actions/create-release@v1
-      if: github.event_name != 'release'
-      with:
-        tag_name: ${{ github.ref_name }}
-        release_name: Release ${{ github.ref_name }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Linux binary
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-linux-binary/pyrpl-linux-${{ github.ref_name }}
-        asset_name: pyrpl-linux-${{ github.ref_name }}
-        asset_content_type: application/octet-stream
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload Windows binary
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-windows-binary/pyrpl-windows-${{ github.ref_name }}.exe
-        asset_name: pyrpl-windows-${{ github.ref_name }}.exe
-        asset_content_type: application/octet-stream
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Upload macOS binary
-      uses: actions/upload-release-asset@v1
-      with:
-        upload_url: ${{ github.event.release.upload_url || steps.create_release.outputs.upload_url }}
-        asset_path: release-assets/pyrpl-macos-binary/pyrpl-macos-${{ github.ref_name }}
-        asset_name: pyrpl-macos-${{ github.ref_name }}
-        asset_content_type: application/octet-stream
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        files: ./coverage.xml
+        use_oidc: true
 
   # Notification job
   notify:
     runs-on: ubuntu-latest
-    needs: [test, build-linux, build-windows, build-macos, publish-release]
+    needs: test
     if: always()
 
     steps:
     - name: Notify on success
-      if: ${{ !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
-      run: echo "All jobs completed successfully!"
+      if: ${{ needs.test.result == 'success' }}
+      run: echo "All hardware test jobs completed successfully!"
 
     - name: Notify on failure
-      if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+      if: ${{ needs.test.result != 'success' }}
       run: |
-        echo "Some jobs failed or were cancelled"
+        echo "Some hardware test jobs failed or were cancelled"
         exit 1
