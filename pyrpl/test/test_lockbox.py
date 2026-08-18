@@ -36,6 +36,10 @@ def setup_fake_system_once(hardware_session):
     lockbox = pyrpl.lockbox
     pid.i = -1
     pid.p = -1
+    # A previous hardware test may leave the integrator saturated.  Starting
+    # calibration from that state can produce a constant +/-1 trace and make
+    # the lock test depend on suite order.
+    pid.ival = 0
     pid.paused = False
     pid.differential_mode_enabled = False
     pid.input = lockbox.outputs.piezo
