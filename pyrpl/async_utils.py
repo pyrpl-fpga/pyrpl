@@ -328,11 +328,18 @@ def wait(future, timeout=None):
 
         if not new_future.done():
             new_future.cancel()
+            future.cancel()
+            APP.processEvents()
             raise TimeoutError("Timeout exceeded")
 
         done, pending = new_future.result()
         if future in done:
             return future.result()
+        # asyncio.wait() does not cancel pending futures on timeout.  This is
+        # a synchronous wait API, so leaving its private waiter alive leaks a
+        # task until qasync shuts down (particularly visible on Python 3.9).
+        future.cancel()
+        APP.processEvents()
         raise TimeoutError("Timeout exceeded")
     else:
         # Non-interactive mode:
@@ -382,11 +389,15 @@ def wait(future, timeout=None):
 
                 if not waiter.done():
                     waiter.cancel()
+                    future.cancel()
+                    APP.processEvents()
                     raise TimeoutError("Timeout exceeded")
 
                 done, pending = waiter.result()
                 if future in done:
                     return future.result()
+                future.cancel()
+                APP.processEvents()
                 raise TimeoutError("Timeout exceeded")
 
             if timeout is None:
