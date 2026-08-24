@@ -1,0 +1,161 @@
+Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
+---------------------------------------------------------------------------------------------------------------------------------------------
+| Tool Version : Vivado v.2024.2 (win64) Build 5239630 Fri Nov 08 22:35:27 MST 2024
+| Date         : Mon Aug 24 12:29:53 2026
+| Host         : PCLDY-ESGT-419 running 64-bit major release  (build 9200)
+| Command      : report_utilization -hierarchical -hierarchical_depth 5 -file out/hierarchical_util_8stages.rpt
+| Design       : red_pitaya_top
+| Device       : xc7z010clg400-1
+| Speed File   : -1
+| Design State : Routed
+---------------------------------------------------------------------------------------------------------------------------------------------
+
+Utilization Design Information
+
+Table of Contents
+-----------------
+1. Utilization by Hierarchy
+
+1. Utilization by Hierarchy
+---------------------------
+
++------------------------------------+-------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+|              Instance              |                         Module                        | Total LUTs | Logic LUTs | LUTRAMs | SRLs |  FFs  | RAMB36 | RAMB18 | DSP Blocks |
++------------------------------------+-------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+| red_pitaya_top                     |                                                 (top) |      15080 |      15037 |       0 |   43 | 12860 |     34 |      0 |         46 |
+|   (red_pitaya_top)                 |                                                 (top) |        113 |        113 |       0 |    0 |    31 |      0 |      0 |          0 |
+|   i_ams                            |                                        red_pitaya_ams |         48 |         48 |       0 |    0 |   165 |      0 |      0 |          0 |
+|   i_asg                            |                                        red_pitaya_asg |       1466 |       1466 |       0 |    0 |  1385 |     14 |      0 |          2 |
+|     (i_asg)                        |                                        red_pitaya_asg |        377 |        377 |       0 |    0 |   645 |      0 |      0 |          0 |
+|     adv_trig_a                     |                             red_pitaya_adv_trigger__1 |        155 |        155 |       0 |    0 |    66 |      0 |      0 |          0 |
+|     adv_trig_b                     |                                red_pitaya_adv_trigger |        155 |        155 |       0 |    0 |    66 |      0 |      0 |          0 |
+|     ch[0]                          |                                     red_pitaya_asg_ch |        367 |        367 |       0 |    0 |   256 |      7 |      0 |          1 |
+|     ch[1]                          |                                  red_pitaya_asg_ch__1 |        367 |        367 |       0 |    0 |   256 |      7 |      0 |          1 |
+|     prng                           |                                   red_pitaya_prng_xor |         47 |         47 |       0 |    0 |    96 |      0 |      0 |          0 |
+|   i_dsp                            |                                        red_pitaya_dsp |      11687 |      11687 |       0 |    0 |  9343 |      6 |      0 |         44 |
+|     (i_dsp)                        |                                        red_pitaya_dsp |       1283 |       1283 |       0 |    0 |   541 |      0 |      0 |          0 |
+|     dac_saturate[0]                |                   red_pitaya_saturate__parameterized2 |         14 |         14 |       0 |    0 |     0 |      0 |      0 |          0 |
+|     dac_saturate[1]                |                red_pitaya_saturate__parameterized2__1 |         14 |         14 |       0 |    0 |     0 |      0 |      0 |          0 |
+|     genblk2[0].i_pid               |                                  red_pitaya_pid_block |        856 |        856 |       0 |    0 |   610 |      0 |      0 |          2 |
+|       (genblk2[0].i_pid)           |                                  red_pitaya_pid_block |        316 |        316 |       0 |    0 |   306 |      0 |      0 |          2 |
+|       pidfilter                    |                               red_pitaya_filter_block |        540 |        540 |       0 |    0 |   304 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |                               red_pitaya_lpf_block__5 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |                               red_pitaya_lpf_block__6 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[2].lpf             |                               red_pitaya_lpf_block__7 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[3].lpf             |                                  red_pitaya_lpf_block |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|     genblk2[1].i_pid               |                               red_pitaya_pid_block__2 |        856 |        856 |       0 |    0 |   610 |      0 |      0 |          2 |
+|       (genblk2[1].i_pid)           |                               red_pitaya_pid_block__2 |        316 |        316 |       0 |    0 |   306 |      0 |      0 |          2 |
+|       pidfilter                    |                            red_pitaya_filter_block__2 |        540 |        540 |       0 |    0 |   304 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |                              red_pitaya_lpf_block__11 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |                              red_pitaya_lpf_block__10 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[2].lpf             |                               red_pitaya_lpf_block__9 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[3].lpf             |                               red_pitaya_lpf_block__8 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|     genblk2[2].i_pid               |                               red_pitaya_pid_block__1 |        857 |        857 |       0 |    0 |   610 |      0 |      0 |          2 |
+|       (genblk2[2].i_pid)           |                               red_pitaya_pid_block__1 |        318 |        318 |       0 |    0 |   306 |      0 |      0 |          2 |
+|       pidfilter                    |                            red_pitaya_filter_block__1 |        539 |        539 |       0 |    0 |   304 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |                               red_pitaya_lpf_block__1 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |                               red_pitaya_lpf_block__2 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[2].lpf             |                               red_pitaya_lpf_block__3 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|         genblk2[3].lpf             |                               red_pitaya_lpf_block__4 |        135 |        135 |       0 |    0 |    76 |      0 |      0 |          0 |
+|     genblk3[3].i_trigger           |                              red_pitaya_trigger_block |        427 |        427 |       0 |    0 |   404 |      0 |      0 |          0 |
+|       (genblk3[3].i_trigger)       |                              red_pitaya_trigger_block |        276 |        276 |       0 |    0 |   322 |      0 |      0 |          0 |
+|       triggerfilter                |               red_pitaya_filter_block__parameterized0 |        152 |        152 |       0 |    0 |    82 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |                  red_pitaya_lpf_block__parameterized0 |        152 |        152 |       0 |    0 |    82 |      0 |      0 |          0 |
+|     genblk4[4].iir                 |                                  red_pitaya_iir_block |       1240 |       1240 |       0 |    0 |  2501 |      0 |      0 |         16 |
+|       (genblk4[4].iir)             |                                  red_pitaya_iir_block |        794 |        794 |       0 |    0 |  2433 |      0 |      0 |          0 |
+|       iir_inputfilter              |               red_pitaya_filter_block__parameterized1 |        100 |        100 |       0 |    0 |    68 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |                  red_pitaya_lpf_block__parameterized1 |        100 |        100 |       0 |    0 |    68 |      0 |      0 |          0 |
+|       p_ay1_module                 |                             red_pitaya_product_sat__1 |         80 |         80 |       0 |    0 |     0 |      0 |      0 |          4 |
+|       p_ay2_module                 |                             red_pitaya_product_sat__2 |         80 |         80 |       0 |    0 |     0 |      0 |      0 |          4 |
+|       p_bx0_module                 |                             red_pitaya_product_sat__3 |         80 |         80 |       0 |    0 |     0 |      0 |      0 |          4 |
+|       p_bx1_module                 |                                red_pitaya_product_sat |         80 |         80 |       0 |    0 |     0 |      0 |      0 |          4 |
+|       s_dat_o_module               |                   red_pitaya_saturate__parameterized0 |         10 |         10 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       s_y0_module                  |                                   red_pitaya_saturate |         16 |         16 |       0 |    0 |     0 |      0 |      0 |          0 |
+|     genblk5[5].iq                  |                                red_pitaya_iq_block__1 |       1793 |       1793 |       0 |    0 |  1211 |      2 |      0 |          7 |
+|       (genblk5[5].iq)              |                                red_pitaya_iq_block__1 |        557 |        557 |       0 |    0 |   495 |      0 |      0 |          0 |
+|       demodulator                  |                    red_pitaya_iq_demodulator_block__2 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          2 |
+|       inputfilter                  |            red_pitaya_filter_block__parameterized2__2 |        133 |        133 |       0 |    0 |    72 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |               red_pitaya_lpf_block__parameterized2__2 |        133 |        133 |       0 |    0 |    72 |      0 |      0 |          0 |
+|       iq_fgen                      |                           red_pitaya_iq_fgen_block__2 |        244 |        244 |       0 |    0 |   152 |      2 |      0 |          0 |
+|       iqfilter[0]                  |            red_pitaya_filter_block__parameterized3__2 |        371 |        371 |       0 |    0 |   216 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |              red_pitaya_lpf_block__parameterized3__13 |        185 |        185 |       0 |    0 |   120 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |              red_pitaya_lpf_block__parameterized3__12 |        186 |        186 |       0 |    0 |    96 |      0 |      0 |          0 |
+|       iqfilter[1]                  |            red_pitaya_filter_block__parameterized3__3 |        371 |        371 |       0 |    0 |   216 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |              red_pitaya_lpf_block__parameterized3__15 |        185 |        185 |       0 |    0 |   120 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |              red_pitaya_lpf_block__parameterized3__14 |        186 |        186 |       0 |    0 |    96 |      0 |      0 |          0 |
+|       modulator                    |                      red_pitaya_iq_modulator_block__2 |         92 |         92 |       0 |    0 |    44 |      0 |      0 |          5 |
+|         (modulator)                |                      red_pitaya_iq_modulator_block__2 |         32 |         32 |       0 |    0 |    44 |      0 |      0 |          2 |
+|         firstproduct_saturation[0] |             red_pitaya_product_sat__parameterized0__4 |         15 |         15 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         firstproduct_saturation[1] |             red_pitaya_product_sat__parameterized0__5 |         15 |         15 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         i0_product_and_sat         |             red_pitaya_product_sat__parameterized1__4 |         23 |         23 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         sumsaturation              |                red_pitaya_saturate__parameterized1__2 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       pfd_block                    |                               red_pitaya_pfd_block__2 |         30 |         30 |       0 |    0 |    16 |      0 |      0 |          0 |
+|     genblk5[6].iq                  |                                   red_pitaya_iq_block |       1790 |       1790 |       0 |    0 |  1211 |      2 |      0 |          7 |
+|       (genblk5[6].iq)              |                                   red_pitaya_iq_block |        556 |        556 |       0 |    0 |   495 |      0 |      0 |          0 |
+|       demodulator                  |                    red_pitaya_iq_demodulator_block__1 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          2 |
+|       inputfilter                  |            red_pitaya_filter_block__parameterized2__1 |        133 |        133 |       0 |    0 |    72 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |               red_pitaya_lpf_block__parameterized2__1 |        133 |        133 |       0 |    0 |    72 |      0 |      0 |          0 |
+|       iq_fgen                      |                           red_pitaya_iq_fgen_block__1 |        243 |        243 |       0 |    0 |   152 |      2 |      0 |          0 |
+|       iqfilter[0]                  |               red_pitaya_filter_block__parameterized3 |        370 |        370 |       0 |    0 |   216 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |               red_pitaya_lpf_block__parameterized3__1 |        185 |        185 |       0 |    0 |   120 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |               red_pitaya_lpf_block__parameterized3__4 |        185 |        185 |       0 |    0 |    96 |      0 |      0 |          0 |
+|       iqfilter[1]                  |            red_pitaya_filter_block__parameterized3__1 |        369 |        369 |       0 |    0 |   216 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |               red_pitaya_lpf_block__parameterized3__3 |        185 |        185 |       0 |    0 |   120 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |               red_pitaya_lpf_block__parameterized3__2 |        184 |        184 |       0 |    0 |    96 |      0 |      0 |          0 |
+|       modulator                    |                      red_pitaya_iq_modulator_block__1 |         92 |         92 |       0 |    0 |    44 |      0 |      0 |          5 |
+|         (modulator)                |                      red_pitaya_iq_modulator_block__1 |         32 |         32 |       0 |    0 |    44 |      0 |      0 |          2 |
+|         firstproduct_saturation[0] |             red_pitaya_product_sat__parameterized0__2 |         15 |         15 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         firstproduct_saturation[1] |             red_pitaya_product_sat__parameterized0__1 |         15 |         15 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         i0_product_and_sat         |             red_pitaya_product_sat__parameterized1__1 |         23 |         23 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         sumsaturation              |                red_pitaya_saturate__parameterized1__1 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       pfd_block                    |                               red_pitaya_pfd_block__1 |         30 |         30 |       0 |    0 |    16 |      0 |      0 |          0 |
+|     genblk6[7].iq_2_outputs        |                   red_pitaya_iq_block__parameterized0 |       2574 |       2574 |       0 |    0 |  1645 |      2 |      0 |          8 |
+|       (genblk6[7].iq_2_outputs)    |                   red_pitaya_iq_block__parameterized0 |        573 |        573 |       0 |    0 |   531 |      0 |      0 |          0 |
+|       demodulator                  |                       red_pitaya_iq_demodulator_block |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          2 |
+|       inputfilter                  |               red_pitaya_filter_block__parameterized2 |        133 |        133 |       0 |    0 |    72 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |                  red_pitaya_lpf_block__parameterized2 |        133 |        133 |       0 |    0 |    72 |      0 |      0 |          0 |
+|       iq_fgen                      |                              red_pitaya_iq_fgen_block |        243 |        243 |       0 |    0 |   152 |      2 |      0 |          0 |
+|       iqfilter[0]                  |               red_pitaya_filter_block__parameterized4 |        743 |        743 |       0 |    0 |   408 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |               red_pitaya_lpf_block__parameterized3__5 |        185 |        185 |       0 |    0 |   120 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |               red_pitaya_lpf_block__parameterized3__6 |        186 |        186 |       0 |    0 |    96 |      0 |      0 |          0 |
+|         genblk2[2].lpf             |               red_pitaya_lpf_block__parameterized3__7 |        185 |        185 |       0 |    0 |    96 |      0 |      0 |          0 |
+|         genblk2[3].lpf             |                  red_pitaya_lpf_block__parameterized3 |        187 |        187 |       0 |    0 |    96 |      0 |      0 |          0 |
+|       iqfilter[1]                  |            red_pitaya_filter_block__parameterized4__1 |        743 |        743 |       0 |    0 |   408 |      0 |      0 |          0 |
+|         genblk2[0].lpf             |              red_pitaya_lpf_block__parameterized3__11 |        186 |        186 |       0 |    0 |   120 |      0 |      0 |          0 |
+|         genblk2[1].lpf             |              red_pitaya_lpf_block__parameterized3__10 |        184 |        184 |       0 |    0 |    96 |      0 |      0 |          0 |
+|         genblk2[2].lpf             |               red_pitaya_lpf_block__parameterized3__9 |        190 |        190 |       0 |    0 |    96 |      0 |      0 |          0 |
+|         genblk2[3].lpf             |               red_pitaya_lpf_block__parameterized3__8 |        184 |        184 |       0 |    0 |    96 |      0 |      0 |          0 |
+|       modulator                    |                         red_pitaya_iq_modulator_block |        114 |        114 |       0 |    0 |    58 |      0 |      0 |          6 |
+|         (modulator)                |                         red_pitaya_iq_modulator_block |         31 |         31 |       0 |    0 |    58 |      0 |      0 |          2 |
+|         firstproduct_saturation[0] |                red_pitaya_product_sat__parameterized0 |         15 |         15 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         firstproduct_saturation[1] |             red_pitaya_product_sat__parameterized0__3 |         15 |         15 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         i0_product_and_sat         |             red_pitaya_product_sat__parameterized1__3 |         23 |         23 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         q0_product_and_sat         |                red_pitaya_product_sat__parameterized1 |         23 |         23 |       0 |    0 |     0 |      0 |      0 |          1 |
+|         sumsaturation              |                   red_pitaya_saturate__parameterized1 |          7 |          7 |       0 |    0 |     0 |      0 |      0 |          0 |
+|       pfd_block                    |                                  red_pitaya_pfd_block |         30 |         30 |       0 |    0 |    16 |      0 |      0 |          0 |
+|   i_hk                             |                                         red_pitaya_hk |         97 |         97 |       0 |    0 |   152 |      0 |      0 |          0 |
+|   i_ps                             |                                         red_pitaya_ps |        673 |        630 |       0 |   43 |   886 |      0 |      0 |          0 |
+|     (i_ps)                         |                                         red_pitaya_ps |          0 |          0 |       0 |    0 |     1 |      0 |      0 |          0 |
+|     axi_master[0]                  |                                            axi_master |         17 |         17 |       0 |    0 |    18 |      0 |      0 |          0 |
+|     axi_master[1]                  |                                         axi_master__1 |         17 |         17 |       0 |    0 |    18 |      0 |      0 |          0 |
+|     axi_slave_gp0                  |                                             axi_slave |         45 |         45 |       0 |    0 |   151 |      0 |      0 |          0 |
+|     system_i                       |                                        system_wrapper |        594 |        551 |       0 |   43 |   698 |      0 |      0 |          0 |
+|       system_i                     |                                                system |        594 |        551 |       0 |   43 |   698 |      0 |      0 |          0 |
+|         axi_protocol_converter_0   |                     system_axi_protocol_converter_0_0 |        364 |        322 |       0 |   42 |   427 |      0 |      0 |          0 |
+|           inst                     | axi_protocol_converter_v2_1_33_axi_protocol_converter |        364 |        322 |       0 |   42 |   427 |      0 |      0 |          0 |
+|         proc_sys_reset             |                               system_proc_sys_reset_0 |         20 |         19 |       0 |    1 |    29 |      0 |      0 |          0 |
+|           U0                       |                                        proc_sys_reset |         20 |         19 |       0 |    1 |    29 |      0 |      0 |          0 |
+|         processing_system7         |                           system_processing_system7_0 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|           inst                     |            processing_system7_v5_5_processing_system7 |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|         xadc                       |                                         system_xadc_0 |        212 |        212 |       0 |    0 |   242 |      0 |      0 |          0 |
+|           inst                     |                                system_xadc_0_axi_xadc |        212 |        212 |       0 |    0 |   242 |      0 |      0 |          0 |
+|   i_scope                          |                                      red_pitaya_scope |        856 |        856 |       0 |    0 |   688 |     14 |      0 |          0 |
+|   pll                              |                                        red_pitaya_pll |          0 |          0 |       0 |    0 |     0 |      0 |      0 |          0 |
+|   pwm[0]                           |                                        red_pitaya_pwm |         39 |         39 |       0 |    0 |    52 |      0 |      0 |          0 |
+|   pwm[1]                           |                                     red_pitaya_pwm__3 |         40 |         40 |       0 |    0 |    52 |      0 |      0 |          0 |
+|   pwm[2]                           |                                     red_pitaya_pwm__2 |         41 |         41 |       0 |    0 |    53 |      0 |      0 |          0 |
+|   pwm[3]                           |                                     red_pitaya_pwm__1 |         42 |         42 |       0 |    0 |    53 |      0 |      0 |          0 |
++------------------------------------+-------------------------------------------------------+------------+------------+---------+------+-------+--------+--------+------------+
+* Note: The sum of lower-level cells may be larger than their parent cells total, due to cross-hierarchy LUT combining
+
+
