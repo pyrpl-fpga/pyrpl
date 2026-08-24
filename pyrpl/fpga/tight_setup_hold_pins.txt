@@ -1,12 +1,6 @@
-+====================+===================+==============================================================================================================================================+
-| Launch Setup Clock | Launch Hold Clock | Pin                                                                                                                                          |
-+====================+===================+==============================================================================================================================================+
-| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk3[3].i_trigger/adc_scht_ap_reg[0]/D                                                                                              |
-| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_sleep_remaining_reg[31]/D                                                                                             |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[11].GEN_REG_STATUS.ip_irpt_status_reg_reg[11]/D |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[0].GEN_REG_STATUS.ip_irpt_status_reg_reg[0]/D   |
-| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_sleep_remaining_reg[28]/D                                                                                             |
-| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk5[5].iq/na_sleep_remaining_reg[27]/D                                                                                             |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[6].GEN_REG_STATUS.ip_irpt_status_reg_reg[6]/D   |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[9].GEN_REG_STATUS.ip_irpt_status_reg_reg[9]/D   |
-+--------------------+-------------------+----------------------------------------------------------------------------------------------------------------------------------------------+
++====================+===================+==================================================+
+| Launch Setup Clock | Launch Hold Clock | Pin                                              |
++====================+===================+==================================================+
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk6[7].iq_2_outputs/iq_i_sum_reg[60]/D |
+| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk6[7].iq_2_outputs/iq_i_sum_reg[59]/D |
++--------------------+-------------------+--------------------------------------------------+
