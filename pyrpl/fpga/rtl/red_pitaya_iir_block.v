@@ -99,6 +99,7 @@ reg     		shortcut;
 //reg     		copydata;
 reg [32-1:0]    overflow;   // accumulated overflows
 wire [7-1:0]    overflow_i; // instantaneous overflows
+reg  [7-1:0]    overflow_i_reg; // registered to break multiplier-to-accumulator timing paths
 reg [32-1:0]    iir_coefficients [0:IIRSTAGES*4*2-1];
 reg [ 32-1: 0]  set_filter;   // input filter setting
 
@@ -212,6 +213,7 @@ reg [LOOPBITS-1:0] stage6;
 always @(posedge clk_i) begin
     if (on==1'b0) begin
         overflow <= 32'h00000000;
+        overflow_i_reg <= 7'h00;
         stage0 <= loops;
         stage1 <= {LOOPBITS{1'b0}};
         stage2 <= {LOOPBITS{1'b0}};
@@ -221,7 +223,8 @@ always @(posedge clk_i) begin
         //stage6 <= {LOOPBITS{1'b0}};
     end
     else begin
-        overflow <= overflow | overflow_i;
+        overflow_i_reg <= overflow_i;
+        overflow <= overflow | overflow_i_reg;
         if (stage0 == 8'h00)
             stage0 <= loops - {{LOOPBITS-1{1'b0}},1'b1};
         else
@@ -357,7 +360,7 @@ red_pitaya_saturate #( .BITS_IN (IIRSIGNALBITS+4), .SHIFT(SIGNALSHIFT), .BITS_OU
 // better solution - incremental adding - see below, here only saturator
 reg signed [IIRSIGNALBITS+4-1:0] dat_o_sum;
 wire signed [SIGNALBITS-1:0] dat_o_full;
-  red_pitaya_saturate #( .BITS_IN (IIRSIGNALBITS+4), .SHIFT(SIGNALBITS + SIGNALSHIFT), .BITS_OUT(SIGNALBITS)) //.SHIFT(SIGNALSHIFT
+  red_pitaya_saturate #( .BITS_IN (IIRSIGNALBITS+4), .SHIFT(IIRSIGNALBITS-SIGNALBITS-1), .BITS_OUT(SIGNALBITS))
    s_dat_o_module (
    .input_i(dat_o_sum),
    .output_o(dat_o_full),

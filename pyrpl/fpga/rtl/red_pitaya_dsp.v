@@ -367,7 +367,12 @@ assign trig_o = trig_signal;
 
 //IIR module 
 generate for (j = 4; j < 5; j = j+1) begin
-    red_pitaya_iir_block iir (
+    red_pitaya_iir_block #(
+         .IIRBITS(24),
+         .IIRSHIFT(21),
+         .IIRSTAGES(8),
+         .IIRSIGNALBITS(24)
+      ) iir (
 	     // data
 	     .clk_i        (  clk_i          ),  // clock
 	     .rstn_i       (  rstn_i         ),  // reset - active low
