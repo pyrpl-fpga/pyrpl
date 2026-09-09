@@ -19,20 +19,23 @@ jobs:
       with:
         python-version: '3.9'
 
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v9
+      with:
+        version: "0.10.11"
+
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y pandoc xvfb
 
     - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[docs]
+      run: uv sync --locked --python 3.9 --extra docs
 
     - name: Build documentation
       run: |
         cd docs
-        xvfb-run -a make html
+        xvfb-run -a uv run --no-sync make html
       env:
         READTHEDOCS: "True"
         QT_QPA_PLATFORM: "offscreen"
