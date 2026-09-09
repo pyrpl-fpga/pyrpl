@@ -50,15 +50,16 @@ of the GUI.
 3) Installation
 ---------------
 
-Option 1: Install the latest stable release from PyPI (recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 1: Install the latest stable release with uv (recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Install PyRPL with one of the supported Qt bindings (preferably in a fresh
-environment):
+Create an isolated environment and install PyRPL with a supported Qt binding:
 
 .. code:: bash
 
-    pip install "pyrpl[qt-pyqt5]"
+    uv python install 3.12
+    uv venv --python 3.12
+    uv pip install "pyrpl[qt-pyqt5]"
 
 
 You can replace ``qt-pyqt5`` with ``qt-pyqt6``, ``qt-pyside2`` or
@@ -67,7 +68,7 @@ You can replace ``qt-pyqt5`` with ``qt-pyqt6``, ``qt-pyside2`` or
 .. code:: ipython3
 
     #no-test
-    !pip install "pyrpl[qt-pyqt5]"
+    !uv pip install "pyrpl[qt-pyqt5]"
 
 .. code:: ipython3
 
@@ -85,22 +86,23 @@ If you have a `git client <https://git-scm.com/downloads>`__ installed
 
     git clone https://github.com/pyrpl-fpga/pyrpl.git
     cd pyrpl
-    pip install -e .[qt-pyqt5]
+    uv sync --extra qt-pyqt5 --extra dev
 
-For a non-editable installation, use ``pip install .[qt-pyqt5]``.
+Run commands in the synchronized environment with ``uv run``.
 
-Option 3: Conda environment (optional)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Option 3: Existing conda environment (optional)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you prefer conda, create and activate a dedicated environment first:
 
 .. code:: bash
 
-    conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
+    conda create -n pyrpl-env python=3.12 pip
     conda activate pyrpl-env
+    python -m pip install "pyrpl[qt-pyqt5]"
 
-Then install the stable PyRPL release from PyPI as shown above, or install the
-development checkout with ``pip install -e .[qt-pyqt5]``.
+For a development checkout, replace the final command with
+``python -m pip install -e ".[qt-pyqt5,dev]"`` from the project root.
 
 Compiling the server application (optional)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,7 +112,7 @@ The software comes with a precompiled version of the server application
 automatically when you start the connection. If you made changes to this
 file, you can recompile it by typing
 
-``python setup.py compile_server``
+``make -C pyrpl/monitor_server``
 
 For this to work, you must have gcc and the cross-compiling libraries
 installed. Basically, if you can compile any of the official RedPitaya
@@ -166,16 +168,14 @@ functionality of all major submodules against reference benchmarks
 To run the test, navigate in command line into the pyrpl directory and
 type
 
-``set REDPITAYA=192.168.1.100`` (in windows) or
+``set REDPITAYA_HOSTNAME=192.168.1.100`` (in Windows Command Prompt) or
 
-``export REDPITAYA=192.168.1.100`` (in linux)
+``export REDPITAYA_HOSTNAME=192.168.1.100`` (in Linux or macOS)
 
-``python setup.py nosetests``
+``uv run pytest``
 
-The first command tells the test at which IP address it can find a
-RedPitaya. The last command runs the actual test. After a few seconds,
-there should be some output saying that the software has passed more
-than 140 tests.
+The first command tells the tests at which IP address they can find a
+RedPitaya. The last command runs the current pytest test suite.
 
 After you have implemented additional features, you are encouraged to
 add unitary tests to consolidate the changes. If you immediately

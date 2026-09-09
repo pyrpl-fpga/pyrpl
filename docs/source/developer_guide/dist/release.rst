@@ -1,31 +1,24 @@
-Prepare a new release
-**********************
+Preparing a release
+*******************
 
-The process of deploying new releases is automated in the file :code:`.travis.yml` and
-is triggered when a new tag is created on github.com. This page contains what to do if
-you want to manually deploy a new release.
+PyRPL publishes distributions through GitHub Actions. The package version in
+``pyrpl/_version.py`` must match the release tag. Publishing a GitHub release
+triggers ``.github/workflows/publish-pypi.yml``, which builds the source archive
+and wheel, validates their metadata, and publishes them to PyPI using trusted
+publishing.
 
-First, we install a bunch of programs::
+Before creating the release, synchronize the development environment and run the
+tests::
 
-    conda create -y -n py34 python=3.4 numpy scipy paramiko pandas nose pip pyqt qtpy
-    activate py34
-    python setup.py develop
-    pip install pyinstaller
+    uv sync --extra qt-pyqt5 --extra dev
+    uv run pytest
 
-Then, for the actual build::
+You can validate the Python distributions locally as well::
 
-    # do everything in python 3.4 for compatibility reasons
-    activate py34
+    uv build
+    uvx twine check dist/*
 
-    # Readme file must be converted from Markdown to ReStructuredText to be displayed correctly on Pip
-    pandoc --from=markdown --to=rst --output=README.rst README.md
-
-    # Next, we must build the distributions (we provide source and binary):
-    python setup.py sdist
-    python setup.py bdist_wheel --universal
-
-    # Last, make a windows executable file
-    pyinstaller pyrpl.spec
-
-    # Eventually we upload the distribution using twine:
-    twine upload dist/*
+Use the ``Manual Binary Build`` workflow to build and smoke-test the standalone
+applications. Its ``source_ref`` should identify the same commit as the release
+tag. After checking its artifacts, run it with ``publish_release`` enabled to
+attach the applications to the existing GitHub release.

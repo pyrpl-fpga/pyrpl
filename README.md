@@ -16,62 +16,44 @@ PyRPL (Python RedPitaya Lockbox) turns your RedPitaya into a powerful DSP device
 The official PyRPL website address is [http://pyrpl.readthedocs.io/](http://pyrpl.readthedocs.io).
 
 ## Installation
-The easiest and fastest way to get PyRPL is to download and execute the [precompiled executable for windows, mac and linux](https://github.com/pyrpl-fpga/pyrpl/releases). This option requires no extra programs to be installed on the computer.
+The easiest way to run PyRPL is to download the latest precompiled application for
+Windows, macOS, or Linux from the [releases page](https://github.com/pyrpl-fpga/pyrpl/releases).
+It does not require a separate Python installation.
 
-If instead you would like to use and/or modify the source code, make sure you have an
-installation of Python (3.7 to 3.13). The easiest way to install the PyRPL python module cleanly is to run 
-```
-pip install "git+https://github.com/pyrpl-fpga/pyrpl.git#egg=pyrpl[qt-pyqt5]"
-```
-This will pull the most recent development code from GitHub and install the needed module. It is recommended to use a new environment. Stable releases can instead be installed from PyPI with `pip install pyrpl`.
+For a Python installation, we recommend [uv](https://docs.astral.sh/uv/). PyRPL
+supports Python 3.8 through 3.13; Python 3.12 is a conservative choice with broad Qt
+support:
 
-If you are new to Python or unexperienced with fighting installation issues, it is recommended to install the [Anaconda](https://www.continuum.io/downloads) Python distribution, which allows to install all PyRPL dependencies via
-```
-conda install numpy paramiko nose pip pyqt qtpy pyqtgraph pyyaml scp qasync
-```
-Check [this documentation section](http://pyrpl-fpga.github.io/pyrpl//en/latest/user_guide/installation/common_problems.html#anaconda-problems) for hints if you are unable to execute conda in a terminal. Alternatively, if you prefer creating a virtual environment for pyrpl, do so with the following two commands
-```
-conda create -y -n pyrpl-env numpy paramiko nose pip pyqt qtpy pyqtgraph pyyaml scp qasync
-conda activate pyrpl-env
+```bash
+uv python install 3.12
+uv venv --python 3.12
+uv pip install "pyrpl[qt-pyqt5]"
+uv run python -m pyrpl your_configuration_name
 ```
 
-Next, clone (if you have a [git client](https://git-scm.com/downloads) installed - recommended option) the pyrpl repository to your computer with 
-```
+PyRPL requires one Qt binding. You can replace `qt-pyqt5` with `qt-pyqt6`,
+`qt-pyside2`, or `qt-pyside6`.
+
+To work on the source code:
+
+```bash
 git clone https://github.com/pyrpl-fpga/pyrpl.git
-```
-or [download and extract](https://github.com/pyrpl-fpga/pyrpl/archive/master.zip) (if you do not want to install git on your computer) the repository. 
-
-If you are using pip, you can just navigate to the pyrpl directory and run 
-
-```
-pip install -e .[qt-pyqt5]
-```
-if you want an editable installation of pyrpl or 
-
-```
-pip install .[qt-pyqt5]
-```
-for a regular installation (if you have no instention of modifying the code). I recommend using pip as conda tends to become very slow at solving environments. Note that pyrpl requires a Qt binding but it is compatible with PyQt5, PyQt6, PySide2 and PySide6 so you can also run :
-
-```
-pip install -e .[qt-pyqt6]
-pip install -e .[qt-pyside2]  
-pip install -e .[qt-pyside6]
+cd pyrpl
+uv sync --extra qt-pyqt5 --extra dev
+uv run pytest
 ```
 
+Standard `venv` and pip remain supported. Create and activate a virtual environment,
+then run `python -m pip install "pyrpl[qt-pyqt5]"`, or install a checkout with
+`python -m pip install -e ".[qt-pyqt5]"`.
 
-If you want to use conda, you can run :
+If your laboratory already uses conda, it can manage the environment while pip installs
+PyRPL from PyPI:
 
-```
-conda create -y -n pyrpl-env numpy paramiko pip pyqt qtpy pyqtgraph pyyaml scp qasync
+```bash
+conda create -n pyrpl-env python=3.12 pip
 conda activate pyrpl-env
-```
-This will create an new conda environment named "pyrpl-env" and install all the needed modules inside. 
-
-You can also use the environment config file "environment_pyrpl.yml"
-```
-conda env create -f environment_pyrpl.yml
-conda activate pyrpl-env
+python -m pip install "pyrpl[qt-pyqt5]"
 ```
 
 ## Installation with Optional Dependencies
@@ -79,19 +61,19 @@ conda activate pyrpl-env
 ### For Testing
 
 ```bash
-pip install -e .[test]
+uv sync --extra qt-pyqt5 --extra test
 ```
 
 ### For IPython/Jupyter Support
 
 ```bash
-pip install -e .[ipython]
+uv sync --extra qt-pyqt5 --extra ipython
 ```
 
 ### For Development (all dependencies)
 
 ```bash
-pip install -e .[dev]
+uv sync --extra qt-pyqt5 --extra dev
 ```
 
 
@@ -110,9 +92,9 @@ We collect a list of common problems on the [documentation website](http://pyrpl
 ## Unit test
 If you want to check whether PyRPL works correctly on your machine, navigate with a command line terminal into the pyrpl root directory and type the  following commands (by substituting the ip-address / hostname of your Red Pitaya, of course)
 ```
-pip install pytest pytest-cov matplotlib nbconvert
+uv sync --extra qt-pyqt5 --extra test
 set REDPITAYA_HOSTNAME=your_redpitaya_ip_address
-pytest
+uv run pytest
 ```
 All tests should take about 3 minutes and finish without failures or errors. If there are errors, please report the console output as an issue (see the section "Issues" below for detailed explanations).
 
