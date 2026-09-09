@@ -238,12 +238,12 @@ class TfTypeProperty(SelectProperty):
 class IIR(FilterModule):
     _signal_launcher = SignalLauncherIir
     iirfilter = None  # will be set by setup()
-    _minloops = 3  # minimum number of loops for correct behaviour
+    _minloops = 4  # minimum number of loops for the pipelined multiplier datapath
     _maxloops = 1023
     # the first biquad (self.coefficients[0] has _delay cycles of delay
     # from input to output_signal. Biquad self.coefficients[i] has
     # _delay+i cycles of delay.
-    _delay = 5  # empirically found. Counting cycles gave me 7.
+    _delay = 6  # one extra cycle for the registered full-width products
 
     # parameters for scipy.signal.cont2discrete
     _method = "gbt"  # method to go from continuous to discrete coefficients
