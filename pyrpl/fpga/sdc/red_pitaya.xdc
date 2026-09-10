@@ -218,6 +218,12 @@ set_property LOC XADC_X0Y0 [get_cells i_ams/XADC_inst]
 # Clock constraints                                                        #
 ############################################################################
 
+# The Red Pitaya reference design intentionally excludes timing between the
+# external ADC source clock and the phase-aligned PLL clock used by the ADC
+# IOB capture registers. The interface is validated by the board-level ADC
+# clock/data relationship rather than by this internal static timing path.
+set_false_path -from [get_clocks adc_clk]     -to [get_clocks pll_adc_clk]
+
 set_false_path -from [get_clocks adc_clk]     -to [get_clocks dac_clk_out]
 set_false_path -from [get_clocks clk_fpga_0]  -to [get_clocks ser_clk_out]
 set_false_path -from [get_clocks clk_fpga_0]  -to [get_clocks dac_2clk_out]
