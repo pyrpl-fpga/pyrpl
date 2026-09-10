@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version     : Vivado v.2024.2 (win64) Build 5239630 Fri Nov 08 22:35:27 MST 2024
-| Date             : Wed Sep  9 18:50:09 2026
+| Date             : Thu Sep 10 12:42:17 2026
 | Host             : PCLDY-ESGT-419 running 64-bit major release  (build 9200)
 | Command          : report_power -file out/post_synth_power.rpt
 | Design           : red_pitaya_top
@@ -53,10 +53,10 @@ Table of Contents
 | On-Chip                 | Power (W) | Used     | Available | Utilization (%) |
 +-------------------------+-----------+----------+-----------+-----------------+
 | Clocks                  |     0.064 |       15 |       --- |             --- |
-| Slice Logic             |     0.105 |    28182 |       --- |             --- |
+| Slice Logic             |     0.105 |    28186 |       --- |             --- |
 |   LUT as Logic          |     0.087 |    12964 |     17600 |           73.66 |
 |   CARRY4                |     0.013 |     1198 |      4400 |           27.23 |
-|   Register              |     0.004 |    10918 |     35200 |           31.02 |
+|   Register              |     0.004 |    10922 |     35200 |           31.03 |
 |   F7/F8 Muxes           |    <0.001 |      749 |     17600 |            4.26 |
 |   LUT as Shift Register |    <0.001 |       54 |      6000 |            0.90 |
 |   Others                |     0.000 |      374 |       --- |             --- |

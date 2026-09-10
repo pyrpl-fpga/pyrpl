@@ -1,16 +1,7 @@
-+====================+===================+============================================================================================================================================================+
-| Launch Setup Clock | Launch Hold Clock | Pin                                                                                                                                                        |
-+====================+===================+============================================================================================================================================================+
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.aw_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[2]/D  |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[1]/D  |
-| pll_adc_clk        | pll_adc_clk       | i_dsp/genblk3[3].i_trigger/adc_scht_ap_reg[0]/D                                                                                                            |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.r_channel_0/rd_data_fifo_0/cnt_read_reg[4]/D                  |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[12].GEN_REG_STATUS.ip_irpt_status_reg_reg[12]/D               |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[9].GEN_REG_STATUS.ip_irpt_status_reg_reg[9]/D                 |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[15].GEN_REG_STATUS.ip_irpt_status_reg_reg[15]/D               |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[8].GEN_REG_STATUS.ip_irpt_status_reg_reg[8]/D                 |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[0]/D  |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[14].GEN_REG_STATUS.ip_irpt_status_reg_reg[14]/D               |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/xadc/inst/INTR_CTRLR_GEN_I.INTERRUPT_CONTROL_I/GEN_IP_IRPT_STATUS_REG[16].GEN_REG_STATUS.ip_irpt_status_reg_reg[16]/D               |
-| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/WR.aw_channel_0/cmd_translator_0/incr_cmd_0/axaddr_incr_reg[8]/D |
-+--------------------+-------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+
++====================+===================+===========================================================================================================================================================+
+| Launch Setup Clock | Launch Hold Clock | Pin                                                                                                                                                       |
++====================+===================+===========================================================================================================================================================+
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[1]/D |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[0]/D |
+| clk_fpga_3         | clk_fpga_3        | i_ps/system_i/system_i/axi_protocol_converter_0/inst/gen_axilite.gen_b2s_conv.axilite_b2s/RD.ar_channel_0/cmd_translator_0/wrap_cmd_0/wrap_cnt_r_reg[2]/D |
++--------------------+-------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------+

@@ -8,4 +8,4 @@ Start Address      0x00000000
 End Address        0x001FFFFF
 
 Addr1         Addr2         Date                    File(s)
-0x00000000    0x001FCB9B    Sep  9 18:53:25 2026    out/red_pitaya_uncompressed.bit
+0x00000000    0x001FCB9B    Sep 10 12:48:26 2026    out/red_pitaya_uncompressed.bit
