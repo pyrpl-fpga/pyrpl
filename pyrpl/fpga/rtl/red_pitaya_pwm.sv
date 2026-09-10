@@ -51,6 +51,7 @@ reg  [16-1: 0] b     ;
 reg  [ 8-1: 0] vcnt, vcnt_r;
 reg  [ 8-1: 0] v   ;
 reg  [ 9-1: 0] v_r ; // needs an extra bit to avoid overflow
+reg             pwm_compare; // pipeline the duty-cycle comparison before the IOB register
 
 // short description of what is going on:
 
@@ -71,6 +72,7 @@ always @(posedge clk)
 if (~rstn) begin
    vcnt  <=  8'h0 ;
    bcnt  <=  4'h0 ;
+   pwm_compare <= 1'b0 ;
    pwm_o <=  1'b0 ;
 end else begin
    vcnt   <= vcnt + 8'd1 ;
@@ -81,8 +83,10 @@ end else begin
       v    <= (bcnt == 4'hF) ? cfg[24-1:16] : v ; // new value on 16*FULL
       b    <= (bcnt == 4'hF) ? cfg[16-1:0] : {1'b0,b[15:1]} ; // shift right
    end
-   // make PWM duty cycle
-   pwm_o <= ({1'b0,vcnt_r} < v_r) ;
+   // Pipeline the duty-cycle comparison in fabric before the output IOB
+   // register. This adds one clock cycle of latency to the PWM output.
+   pwm_compare <= ({1'b0,vcnt_r} < v_r) ;
+   pwm_o       <= pwm_compare ;
 end
 
 assign pwm_s = (bcnt == 4'hF) && (vcnt == (FULL-1)) ; // latch one before
