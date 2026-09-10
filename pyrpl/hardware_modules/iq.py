@@ -271,7 +271,9 @@ class Iq(FilterModule):
     _gui_attributes = _setup_attributes  # + ["synchronize_iqs"]
     # function calls auto-gui only works in develop-0.9.3 branch
 
-    _delay = 5  # bare delay of IQ module with no filters set (cycles)
+    # Two pipeline cycles were added before the IQ gain/saturation datapaths:
+    # one at the modulator inputs and one at the full-width product outputs.
+    _delay = 7  # bare delay of IQ module with no filters set (cycles)
 
     _output_signals = sorted_dict(quadrature=0, output_direct=1, pfd=2, off=3, quadrature_hf=4)
 
