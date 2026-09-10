@@ -115,8 +115,11 @@ report_power             -file    $path_out/post_synth_power.rpt
 
 opt_design
 power_opt_design
-place_design
-phys_opt_design
+# The design is routing-limited at high slice utilization. Give placement more
+# weight to estimated net delay, then use the most timing-focused physical
+# optimization pass before routing.
+place_design            -directive ExtraNetDelay_high
+phys_opt_design         -directive AggressiveExplore
 write_checkpoint         -force   $path_out/post_place
 report_timing_summary    -file    $path_out/post_place_timing_summary.rpt
 #write_hwdef              -file    $path_sdk/red_pitaya.hwdef
@@ -128,7 +131,12 @@ report_timing_summary    -file    $path_out/post_place_timing_summary.rpt
 # run drc, write verilog and xdc out
 ################################################################################
 
-route_design
+# Explore additional timing-driven routes, then optimize the real routed
+# critical paths. The post-route pass does not alter RTL pipeline latency.
+route_design             -directive AggressiveExplore
+# On Vivado 2024.2, phys_opt_design detects that the design is routed; there is
+# no separate -post_route command-line option.
+phys_opt_design          -directive AggressiveExplore
 write_checkpoint         -force   $path_out/post_route
 report_timing_summary    -file    $path_out/post_route_timing_summary.rpt
 report_timing            -file    $path_out/post_route_timing.rpt -sort_by group -max_paths 100 -path_type summary
