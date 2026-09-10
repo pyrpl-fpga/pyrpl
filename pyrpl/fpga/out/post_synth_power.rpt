@@ -1,7 +1,7 @@
 Copyright 1986-2022 Xilinx, Inc. All Rights Reserved. Copyright 2022-2024 Advanced Micro Devices, Inc. All Rights Reserved.
 -------------------------------------------------------------------------------------------------------------------------------------------------
 | Tool Version     : Vivado v.2024.2 (win64) Build 5239630 Fri Nov 08 22:35:27 MST 2024
-| Date             : Wed Sep  9 18:34:36 2026
+| Date             : Wed Sep  9 18:50:09 2026
 | Host             : PCLDY-ESGT-419 running 64-bit major release  (build 9200)
 | Command          : report_power -file out/post_synth_power.rpt
 | Design           : red_pitaya_top
@@ -30,10 +30,10 @@ Table of Contents
 ----------
 
 +--------------------------+--------------+
-| Total On-Chip Power (W)  | 2.201        |
+| Total On-Chip Power (W)  | 2.200        |
 | Design Power Budget (W)  | Unspecified* |
 | Power Budget Margin (W)  | NA           |
-| Dynamic (W)              | 2.061        |
+| Dynamic (W)              | 2.060        |
 | Device Static (W)        | 0.141        |
 | Effective TJA (C/W)      | 11.5         |
 | Max Ambient (C)          | 59.6         |
@@ -52,24 +52,24 @@ Table of Contents
 +-------------------------+-----------+----------+-----------+-----------------+
 | On-Chip                 | Power (W) | Used     | Available | Utilization (%) |
 +-------------------------+-----------+----------+-----------+-----------------+
-| Clocks                  |     0.065 |       15 |       --- |             --- |
-| Slice Logic             |     0.105 |    28345 |       --- |             --- |
-|   LUT as Logic          |     0.087 |    12987 |     17600 |           73.79 |
+| Clocks                  |     0.064 |       15 |       --- |             --- |
+| Slice Logic             |     0.105 |    28182 |       --- |             --- |
+|   LUT as Logic          |     0.087 |    12964 |     17600 |           73.66 |
 |   CARRY4                |     0.013 |     1198 |      4400 |           27.23 |
-|   Register              |     0.004 |    11062 |     35200 |           31.43 |
+|   Register              |     0.004 |    10918 |     35200 |           31.02 |
 |   F7/F8 Muxes           |    <0.001 |      749 |     17600 |            4.26 |
 |   LUT as Shift Register |    <0.001 |       54 |      6000 |            0.90 |
-|   Others                |     0.000 |      394 |       --- |             --- |
+|   Others                |     0.000 |      374 |       --- |             --- |
 |   BUFG                  |     0.000 |        1 |        32 |            3.13 |
-| Signals                 |     0.109 |    23454 |       --- |             --- |
+| Signals                 |     0.108 |    23263 |       --- |             --- |
 | Block RAM               |     0.103 |       34 |        60 |           56.67 |
 | PLL                     |     0.097 |        1 |         2 |           50.00 |
-| DSPs                    |     0.041 |       38 |        80 |           47.50 |
+| DSPs                    |     0.042 |       38 |        80 |           47.50 |
 | I/O                     |     0.244 |       91 |       100 |           91.00 |
 | XADC                    |     0.004 |        1 |       --- |             --- |
 | PS7                     |     1.292 |        1 |       --- |             --- |
 | Static Power            |     0.141 |          |           |                 |
-| Total                   |     2.201 |          |           |                 |
+| Total                   |     2.200 |          |           |                 |
 +-------------------------+-----------+----------+-----------+-----------------+
 
 
@@ -79,7 +79,7 @@ Table of Contents
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
 | Source    | Voltage (V) | Total (A) | Dynamic (A) | Static (A) | Powerup (A) | Budget (A)  | Margin (A) |
 +-----------+-------------+-----------+-------------+------------+-------------+-------------+------------+
-| Vccint    |       1.000 |     0.434 |       0.424 |      0.010 |       NA    | Unspecified | NA         |
+| Vccint    |       1.000 |     0.433 |       0.423 |      0.010 |       NA    | Unspecified | NA         |
 | Vccaux    |       1.800 |     0.065 |       0.056 |      0.009 |       NA    | Unspecified | NA         |
 | Vcco33    |       3.300 |     0.071 |       0.070 |      0.001 |       NA    | Unspecified | NA         |
 | Vcco25    |       2.500 |     0.000 |       0.000 |      0.000 |       NA    | Unspecified | NA         |
@@ -166,7 +166,7 @@ Table of Contents
 +-----------------------------+-----------+
 | Name                        | Power (W) |
 +-----------------------------+-----------+
-| red_pitaya_top              |     2.060 |
+| red_pitaya_top              |     2.059 |
 |   i_ams                     |     0.001 |
 |   i_asg                     |     0.061 |
 |     adv_trig_a              |     0.001 |
@@ -174,7 +174,7 @@ Table of Contents
 |     ch[0]                   |     0.026 |
 |     ch[1]                   |     0.025 |
 |     prng                    |     0.002 |
-|   i_dsp                     |     0.269 |
+|   i_dsp                     |     0.268 |
 |     genblk2[0].i_pid        |     0.010 |
 |     genblk2[1].i_pid        |     0.010 |
 |     genblk2[2].i_pid        |     0.010 |
@@ -188,14 +188,14 @@ Table of Contents
 |       iq_fgen               |     0.018 |
 |       iqfilter[0]           |     0.008 |
 |       iqfilter[1]           |     0.008 |
-|       modulator             |     0.011 |
+|       modulator             |     0.010 |
 |     genblk5[6].iq           |     0.059 |
 |       demodulator           |     0.004 |
 |       inputfilter           |     0.003 |
 |       iq_fgen               |     0.018 |
 |       iqfilter[0]           |     0.008 |
 |       iqfilter[1]           |     0.008 |
-|       modulator             |     0.011 |
+|       modulator             |     0.010 |
 |     genblk6[7].iq_2_outputs |     0.079 |
 |       demodulator           |     0.004 |
 |       inputfilter           |     0.003 |
