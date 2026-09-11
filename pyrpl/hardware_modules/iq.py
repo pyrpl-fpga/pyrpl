@@ -601,8 +601,15 @@ class Iq(FilterModule):
         tf: np.array(..., dtype=complex)
             The complex open loop transfer function of the module.
         """
-        quadrature_delay = 2  # the delay experienced by the signal when it
-        # is represented as a quadrature (=lower frequency, less phaseshift)
+        # Two original cycles plus the two pipeline registers added between
+        # demodulation and remodulation are experienced by the baseband
+        # quadratures.  They therefore delay the envelope (f - f_center), not
+        # the carrier itself.  Keeping these cycles in ``module_delay`` would
+        # incorrectly predict an extra 57.6 degrees at a 10 MHz center
+        # frequency.
+        quadrature_delay = 4
+        # Delay experienced while the signal is represented as a quadrature
+        # (= lower frequency, hence less phase shift).
         # the remaining delay of the module
         module_delay = self._delay - quadrature_delay
         frequencies = np.array(frequencies, dtype=complex)
@@ -615,7 +622,8 @@ class Iq(FilterModule):
                 tf *= 1.0 / (1.0 + 1j * (frequencies - self.frequency) / f)
                 quadrature_delay += 2
             elif f < 0:  # highpass
-                tf *= 1.0 / (1.0 + 1j * f / (frequencies - self.frequency))
+                displaced_frequencies = frequencies - self.frequency
+                tf *= displaced_frequencies / (displaced_frequencies + 1j * f)
                 quadrature_delay += 1  # one cycle extra delay per highpass
         # compute phase shift due to quadrature propagation delay
         quadrature_delay *= 8e-9 / self._frequency_correction
@@ -626,7 +634,9 @@ class Iq(FilterModule):
             tf /= 1.0 + 1j * frequencies / f
             module_delay += 2  # two cycles extra delay per lowpass
         elif f < 0:  # highpass
-            tf /= 1.0 + 1j * f / frequencies
+            # This equivalent form has the correct zero at DC without a
+            # division-by-zero warning or a NaN at exactly zero frequency.
+            tf *= frequencies / (frequencies + 1j * f)
             module_delay += 1  # one cycle extra delay per highpass
         # compute delay
         delay = module_delay * 8e-9 / self._frequency_correction + extradelay
