@@ -7,6 +7,7 @@ from scipy.optimize import least_squares
 
 from pyrpl import APP
 from pyrpl.async_utils import sleep
+from pyrpl.test.frequency_response_artifacts import save_frequency_response
 from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
@@ -236,10 +237,35 @@ class TestClass(TestPyrpl):
         exp = cross / in1
         theory = self.iq.transfer_function(self.sa.frequencies)
 
-        # from pylab import plot, show
-        diff = abs(exp - theory)[1:].max()
+        # The DC point is excluded because the configured input high-pass has
+        # zero theoretical response there.
+        frequencies = self.sa.frequencies[1:]
+        measured = exp[1:]
+        expected = theory[1:]
+        absolute_error = np.abs(measured - expected)
+        diff = absolute_error.max()
         maxdiff = 0.08  # test fails 1 in 3 times with former value 0.05
-        assert diff < maxdiff, (diff, diff.argmax(), exp, theory)
+        artifact = save_frequency_response(
+            f"iq_white_noise_{self.iq.name}",
+            frequencies,
+            measured,
+            expected,
+            metadata={
+                "center_frequency_hz": self.iq.frequency,
+                "bandwidth_hz": self.iq.bandwidth,
+                "input_filter_hz": self.iq.inputfilter,
+                "iq_delay_cycles": self.iq._delay,
+                "maximum_allowed_absolute_error": maxdiff,
+            },
+        )
+        logger.info("Saved IQ white-noise response artifacts to %s.*", artifact)
+        worst_index = int(np.argmax(absolute_error))
+        assert diff < maxdiff, (
+            diff,
+            frequencies[worst_index],
+            measured,
+            expected,
+        )
 
     def test_flatness_iqmode(self):
         return  # to be tested in next release

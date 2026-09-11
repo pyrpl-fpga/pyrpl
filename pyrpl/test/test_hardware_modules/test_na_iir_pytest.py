@@ -1,9 +1,11 @@
 import logging
+import os
 
 import numpy as np
 import pytest
 
 from pyrpl import CurveDB
+from pyrpl.test.frequency_response_artifacts import save_frequency_response
 from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
@@ -14,6 +16,13 @@ def setup_iir(hardware_session):
     # shortcuts
     pyrpl = hardware_session.pyrpl
     na = pyrpl.networkanalyzer
+    iir = pyrpl.rp.iir
+    original_delay = iir._delay
+    original_minloops = iir._minloops
+    if "PYRPL_TEST_IIR_DELAY_CYCLES" in os.environ:
+        iir._delay = float(os.environ["PYRPL_TEST_IIR_DELAY_CYCLES"])
+    if "PYRPL_TEST_IIR_MIN_LOOPS" in os.environ:
+        iir._minloops = int(os.environ["PYRPL_TEST_IIR_MIN_LOOPS"])
     # set na loglevel to DEBUG
     loglevel = na._logger.getEffectiveLevel()
     na._logger.setLevel(10)
@@ -23,6 +32,8 @@ def setup_iir(hardware_session):
 
     # Teardown
     na.stop()
+    iir._delay = original_delay
+    iir._minloops = original_minloops
     # set na loglevel to previous one
     na._logger.setLevel(loglevel)
 
@@ -88,6 +99,8 @@ class TestIir(TestPyrpl):
         # setup na
         na = self.na
         iir = self.iir
+        if setting >= iir._IIRSTAGES:
+            pytest.skip(f"Bitstream provides only {iir._IIRSTAGES} IIR stages")
         na.setup(
             start_freq=3e3,
             stop_freq=1e6,
@@ -130,7 +143,8 @@ class TestIir(TestPyrpl):
                 -1510.0000001 + 10101.36145285j,
                 -2100.0000001 + 21828.90817759j,
                 -1000.0000001 + 30156.73583005j,
-                -1000.0000001 + 32063.2533145j - 6100.0000001 + 44654.63524562j,
+                -1000.0000001 + 32063.2533145j,
+                -6100.0000001 + 44654.63524562j,
             ]
         ),
         np.array(
@@ -270,7 +284,7 @@ class TestIir(TestPyrpl):
 
     # I also find it weird that we are only using params[2] in the end s
     @pytest.mark.parametrize(
-        "param_set", params[2:3], ids=lambda p: p[5]
+        "param_set", params, ids=lambda p: p[5]
     )  # Use the name field as test ID
     def test_iircomplicated_na(self, param_set):
         """
@@ -339,6 +353,25 @@ class TestIir(TestPyrpl):
                     eth = error_threshold
             error = np.abs((data - theory) / theory) if relative else np.abs(data - theory)
             maxerror = np.mean(error) if mean else np.max(error)
+            artifact_name = f"iir_{module.name}_{setting}_{kind or 'default'}"
+            artifact = save_frequency_response(
+                artifact_name,
+                f,
+                data,
+                theory,
+                metadata={
+                    "setting": setting,
+                    "kind": kind,
+                    "error_threshold": eth,
+                    "error_is_relative": relative,
+                    "error_uses_mean": mean,
+                    "iir_bits": module._IIRBITS,
+                    "iir_stages": module._IIRSTAGES,
+                    "loops": module.loops,
+                    "module_delay_cycles": module._delay,
+                },
+            )
+            logger.info("Saved IIR response artifacts to %s.*", artifact)
             if maxerror > eth:
                 c = CurveDB.create(
                     f,
