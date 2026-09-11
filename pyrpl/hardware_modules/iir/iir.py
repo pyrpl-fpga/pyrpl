@@ -402,10 +402,17 @@ class IIR(FilterModule):
         return hi, lo
 
     def _to_double(self, hi, lo, bitlength=64, shift=0):
-        hi = int(hi) & ((1 << (bitlength - 32)) - 1)
+        if not 1 <= bitlength <= 64:
+            raise ValueError("bitlength must be between 1 and 64")
         lo = int(lo) & ((1 << 32) - 1)
-        v = int((hi << 32) + lo)
-        if v >> (bitlength - 1) != 0:  # sign bit is set
+        if bitlength <= 32:
+            # Values narrower than one register are entirely stored in lo.
+            # Mask padding bits before interpreting the two's-complement sign.
+            v = lo & ((1 << bitlength) - 1)
+        else:
+            hi = int(hi) & ((1 << (bitlength - 32)) - 1)
+            v = int((hi << 32) + lo)
+        if v & (1 << (bitlength - 1)):  # sign bit is set
             v = v - 2**bitlength
         v = np.float64(v) / 2**shift
         return v
