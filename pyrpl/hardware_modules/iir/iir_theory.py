@@ -247,6 +247,44 @@ def residues(z, p, k):
     return a, c
 
 
+def residues_discrete(z, p, k):
+    """Return partial fractions for a transfer function in ``q = z**-1``.
+
+    The returned values satisfy
+
+    ``k * prod(1 - z[j] * q) / prod(1 - p[j] * q)``
+    ``== c + sum(r[i] / (1 - p[i] * q))``.
+
+    This differs from :func:`residues`, which expands in the ordinary
+    polynomial variable. The FPGA biquads are implemented in powers of
+    ``z**-1``, so their residues must be calculated in that variable.
+    """
+    z = np.asarray(z, dtype=np.complex128)
+    p = np.asarray(p, dtype=np.complex128)
+
+    if len(z) > len(p):
+        raise ValueError("Specified discrete transfer function is not proper!")
+    if len(np.unique(p)) < len(p):
+        raise ValueError(
+            "residues_discrete() received repeated poles, which are not supported."
+        )
+
+    r = np.empty(len(p), dtype=np.complex128)
+    for i, pole in enumerate(p):
+        numerator = k * np.prod(1.0 - z / pole)
+        denominator = np.prod(
+            [1.0 - other_pole / pole for j, other_pole in enumerate(p) if j != i]
+        )
+        r[i] = numerator / denominator
+
+    # Equal numerator and denominator degree produces a direct term. Its
+    # value is the ratio of their leading coefficients in q.
+    c = k * np.prod(z) / np.prod(p) if len(z) == len(p) else 0.0
+    if abs(np.imag(c)) > 1e-12 + 1e-9 * abs(c):
+        raise ValueError(f"Discrete direct term is unexpectedly complex: {c!r}")
+    return r, float(np.real(c))
+
+
 def cont2discrete(r, p, c, dt=8e-9):
     """
     Transforms residue and pole from continuous to discrete time
@@ -520,18 +558,27 @@ class IirFilter:
         # if prewarp:
         #    z, p = prewarp(z, p, dt=loops * dt)
 
-        # perform the partial fraction expansion to get first order sections
-        """
+        # Preserve the continuous partial-fraction representation for the
+        # corresponding diagnostic transfer function.
         r, c = residues(z, p, k)
-
         self.rp_continuous = r, p, c  # 'tf_partialfraction'
 
-        # transform to discrete time
-        rd, pd, cd = cont2discrete(r, p, c, dt=self.dt * self.loops)
-        """
+        # Matched-pole-zero conversion. The requested gain is a DC gain, so
+        # normalize the mapped transfer function at q=z**-1=1. Calculating
+        # residues directly in q is essential: ordinary polynomial residues
+        # only have the same form for one particular relative degree.
         zd = np.exp(np.asarray(z, dtype=np.complex128) * self.dt * self.loops)
         pd = np.exp(np.asarray(p, dtype=np.complex128) * self.dt * self.loops)
-        rd, cd = residues(zd, pd, k)
+        denominator_at_dc = np.prod(1.0 - pd)
+        numerator_at_dc = np.prod(1.0 - zd)
+        if any(zero == 0 for zero in z):
+            raise ValueError(
+                "Cannot normalize IIR DC gain because a mapped zero lies at DC."
+            )
+        kd = gain * denominator_at_dc / numerator_at_dc
+        if abs(np.imag(kd)) > 1e-12 + 1e-9 * abs(kd):
+            raise ValueError(f"Discrete gain is unexpectedly complex: {kd!r}")
+        rd, cd = residues_discrete(zd, pd, float(np.real(kd)))
 
         self.rp_discrete = rd, pd, cd  # 'tf_discrete'
 
@@ -914,21 +961,18 @@ class IirFilter:
         for x in np.nditer(res, op_flags=["readwrite"]):
             xr = np.round(x * 2**shiftbits)
             xmax = 2 ** (totalbits - 1)
-            if xr == 0 and xr != 0:
+            if xr == 0 and x != 0:
                 logger.warning(
                     "One value was rounded off to zero: Increase "
                     "shiftbits in fpga design if this is a "
                     "problem!"
                 )
-            elif xr > xmax - 1:
-                xr = xmax - 1
-                logger.warning(
-                    "One value saturates positively: Increase totalbits or decrease gain!"
-                )
-            elif xr < -xmax:
-                xr = -xmax
-                logger.warning(
-                    "One value saturates negatively: Increase totalbits or decrease gain!"
+            elif xr > xmax - 1 or xr < -xmax:
+                raise ValueError(
+                    f"IIR coefficient {float(x):.12g} is outside the Q"
+                    f"{totalbits - shiftbits - 1}.{shiftbits} range "
+                    f"[{-(xmax / 2**shiftbits):.12g}, "
+                    f"{((xmax - 1) / 2**shiftbits):.12g}]."
                 )
             x[...] = 2 ** (-shiftbits) * xr
         return res
@@ -1064,8 +1108,10 @@ class IirFilter:
             r, p, c = self.rp_discrete
         else:
             r, p, c = rp_discrete
-        rc, pc, cc = discrete2cont(r, p, c, dt=self.dt * self.loops)
-        h = freqs_rp(rc, pc, cc, frequencies * 2 * np.pi)
+        q = np.exp(-1j * frequencies * 2 * np.pi * self.dt * self.loops)
+        h = np.full(len(q), c, dtype=np.complex128)
+        for residue, pole in zip(r, p):
+            h += residue / (1.0 - pole * q)
         return h * self.tf_inputfilter(frequencies=frequencies)
 
     def tf_coefficients_numpy(self, frequencies=None, coefficients=None, delay=False):
