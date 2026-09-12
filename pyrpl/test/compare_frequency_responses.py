@@ -29,18 +29,21 @@ def compare_artifacts(old_file, new_file, output_dir):
     relative_difference = np.abs(difference) / np.maximum(
         np.abs(old_measured), np.finfo(float).eps
     )
-    ratio = new_measured / np.where(
-        np.abs(old_measured) > np.finfo(float).eps,
-        old_measured,
-        np.nan + 0j,
-    )
-    phase_difference = np.unwrap(np.angle(ratio)) * 180.0 / np.pi
     amplitude_floor = max(np.max(np.abs(old_measured)), np.max(np.abs(new_measured))) * 1e-6
-    valid = (
-        np.isfinite(phase_difference)
-        & (np.abs(old_measured) > amplitude_floor)
-        & (np.abs(new_measured) > amplitude_floor)
+    valid_amplitude = (np.abs(old_measured) > amplitude_floor) & (
+        np.abs(new_measured) > amplitude_floor
     )
+    ratio = np.full(old_measured.shape, np.nan + 0j, dtype=complex)
+    # ``np.where`` evaluates the division before selecting its result, which
+    # emits warnings at zero-response points.  The ``where`` argument of
+    # ``np.divide`` avoids evaluating those divisions altogether.
+    with np.errstate(divide="ignore", invalid="ignore"):
+        np.divide(new_measured, old_measured, out=ratio, where=valid_amplitude)
+    phase_difference = np.full(old_measured.shape, np.nan, dtype=float)
+    phase_difference[valid_amplitude] = (
+        np.unwrap(np.angle(ratio[valid_amplitude])) * 180.0 / np.pi
+    )
+    valid = np.isfinite(phase_difference)
     delay_seconds = np.nan
     if np.count_nonzero(valid) >= 2:
         slope, _ = np.polyfit(frequency[valid], phase_difference[valid], 1)
