@@ -54,6 +54,11 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v9
+      with:
+        version: "0.10.11"
+
     - name: Read package version
       shell: bash
       run: |
@@ -66,14 +71,11 @@ jobs:
         sudo apt-get install -y qtbase5-dev qt5-qmake
 
     - name: Install Python dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller pyqt5
-        pip install .
+      run: uv sync --locked --python ${{ env.PYTHON_VERSION }} --extra dev --extra qt-pyqt5
 
     - name: Build Linux binary
       run: |
-        pyinstaller pyrpl.spec
+        uv run --no-sync pyinstaller pyrpl.spec
         # A healthy GUI remains alive in the Qt event loop. Fail when the
         # frozen application exits during startup due to a packaging error.
         ./dist/pyrpl/pyrpl config=build_smoke_test hostname=_FAKE_ &
@@ -123,6 +125,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v9
+        with:
+          version: "0.10.11"
+
       - name: Read package version
         shell: bash
         run: |
@@ -130,14 +137,11 @@ jobs:
           echo "PACKAGE_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyinstaller pyqt5
-          pip install .
+        run: uv sync --locked --python ${{ env.PYTHON_VERSION }} --extra dev --extra qt-pyqt5
 
       - name: Build pyrpl (macOS ${{ matrix.arch.name }})
         run: |
-          pyinstaller pyrpl.spec
+          uv run --no-sync pyinstaller pyrpl.spec
           # Create a zip archive of the directory
           cd dist
           mv pyrpl "pyrpl-${PACKAGE_VERSION}-macos-${{ matrix.arch.name }}"
@@ -179,6 +183,11 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
+    - name: Set up uv
+      uses: astral-sh/setup-uv@v9
+      with:
+        version: "0.10.11"
+
     - name: Read package version
       shell: powershell
       run: |
@@ -187,9 +196,9 @@ jobs:
 
     - name: Install Python dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller pyqt5
-        pip install .
+        uv sync --locked --python ${{ env.PYTHON_VERSION }} --extra dev
+        # PyQt5-Qt5 releases after 5.15.2 do not provide Windows wheels.
+        uv pip install --python .venv "PyQt5" "PyQt5-Qt5==5.15.2"
 
     - name: Build Windows binary
       run: |
@@ -198,7 +207,7 @@ jobs:
         if (Test-Path "dist") { Remove-Item -Recurse -Force dist }
         
         # Build with verbose output
-        pyinstaller --clean pyrpl.spec
+        uv run --no-sync pyinstaller --clean pyrpl.spec
 
         # Start the frozen application with fake hardware. A healthy GUI stays
         # alive in the Qt event loop; an import/packaging error exits early.
@@ -243,7 +252,7 @@ jobs:
           exit 1
         }
       env:
-        QT_QPA_PLATFORM_PLUGIN_PATH: ${{ env.Python_ROOT_DIR }}\Lib\site-packages\PyQt5\Qt5\plugins\platforms
+        QT_QPA_PLATFORM_PLUGIN_PATH: ${{ github.workspace }}\.venv\Lib\site-packages\PyQt5\Qt5\plugins\platforms
 
     - uses: actions/upload-artifact@v6
       with:

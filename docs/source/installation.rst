@@ -17,11 +17,14 @@ Installing PyRPL
 
 The easiest and fastest way to get PyRPL running is to download and execute the latest precompiled executable from the `PyRPL releases page <https://github.com/pyrpl-fpga/pyrpl/releases>`__.
 
-For a Python installation with PyQt5, use::
+For a Python installation, we recommend uv with Python 3.12 and PyQt5::
 
-   pip install "pyrpl[qt-pyqt5]"
+   uv python install 3.12
+   uv venv --python 3.12
+   uv pip install "pyrpl[qt-pyqt5]"
 
-If you prefer the current development source, go to :ref:`installation_from_source`.
+See :ref:`installation_from_source` for the complete uv workflow, pip and conda
+alternatives, and development-source installation.
 
 
 Compiling the FPGA code (optional)

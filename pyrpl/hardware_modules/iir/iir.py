@@ -102,10 +102,17 @@ class IirListProperty(ComplexProperty):
                 real.append(v.real)
             else:
                 complex.append(v)
-        # avoid calling setup twice
-        with obj.do_setup:
+        # Avoid calling setup for each slave list. Preserve the previous state
+        # explicitly because ``obj.do_setup`` is not reentrant: using it from
+        # inside an outer ``obj.setup(...)`` used to clear _setup_ongoing and
+        # program transient combinations such as new zeros with old poles.
+        setup_was_ongoing = obj._setup_ongoing
+        obj._setup_ongoing = True
+        try:
             setattr(obj, "complex_" + self.name, complex)
             setattr(obj, "real_" + self.name, real)
+        finally:
+            obj._setup_ongoing = setup_was_ongoing
         # this property should have call_setup=True, such that obj._setup()
         # is called automatically after this function
 
@@ -125,6 +132,19 @@ class IirListProperty(ComplexProperty):
 
     def validate_and_normalize_element(self, obj, val):
         return super().validate_and_normalize(obj, val)
+
+
+class IirLoopsRegister(IntRegister):
+    """IIR decimation register with one-shot automatic loop selection."""
+
+    def validate_and_normalize(self, obj, value):
+        if value is None:
+            # A hardware register cannot store None. Remember the request so
+            # _setup can let IirFilter choose the minimum viable loop count.
+            obj._loops_automatic = True
+            return self.get_value(obj)
+        obj._loops_automatic = False
+        return super().validate_and_normalize(obj, value)
 
 
 class IirFloatListProperty(FloatAttributeListProperty):
@@ -240,10 +260,15 @@ class IIR(FilterModule):
     iirfilter = None  # will be set by setup()
     _minloops = 4  # minimum number of loops for the pipelined multiplier datapath
     _maxloops = 1023
+    _loops_automatic = False
     # the first biquad (self.coefficients[0] has _delay cycles of delay
     # from input to output_signal. Biquad self.coefficients[i] has
     # _delay+i cycles of delay.
-    _delay = 6  # one extra cycle for the registered full-width products
+    
+    # Empirically calibrated from the phase slope of hardware frequency
+    # responses. The registered-multiplier bitstream adds one more cycle and
+    # therefore uses 6.5 cycles.
+    _delay = 6.5  # one extra cycle for the registered full-width products
 
     # parameters for scipy.signal.cont2discrete
     _method = "gbt"  # method to go from continuous to discrete coefficients
@@ -301,7 +326,7 @@ class IIR(FilterModule):
         # "_setup_zero",
     ]
 
-    loops = IntRegister(
+    loops = IirLoopsRegister(
         0x100,
         doc=f"Decimation factor of IIR w.r.t. 125 MHz. Must be at least {_minloops:d}. ",
         default=_minloops,
@@ -395,10 +420,19 @@ class IIR(FilterModule):
         return overflow
 
     def _from_double(self, v, bitlength=64, shift=0):
-        v = int(np.round(v * 2**shift))
-        v = v & (2**bitlength - 1)
-        hi = (v >> 32) & ((1 << 32) - 1)
-        lo = (v >> 0) & ((1 << 32) - 1)
+        if not 1 <= bitlength <= 64:
+            raise ValueError("bitlength must be between 1 and 64")
+        scaled = int(np.round(v * 2**shift))
+        minimum = -(1 << (bitlength - 1))
+        maximum = (1 << (bitlength - 1)) - 1
+        if not minimum <= scaled <= maximum:
+            raise ValueError(
+                f"Value {v!r} does not fit in a signed {bitlength}-bit "
+                f"fixed-point number with {shift} fractional bits"
+            )
+        encoded = scaled & (2**bitlength - 1)
+        hi = (encoded >> 32) & ((1 << 32) - 1)
+        lo = encoded & ((1 << 32) - 1)
         return hi, lo
 
     def _to_double(self, hi, lo, bitlength=64, shift=0):
@@ -576,7 +610,7 @@ class IIR(FilterModule):
                 zeros=self.zeros,
                 poles=self.poles,
                 gain=self.gain,
-                loops=self.loops,
+                loops=None if self._loops_automatic else self.loops,
                 dt=8e-9 * self._frequency_correction,
                 minloops=self._minloops,
                 maxloops=self._maxloops,
@@ -817,14 +851,11 @@ class IIR(FilterModule):
         :param freq:
         :return:
         """
-        print("yo")
-
         coefs = self.coefficients if biquad == "all" else [self.coefficients[biquad]]
-        coefs = np.array(coefs)
+        coefs = np.rint(np.asarray(coefs) * (2**self._IIRSHIFT)).astype(np.int64)
+        xs = np.asarray(xs)
 
-        coefs = np.asarray(coefs * (2**self._IIRSHIFT), dtype=np.int64)
-
-        if xs.dtype != int:
+        if not np.issubdtype(xs.dtype, np.integer):
             raise TypeError("expected an integer input array")
 
         if any(xs > 2**13 - 1):
@@ -833,24 +864,31 @@ class IIR(FilterModule):
         if any(xs < -(2**13)):
             raise ValueError("input should not exceed -2**13 = -8192")
 
-        xs = xs * 2**3  # pre-filters change the signal from 14 to 17 bits
-        xs = xs * 2 ** (-self._IIRBITS + 17 + self._IIRSHIFT + 1)
+        # Scale a signed 14-bit ADC sample to the internal signal width. The
+        # three input-filter guard bits are included in this total shift.
+        internal_shift = self._IIRBITS - 15
+        xs_internal = xs.astype(np.int64) * 2**internal_shift
 
         ys = np.zeros(len(xs), dtype=np.int64)
         ys_biquad = np.zeros((len(coefs), 2), dtype=np.int64)
+        xs_previous = np.zeros(len(coefs), dtype=np.int64)
 
-        for index in range(2, len(xs)):
+        for index in range(len(xs)):
+            output_sum = 0
             for index_biquad, (b0, b1, _, _, a1, a2) in enumerate(coefs):
                 p_ay1 = self._product_sat(-a1, ys_biquad[index_biquad, 0])
                 p_ay2 = self._product_sat(-a2, ys_biquad[index_biquad, 1])
-                p_bx0 = self._product_sat(b0, xs[index])
-                p_bx1 = self._product_sat(b1, xs[index - 1])
+                p_bx0 = self._product_sat(b0, xs_internal[index])
+                p_bx1 = self._product_sat(b1, xs_previous[index_biquad])
                 y = self._saturate(p_ay1 + p_ay2 + p_bx0 + p_bx1, bits=self._IIRBITS)
-                ys[index] += y
+                output_sum += y
                 ys_biquad[index_biquad, 1] = ys_biquad[index_biquad, 0]
                 ys_biquad[index_biquad, 0] = y
+                xs_previous[index_biquad] = xs_internal[index]
 
-        return ys // 2 ** (self._IIRBITS - 14)
+            # The output saturator truncates the internal sum back to 14 bits.
+            ys[index] = self._saturate(output_sum >> internal_shift, bits=14)
+        return ys
 
     def measure_time_domain_response(self, freq, biquad="all"):
         from pyrpl.async_utils import sleep, wait
@@ -930,18 +968,17 @@ class IIR(FilterModule):
         return int(np.floor(val * 2**13))
 
     def _product_sat(self, factor1_i, factor2_i):
-        result = (factor1_i * factor2_i) // (2**self._IIRSHIFT)
-        assert (
-            np.abs(result - np.float64(factor1_i) * np.float64(factor2_i) / (2**self._IIRSHIFT)) < 1
-        )
+        # Match red_pitaya_product_sat: add half an LSB before the arithmetic
+        # right shift, then saturate to the internal signal width.
+        result = (
+            int(factor1_i) * int(factor2_i) + (1 << (self._IIRSHIFT - 1))
+        ) >> self._IIRSHIFT
         return self._saturate(result, bits=self._IIRBITS)
 
     def _saturate(self, val, bits):
-        if val > 2**bits - 1:
-            raise OverflowError(f"Overflox in saturate with {val} > {2**bits - 1}")
-        if val < -(2**bits):
-            raise OverflowError(f"Overflox in saturate with {val} < {-(2**bits)}")
-        return val
+        minimum = -(1 << (bits - 1))
+        maximum = (1 << (bits - 1)) - 1
+        return min(max(int(val), minimum), maximum)
 
     def format_coefs_verilog(self):
         n = 0

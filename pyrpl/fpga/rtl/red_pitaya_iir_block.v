@@ -484,24 +484,6 @@ always @(posedge clk_i) begin
         end
     end
     dat_o <= (shortcut==1'b1) ? dat_i_filtered[SIGNALSHIFT+SIGNALBITS-1:SIGNALSHIFT] : signal_o;
-  if(overflow_i!=0) begin
-    /*$display("%b", overflow_i);
-    $display("dat_o_sum: %d", dat_o_sum);
-    $display("y_sum: %d", y_sum);
-    $display("p_ay1_over_2: %d", p_ay1_over_2);
-    $display("p_ay1_full: %d", p_ay1_full);
-    $display("p_ay1: %d", p_ay1);
-    $display("p_ay2: %d", p_ay2);
-    $display("p_bx0: %d", p_bx0);
-    $display("p_bx1: %d", p_bx1);   */
-    $display("y1_i: %d", y1_i[1]);
-  end
-  //$display("p_ay1_over_2: %d", p_ay1_over_2);
-  //$display("p_ay1_full: %d", p_ay1_full);
-
-  $fwrite(fdebug,"%d\n", x0);
-  //$display("z0: %d", z0);
-  //$display("x0: %b", x0);
 end
 
 endmodule

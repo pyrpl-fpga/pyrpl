@@ -52,35 +52,40 @@ class TestIir(TestPyrpl):
     def test_pz_interface(self):
         """tests that poles and real/comples_poles remain sync'ed"""
         iir = self.iir
-        iir.poles = [-1000j - 2032, -34343j - 3424, -1221, -43254.4]
-        assert iir.real_poles == [-1221, -43254.4], iir.real_poles
-        assert iir.complex_poles == [1000j - 2032, 34343j - 3424], (
-            iir.complex_poles
-        )  # attention: imaginary part is positivized
-        iir.real_poles = []
-        assert iir.complex_poles == [1000j - 2032, 34343j - 3424], (
-            iir.complex_poles
-        )  # attention: imaginary part is positivized
-        assert iir.poles == iir.complex_poles, iir.poles
-        iir.complex_poles = []
-        assert iir.poles == []
-        assert iir.real_poles == []
-        assert iir.complex_poles == []
+        # This test only checks the synchronization of the pole/zero list
+        # attributes. Some intermediate states (in particular zeros without
+        # poles) are not implementable filters, so do not program the FPGA
+        # after each individual list mutation.
+        with iir.do_setup:
+            iir.poles = [-1000j - 2032, -34343j - 3424, -1221, -43254.4]
+            assert iir.real_poles == [-1221, -43254.4], iir.real_poles
+            assert iir.complex_poles == [1000j - 2032, 34343j - 3424], (
+                iir.complex_poles
+            )  # attention: imaginary part is positivized
+            iir.real_poles = []
+            assert iir.complex_poles == [1000j - 2032, 34343j - 3424], (
+                iir.complex_poles
+            )  # attention: imaginary part is positivized
+            assert iir.poles == iir.complex_poles, iir.poles
+            iir.complex_poles = []
+            assert iir.poles == []
+            assert iir.real_poles == []
+            assert iir.complex_poles == []
 
-        iir.zeros = [-1000j - 2032, -34343j - 3424, -1221, -43254.4]
-        assert iir.real_zeros == [-1221, -43254.4], iir.real_zeros
-        assert iir.complex_zeros == [1000j - 2032, 34343j - 3424], (
-            iir.complex_zeros
-        )  # attention: imaginary part is positivized
-        iir.real_zeros = []
-        assert iir.complex_zeros == [1000j - 2032, 34343j - 3424], (
-            iir.complex_zeros
-        )  # attention: imaginary part is positivized
-        assert iir.zeros == iir.complex_zeros, iir.zeros
-        iir.complex_zeros = []
-        assert iir.zeros == []
-        assert iir.real_zeros == []
-        assert iir.complex_zeros == []
+            iir.zeros = [-1000j - 2032, -34343j - 3424, -1221, -43254.4]
+            assert iir.real_zeros == [-1221, -43254.4], iir.real_zeros
+            assert iir.complex_zeros == [1000j - 2032, 34343j - 3424], (
+                iir.complex_zeros
+            )  # attention: imaginary part is positivized
+            iir.real_zeros = []
+            assert iir.complex_zeros == [1000j - 2032, 34343j - 3424], (
+                iir.complex_zeros
+            )  # attention: imaginary part is positivized
+            assert iir.zeros == iir.complex_zeros, iir.zeros
+            iir.complex_zeros = []
+            assert iir.zeros == []
+            assert iir.real_zeros == []
+            assert iir.complex_zeros == []
 
     @pytest.mark.parametrize("setting", range(14))  # iir._IIRSTAGES = 14
     def test_iirsimple_na_generator(self, setting):
@@ -164,13 +169,13 @@ class TestIir(TestPyrpl):
         stop_freq=50e3,
         points=501,
         rbw=500,
-        average_per_point=1,
+        average_per_point=10,
         trace_average=1,
         amplitude=0.05,
         output_direct="off",
         logscale=True,
     )
-    error_threshold = 0.08  # [0.01, 0.03] works if average_per_point=10 in naset
+    error_threshold = [0.05, 0.1]  
     params.append(
         (
             z,
@@ -200,7 +205,10 @@ class TestIir(TestPyrpl):
         output_direct="off",
         logscale=True,
     )
-    error_threshold = 0.05  # large because of phase error at high freq
+    # The final model includes the progressive FPGA biquad latency and is the
+    # strict implementation check. The ideal continuous model intentionally
+    # omits that section-dependent delay, which becomes visible near 10 MHz.
+    error_threshold = [0.05, 0.10]
     params.append(
         (
             z,
@@ -248,8 +256,7 @@ class TestIir(TestPyrpl):
         output_direct="off",
         logscale=True,
     )
-    error_threshold = 0.2  # use to be 0.03, increasing for now so the test is passing but
-    # I don't know if it's a satisfactory error. The curve looks okay though.
+    error_threshold = 0.03  
     params.append(
         (
             z,
@@ -282,7 +289,7 @@ class TestIir(TestPyrpl):
     error_threshold = [0.04, 0.04]
     params.append((z, p, g, loops, naset, "3 - medium", error_threshold, ["final", "continuous"]))
 
-    # I also find it weird that we are only using params[2] in the end s
+    
     @pytest.mark.parametrize(
         "param_set", params, ids=lambda p: p[5]
     )  # Use the name field as test ID

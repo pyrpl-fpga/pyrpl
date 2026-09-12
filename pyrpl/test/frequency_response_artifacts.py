@@ -59,8 +59,10 @@ def save_frequency_response(name, frequencies, measured, theory, metadata=None):
         "frequency_min_hz": float(np.min(frequencies)),
         "frequency_max_hz": float(np.max(frequencies)),
         "maximum_absolute_error": float(np.max(absolute_error)),
+        "mean_absolute_error": float(np.mean(absolute_error)),
         "rms_absolute_error": float(np.sqrt(np.mean(absolute_error**2))),
         "maximum_relative_error": float(np.max(relative_error)),
+        "mean_relative_error": float(np.mean(relative_error)),
         "rms_relative_error": float(np.sqrt(np.mean(relative_error**2))),
         "metadata": metadata or {},
     }

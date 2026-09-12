@@ -1,24 +1,15 @@
-How to make a single-file pyrpl executable not depending on a Python installation
-****************************************************************************************
+Building standalone applications
+********************************
 
-In the pyrpl root dir:
+Standalone applications are built by the ``Manual Binary Build`` GitHub Actions
+workflow for Windows, macOS, and Linux. This is the preferred release process
+because it builds and smoke-tests each application on its target platform.
 
-::
+To test a build locally from the project root::
 
-    conda create -y -n py34 python=3.4 numpy paramiko nose pip pyqt qtpy
-    activate py34
-    python setup.py develop
-    pip install pyinstaller
-    pyinstaller --clean --onefile --distpath dist -n pyrpl ./scripts/run_pyrpl.py
+    uv sync --extra qt-pyqt5 --extra dev
+    uv run pyinstaller --clean pyrpl.spec
 
-We now use spec files in order to include the fpga bitfile in the
-bundle. This requires only
-
-::
-
-    pyi-makespec --onefile -n pyrpl ./scripts/run_pyrpl.py
-    # add datas section to the file...
-    # datas=[('pyrpl/fpga/red_pitaya.bin', 'pyrpl/fpga'),
-             ('pyrpl/monitor_server/monitor_server*',
-              'pyrpl/monitor_server')],
-    pyinstaller pyrpl.spec
+The result is written below ``dist/``. Keep ``pyrpl.spec`` synchronized with
+package-data changes so that the FPGA bitfile, monitor server, and other runtime
+files are included.
