@@ -76,6 +76,8 @@ coverage.xml
 .hypothesis/
 xunit.xml
 unit_tests.xml
+.pyrpl_test_results/
+frequency_response_comparison/
 
 # Translations
 *.mo
@@ -117,6 +119,7 @@ pyrpl/config/*.bak
 pyrpl/config/user_config/*.yml
 pyrpl/config/user_config/*.bak
 pyrpl/config/user_config
+.pyrpl_user_dir/
 
 #test files made by Xueshi
 test_import.py
