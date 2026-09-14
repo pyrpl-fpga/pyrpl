@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from pyrpl.async_utils import sleep
 from pyrpl.attributes import SelectProperty
+from pyrpl.hardware_modules.iir import IIR
 from pyrpl.software_modules import Lockbox, SpectrumAnalyzer
 from pyrpl.software_modules.module_managers import ModuleManager
 from pyrpl.test.test_attribute import DummyModule
@@ -122,9 +123,23 @@ class TestLoadSave(TestPyrpl):
             try:
                 if isinstance(mod, SpectrumAnalyzer):
                     mod.setup(baseband=True)  # iq mod not supported yet
-                attr_names, attr_vals = scramble_values(mod, "foo", 12.1, True, [1923], 0, 5)
+                if isinstance(mod, IIR):
+                    # The generic large numeric offsets can create IIR
+                    # coefficients outside the FPGA's signed Q2 range. Start
+                    # from a simple representable filter and use distinct,
+                    # modest gains: this test exercises serialization, not
+                    # coefficient-range validation.
+                    mod.setup(zeros=[], poles=[], gain=1.0)
+                    first_numeric_offset = 0.1
+                    second_numeric_offset = 0.2
+                else:
+                    first_numeric_offset = 12.1
+                    second_numeric_offset = 13.2
+                attr_names, attr_vals = scramble_values(
+                    mod, "foo", first_numeric_offset, True, [1923], 0, 5
+                )
                 mod.save_state("test_save")
-                scramble_values(mod, "bar", 13.2, False, [15], 1, 7)
+                scramble_values(mod, "bar", second_numeric_offset, False, [15], 1, 7)
                 mod.load_state("test_save")
                 for attr, attr_val in zip(mod._setup_attributes, attr_vals):
                     if attr == "default_sweep_output" or attr == "baseband":
