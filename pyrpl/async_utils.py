@@ -316,9 +316,7 @@ def wait(future, timeout=None):
                 loop.quit()
 
             timeout_timer.timeout.connect(on_timeout)
-            timeout_timer.start(
-                max(0, int(float(timeout) * 1000)) + _QT_WAIT_WATCHDOG_GRACE_MS
-            )
+            timeout_timer.start(max(0, int(float(timeout) * 1000)) + _QT_WAIT_WATCHDOG_GRACE_MS)
 
         while not new_future.done() and not timed_out[0]:
             loop.exec_()

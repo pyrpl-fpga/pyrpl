@@ -26,9 +26,7 @@ def compare_artifacts(old_file, new_file, output_dir):
         new_measured = new["measured"]
 
     difference = new_measured - old_measured
-    relative_difference = np.abs(difference) / np.maximum(
-        np.abs(old_measured), np.finfo(float).eps
-    )
+    relative_difference = np.abs(difference) / np.maximum(np.abs(old_measured), np.finfo(float).eps)
     amplitude_floor = max(np.max(np.abs(old_measured)), np.max(np.abs(new_measured))) * 1e-6
     valid_amplitude = (np.abs(old_measured) > amplitude_floor) & (
         np.abs(new_measured) > amplitude_floor
@@ -40,9 +38,7 @@ def compare_artifacts(old_file, new_file, output_dir):
     with np.errstate(divide="ignore", invalid="ignore"):
         np.divide(new_measured, old_measured, out=ratio, where=valid_amplitude)
     phase_difference = np.full(old_measured.shape, np.nan, dtype=float)
-    phase_difference[valid_amplitude] = (
-        np.unwrap(np.angle(ratio[valid_amplitude])) * 180.0 / np.pi
-    )
+    phase_difference[valid_amplitude] = np.unwrap(np.angle(ratio[valid_amplitude])) * 180.0 / np.pi
     valid = np.isfinite(phase_difference)
     delay_seconds = np.nan
     if np.count_nonzero(valid) >= 2:

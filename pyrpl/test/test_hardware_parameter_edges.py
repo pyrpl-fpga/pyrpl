@@ -31,7 +31,7 @@ def test_filter_register_without_hardware_stages_only_accepts_bypass():
     assert register.validate_and_normalize(module, 1e6) == 0
 
 
-@pytest.mark.parametrize("value", [-3.999, -1.25, -2**-21, 0, 2**-21, 1.25, 3.999])
+@pytest.mark.parametrize("value", [-3.999, -1.25, -(2**-21), 0, 2**-21, 1.25, 3.999])
 def test_iir_fixed_point_roundtrip_below_32_bits(value):
     iir = object.__new__(IIR)
     high, low = iir._from_double(value, bitlength=24, shift=21)

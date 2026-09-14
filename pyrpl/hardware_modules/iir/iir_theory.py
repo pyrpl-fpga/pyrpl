@@ -265,16 +265,12 @@ def residues_discrete(z, p, k):
     if len(z) > len(p):
         raise ValueError("Specified discrete transfer function is not proper!")
     if len(np.unique(p)) < len(p):
-        raise ValueError(
-            "residues_discrete() received repeated poles, which are not supported."
-        )
+        raise ValueError("residues_discrete() received repeated poles, which are not supported.")
 
     r = np.empty(len(p), dtype=np.complex128)
     for i, pole in enumerate(p):
         numerator = k * np.prod(1.0 - z / pole)
-        denominator = np.prod(
-            [1.0 - other_pole / pole for j, other_pole in enumerate(p) if j != i]
-        )
+        denominator = np.prod([1.0 - other_pole / pole for j, other_pole in enumerate(p) if j != i])
         r[i] = numerator / denominator
 
     # Equal numerator and denominator degree produces a direct term. Its
@@ -572,9 +568,7 @@ class IirFilter:
         denominator_at_dc = np.prod(1.0 - pd)
         numerator_at_dc = np.prod(1.0 - zd)
         if any(zero == 0 for zero in z):
-            raise ValueError(
-                "Cannot normalize IIR DC gain because a mapped zero lies at DC."
-            )
+            raise ValueError("Cannot normalize IIR DC gain because a mapped zero lies at DC.")
         kd = gain * denominator_at_dc / numerator_at_dc
         if abs(np.imag(kd)) > 1e-12 + 1e-9 * abs(kd):
             raise ValueError(f"Discrete gain is unexpectedly complex: {kd!r}")

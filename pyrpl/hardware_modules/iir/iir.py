@@ -264,7 +264,7 @@ class IIR(FilterModule):
     # the first biquad (self.coefficients[0] has _delay cycles of delay
     # from input to output_signal. Biquad self.coefficients[i] has
     # _delay+i cycles of delay.
-    
+
     # Empirically calibrated from the phase slope of hardware frequency
     # responses. The registered-multiplier bitstream adds one more cycle and
     # therefore uses 6.5 cycles.
@@ -970,9 +970,7 @@ class IIR(FilterModule):
     def _product_sat(self, factor1_i, factor2_i):
         # Match red_pitaya_product_sat: add half an LSB before the arithmetic
         # right shift, then saturate to the internal signal width.
-        result = (
-            int(factor1_i) * int(factor2_i) + (1 << (self._IIRSHIFT - 1))
-        ) >> self._IIRSHIFT
+        result = (int(factor1_i) * int(factor2_i) + (1 << (self._IIRSHIFT - 1))) >> self._IIRSHIFT
         return self._saturate(result, bits=self._IIRBITS)
 
     def _saturate(self, val, bits):
