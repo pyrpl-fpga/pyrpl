@@ -561,7 +561,7 @@ class SpectrumAnalyzer(AcquisitionModule):
             # need to add epsilon to avoid divergence of logarithm
             return 10 * np.log10(data / 2 / rbw + sys.float_info.epsilon)
         if unit == "Vrms/sqrt(Hz)":
-            return np.sqrt(data) / np.sqrt(2) / rbw
+            return np.sqrt(data / 2 / rbw)
 
     def data_to_display_unit(self, data, rbw):
         """
