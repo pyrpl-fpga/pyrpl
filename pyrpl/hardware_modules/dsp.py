@@ -50,6 +50,12 @@ def all_inputs_keys(instance):
         except (AttributeError, ExpectedPyrplError):
             pass
         else:
+            try:
+                available = pyrpl.rp.fpga_profile.hardware["dsp_inputs"]
+            except (AttributeError, KeyError, ExpectedPyrplError):
+                pass
+            else:
+                signals = [signal for signal in signals if signal in available]
             if hasattr(pyrpl, "software_modules"):
                 for module in pyrpl.software_modules:
                     try:

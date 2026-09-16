@@ -70,7 +70,7 @@ module red_pitaya_pid_block #(
    parameter     DERIVATIVE = 0   , //disables differential gain if 0
    
    //parameters for input pre-filter
-   parameter     FILTERSTAGES = 0 ,
+   parameter     FILTERSTAGES = 4 ,
    parameter     FILTERSHIFTBITS = 5,
    parameter     FILTERMINBW = 10,
    
@@ -111,6 +111,7 @@ reg [ GAINBITS-1: 0] set_kp;   // Kp
 reg [ GAINBITS-1: 0] set_ki;   // Ki
 reg [ GAINBITS-1: 0] set_kd;   // Kd
 wire signed [16-1:0] int_shr;   // integral readback; declared before bus use
+reg [ 32-1: 0] set_filter;   // filter setting
 // limits if arbitrary saturation is enabled
 reg signed [ 14-1:0] out_max;
 reg signed [ 14-1:0] out_min;
@@ -125,6 +126,7 @@ always @(posedge clk_i) begin
       set_kp <= {GAINBITS{1'b0}};
       set_ki <= {GAINBITS{1'b0}};
       set_kd <= {GAINBITS{1'b0}};
+      set_filter <= 32'd0;
       ival_write <= 1'b0;
       out_min <= {1'b1,{14-1{1'b0}}};
       out_max <= {1'b0,{14-1{1'b1}}};
@@ -136,6 +138,7 @@ always @(posedge clk_i) begin
          if (addr==16'h108)   set_kp  <= wdata[GAINBITS-1:0];
          if (addr==16'h10C)   set_ki  <= wdata[GAINBITS-1:0];
          if (addr==16'h110)   set_kd  <= wdata[GAINBITS-1:0];
+         if (addr==16'h120)   set_filter  <= wdata;
          if (addr==16'h124)   out_min  <= wdata;
          if (addr==16'h128)   out_max  <= wdata;
          if (addr==16'h12C)   {enable_differential_mode,pause_pid_on_sync} <= wdata[4-1:0];
@@ -151,7 +154,7 @@ always @(posedge clk_i) begin
 	     16'h108 : begin ack <= wen|ren; rdata <= {{32-GAINBITS{1'b0}},set_kp}; end
 	     16'h10C : begin ack <= wen|ren; rdata <= {{32-GAINBITS{1'b0}},set_ki}; end
 	     16'h110 : begin ack <= wen|ren; rdata <= {{32-GAINBITS{1'b0}},set_kd}; end
-	     16'h120 : begin ack <= wen|ren; rdata <= 32'd0; end
+	     16'h120 : begin ack <= wen|ren; rdata <= set_filter; end
 	     16'h124 : begin ack <= wen|ren; rdata <= {{32-14{1'b0}},out_min}; end
 	     16'h128 : begin ack <= wen|ren; rdata <= {{32-14{1'b0}},out_max}; end
 	     16'h12C : begin ack <= wen|ren; rdata <= {{32-4{1'b0}},enable_differential_mode,pause_pid_on_sync}; end
@@ -170,9 +173,21 @@ end
 
 
 wire signed [14-1:0] dat_i_filtered;
-// Filtering is intentionally omitted in the timing-optimized profile. Keep
-// its capability registers so software discovers zero available stages.
-assign dat_i_filtered = dat_i;
+// Cascaded set of FILTERSTAGES low- or high-pass input filters.
+red_pitaya_filter_block #(
+     .STAGES(FILTERSTAGES),
+     .SHIFTBITS(FILTERSHIFTBITS),
+     .SIGNALBITS(14),
+     .MINBW(FILTERMINBW)
+  )
+  pidfilter
+  (
+  .clk_i(clk_i),
+  .rstn_i(rstn_i),
+  .set_filter(set_filter),
+  .dat_i(dat_i),
+  .dat_o(dat_i_filtered)
+  );
 
 //---------------------------------------------------------------------------------
 //  Set point error calculation - 1 cycle delay
@@ -327,3 +342,6 @@ generate
 endgenerate
 
 endmodule
+
+
+

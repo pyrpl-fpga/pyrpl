@@ -59,41 +59,21 @@ module red_pitaya_iq_modulator_block #(
     output signed [OUTBITS-1:0] signal_q2_o  //the q-quadrature
 );
 
-// The timing-optimized profile registers filtered quadratures before the
-// multiplier datapaths, keeping filter bypass muxes out of those paths.
-reg signed [INBITS-1:0] signal1_reg;
-reg signed [INBITS-1:0] signal2_reg;
-always @(posedge clk_i) begin
-    signal1_reg <= signal1_i;
-    signal2_reg <= signal2_i;
-end
-
-localparam PRODUCTBITS = INBITS + GAINBITS;
-
-// Register the full-width gain products before saturation.  This splits the
-// DSP multiplication from the wide saturation logic across two cycles.
-(* use_dsp = "yes" *) wire signed [PRODUCTBITS-1:0] firstproduct1_mult = signal1_reg * g1;
-(* use_dsp = "yes" *) wire signed [PRODUCTBITS-1:0] firstproduct2_mult = signal2_reg * g4;
-reg signed [PRODUCTBITS-1:0] firstproduct1_mult_reg;
-reg signed [PRODUCTBITS-1:0] firstproduct2_mult_reg;
-
-always @(posedge clk_i) begin
-    firstproduct1_mult_reg <= firstproduct1_mult;
-    firstproduct2_mult_reg <= firstproduct2_mult;
-end
 
 // firstproduct
 wire signed [OUTBITS-1:0] firstproduct1;
 wire signed [OUTBITS-1:0] firstproduct2;
 
-red_pitaya_saturate #(
-	.BITS_IN(PRODUCTBITS),
+red_pitaya_product_sat #(
+	.BITS_IN1(INBITS),
+	.BITS_IN2(GAINBITS),
 	.SHIFT(GAINBITS+INBITS-OUTBITS-SHIFTBITS),
 	.BITS_OUT(OUTBITS))
 firstproduct_saturation [1:0]
-( .input_i  (  {firstproduct2_mult_reg, firstproduct1_mult_reg} ),
-  .output_o (  {firstproduct2,          firstproduct1}          ),
-  .overflow ()
+( .factor1_i  (  {signal2_i, signal1_i} ),
+  .factor2_i  (  {       g4,        g1} ),
+  .product_o  (  {firstproduct2, firstproduct1}),
+  .overflow   ()
 );
 
 // buffering - one extra bit for the sum with g2
@@ -137,34 +117,28 @@ assign dat_o = secondproduct_out;
 //output the scaled quadrature
 wire signed [OUTBITS-1:0] q1_product;
 wire signed [OUTBITS-1:0] q2_product;
-(* use_dsp = "yes" *) wire signed [PRODUCTBITS-1:0] q1_product_mult = signal1_reg * g3;
-(* use_dsp = "yes" *) wire signed [PRODUCTBITS-1:0] q2_product_mult = signal2_reg * g3;
-reg signed [PRODUCTBITS-1:0] q1_product_mult_reg;
-reg signed [PRODUCTBITS-1:0] q2_product_mult_reg;
-
-always @(posedge clk_i) begin
-    q1_product_mult_reg <= q1_product_mult;
-    q2_product_mult_reg <= q2_product_mult;
-end
 
 //output first quadrature to scope etc.
-red_pitaya_saturate #(
-	.BITS_IN(PRODUCTBITS),
+red_pitaya_product_sat #(
+	.BITS_IN1(INBITS),
+	.BITS_IN2(GAINBITS),
 	.SHIFT(SHIFTBITS+2),
 	.BITS_OUT(OUTBITS))
 i0_product_and_sat (
-  .input_i(q1_product_mult_reg),
-  .output_o(q1_product),
+  .factor1_i(signal1_i),
+  .factor2_i(g3),
+  .product_o(q1_product),
   .overflow ()
 );
-// output second quadrature to scope etc.
-red_pitaya_saturate #(
-	.BITS_IN(PRODUCTBITS),
+red_pitaya_product_sat #(
+	.BITS_IN1(INBITS),
+	.BITS_IN2(GAINBITS),
 	.SHIFT(SHIFTBITS+2),
 	.BITS_OUT(OUTBITS))
 q0_product_and_sat (
-  .input_i(q2_product_mult_reg),
-  .output_o(q2_product),
+  .factor1_i(signal2_i),
+  .factor2_i(g3),
+  .product_o(q2_product),
   .overflow ()
 );
 
@@ -180,3 +154,4 @@ assign signal_q1_o = q1_product_reg;
 assign signal_q2_o = q2_product_reg;
 
 endmodule
+

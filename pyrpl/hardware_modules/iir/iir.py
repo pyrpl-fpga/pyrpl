@@ -137,6 +137,12 @@ class IirListProperty(ComplexProperty):
 class IirLoopsRegister(IntRegister):
     """IIR decimation register with one-shot automatic loop selection."""
 
+    def _create_widget(self, module, widget_name=None):
+        widget = super()._create_widget(module, widget_name=widget_name)
+        if widget is not None:
+            widget.widget.setMinimum(module._minloops)
+        return widget
+
     def validate_and_normalize(self, obj, value):
         if value is None:
             # A hardware register cannot store None. Remember the request so
@@ -144,7 +150,10 @@ class IirLoopsRegister(IntRegister):
             obj._loops_automatic = True
             return self.get_value(obj)
         obj._loops_automatic = False
-        return super().validate_and_normalize(obj, value)
+        # The minimum differs between the pipelined default profile and the
+        # legacy datapath, so it cannot be fixed on this shared descriptor.
+        value = int(round(value))
+        return max(min(value, self.max), obj._minloops)
 
 
 class IirFloatListProperty(FloatAttributeListProperty):

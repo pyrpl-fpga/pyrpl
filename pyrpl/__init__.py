@@ -169,6 +169,7 @@ from .attributes import (
     recursive_setattr,
 )
 from .curvedb import CurveDB, XYSeries
+from .fpga_profiles import FpgaProfile, available_fpga_profiles, get_fpga_profile
 from .hardware_modules import (
     AMS,
     DSP_INPUTS,
@@ -215,6 +216,9 @@ __all__ = [
     "global_config",
     "MemoryTree",
     "RedPitaya",
+    "FpgaProfile",
+    "available_fpga_profiles",
+    "get_fpga_profile",
     "setloglevel",
     "user_dir",
     "user_config_dir",

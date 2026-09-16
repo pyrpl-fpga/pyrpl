@@ -31,6 +31,7 @@ from scp import SCPException
 from . import hardware_modules as rp
 from . import redpitaya_client
 from .errors import ExpectedPyrplError
+from .fpga_profiles import get_fpga_profile
 from .memory import MemoryTree
 from .pyrpl_utils import (
     get_unique_name_list_from_class_list,
@@ -50,8 +51,9 @@ defaultparameters = dict(
     autostart=True,  # autostart the client?
     reloadserver=False,  # reinstall the server at startup if not necessary?
     reloadfpga="auto",  # reload the fpga binfile at startup? True/False/'auto'
-    filename="fpga/red_pitaya.bin",  # default name of the binfile for the fpga
-    dtbo_filename="fpga/red_pitaya.dtbo",  # default name of device tree file
+    fpga_profile="default",  # packaged FPGA hardware/software profile
+    filename="fpga/red_pitaya.bin",  # old path is migrated to the selected profile
+    dtbo_filename="fpga/red_pitaya.dtbo",  # old path is migrated to the selected profile
     # name of the binfile on the server and in the device tree overlay file
     serverbinfilename="fpga.bin",
     serverdtbofilename="fpga.dtbo",  # name of the device tree overlay file on the server
@@ -66,15 +68,6 @@ defaultparameters = dict(
 
 
 class RedPitaya:
-    cls_modules = (
-        [rp.HK, rp.AMS, rp.Scope, rp.Sampler, rp.Asg0, rp.Asg1]
-        + [rp.Pwm] * 2
-        + [rp.Iq] * 3
-        + [rp.Pid] * 3
-        + [rp.Trig]
-        + [rp.IIR]
-    )
-
     def __init__(
         self,
         config=None,  # configfile is needed to store parameters. None simulates one
@@ -101,8 +94,9 @@ class RedPitaya:
             autostart=True,  # autostart the client?
             reloadserver=False,  # reinstall the server at startup if not necessary?
             reloadfpga='auto',  # reload the fpga bitfile at startup? True/False/'auto'
-            filename='fpga/red_pitaya.bin',  # name of the binfile for the fpga
-            dtbo_filename='fpga/red_pitaya.dtbo', # name of device tree file
+            fpga_profile='default',  # packaged FPGA hardware/software profile
+            filename='fpga/red_pitaya.bin',  # migrated to the selected profile
+            dtbo_filename='fpga/red_pitaya.dtbo', # migrated to the selected profile
             # name of the binfile on the server and in the device tree overlay file
             serverbinfilename='fpga.bin',
             serverdtbofilename='fpga.dtbo',  # name of the device tree overlay file on the server
@@ -130,9 +124,7 @@ class RedPitaya:
         # 3. config file
         # 4. command line arguments
         # 5. (if missing information) request from GUI or command-line
-        self.parameters = defaultparameters  # BEWARE: By not copying the
-        # dictionary, defaultparameters are modified in the session (which
-        # can be advantageous for instance with hostname in unit_tests)
+        self.parameters = dict(defaultparameters)
 
         # get parameters from os.environment variables
         if not self.parameters["silence_env"]:
@@ -166,6 +158,20 @@ class RedPitaya:
             )
         # settings from class initialisation / command line
         update_with_typeconversion(self.parameters, kwargs)
+
+        # Resolve the profile before connecting, flashing, or constructing
+        # modules. Existing configurations commonly contain the old package
+        # paths; treat those and other managed profile paths as defaults unless
+        # the caller explicitly supplied a custom filename.
+        self.fpga_profile = get_fpga_profile(self.parameters["fpga_profile"])
+        self.parameters["fpga_profile"] = self.fpga_profile.id
+        self.cls_modules = tuple(
+            getattr(rp, class_name) for class_name in self.fpga_profile.hardware_modules
+        )
+        self._resolve_profile_files(
+            filename_explicit="filename" in kwargs,
+            dtbo_filename_explicit="dtbo_filename" in kwargs,
+        )
         # get missing connection settings from gui/command line
         if self.parameters["hostname"] is None or self.parameters["hostname"] == "":
             gui = "gui" not in self.c._keys() or self.c.gui
@@ -240,6 +246,30 @@ class RedPitaya:
             self.start()
         self.logger.info(f"Successfully connected to Redpitaya with hostname {self.ssh.hostname}.")
         self.parent = self
+
+    def _resolve_profile_files(self, filename_explicit=False, dtbo_filename_explicit=False):
+        """Select packaged profile files while preserving explicit overrides."""
+
+        def is_managed_path(value, basename):
+            if value in (None, ""):
+                return True
+            normalized = str(value).replace("\\", "/")
+            return normalized == f"fpga/{basename}" or normalized.startswith(
+                "fpga/bitstreams/"
+            )
+
+        if not filename_explicit and is_managed_path(
+            self.parameters.get("filename"), "red_pitaya.bin"
+        ):
+            self.parameters["filename"] = os.path.relpath(
+                self.fpga_profile.bitstream, os.path.dirname(__file__)
+            )
+        if not dtbo_filename_explicit and is_managed_path(
+            self.parameters.get("dtbo_filename"), "red_pitaya.dtbo"
+        ):
+            self.parameters["dtbo_filename"] = os.path.relpath(
+                self.fpga_profile.dtbo, os.path.dirname(__file__)
+            )
 
     def _configure_os_compatibility(self):
         """Apply settings imposed by the detected Red Pitaya OS."""
@@ -331,6 +361,12 @@ class RedPitaya:
                 # OS 3 can leave a pyrpl marker behind even when overlay.sh
                 # failed. Also require the fixed filename used by that script.
                 expected_image = expected_image and "fpga.bin" in result.lower()
+
+            # Until the RTL exposes a fixed profile-ID register, use a
+            # per-boot marker written only after a successful profile load.
+            self.ssh.ask()
+            loaded_profile = self.ssh.ask("cat /tmp/pyrpl_fpga_profile 2>/dev/null")
+            expected_image = expected_image and self.fpga_profile.id in loaded_profile.split()
 
             if expected_image:
                 self.logger.debug("FPGA already loaded with PyRPL image")
@@ -597,6 +633,7 @@ class RedPitaya:
         # Keep failed inputs on the board for manual fpgautil/dmesg
         # diagnostics. Successful loads no longer need the temporary files.
         if overlay_error is None:
+            self.ssh.ask(f"printf '{self.fpga_profile.id}\\n' > /tmp/pyrpl_fpga_profile")
             self.ssh.ask(
                 "rm -f "
                 + os.path.join(
@@ -811,20 +848,50 @@ class RedPitaya:
             restartserver=self.restartserver,
         )
         self.makemodules()
+        self._validate_fpga_profile()
         self.logger.debug("Client started successfully. ")
 
     def startdummyclient(self):
-        self.client = redpitaya_client.DummyClient()
+        self.client = redpitaya_client.DummyClient(self.fpga_profile)
         self.makemodules()
+        self._validate_fpga_profile()
 
     def makemodule(self, name, cls):
         module = cls(self, name)
+        for attribute, value in self.fpga_profile.module_attributes(cls.__name__).items():
+            setattr(module, attribute, value)
         setattr(self, name, module)
         self.modules[name] = module
 
+    def _validate_fpga_profile(self):
+        """Reject a Python profile that does not match the loaded register map."""
+        expected = self.fpga_profile.hardware
+        observed = {}
+        if hasattr(self, "iir"):
+            observed.update(
+                iir_bits=self.iir._IIRBITS,
+                iir_shift=self.iir._IIRSHIFT,
+                iir_stages=self.iir._IIRSTAGES,
+            )
+        if hasattr(self, "pid0"):
+            observed["pid_input_filter_stages"] = self.pid0._read(0x220)
+        mismatches = {
+            key: (expected[key], observed[key])
+            for key in expected
+            if key in observed and expected[key] != observed[key]
+        }
+        if mismatches:
+            details = ", ".join(
+                f"{key}: expected {values[0]}, read {values[1]}"
+                for key, values in mismatches.items()
+            )
+            raise RuntimeError(
+                f"Loaded FPGA does not match profile {self.fpga_profile.id!r}: {details}"
+            )
+
     def makemodules(self):
         """
-        Automatically generates modules from the list RedPitaya.cls_modules
+        Automatically generate modules declared by the selected FPGA profile.
         """
         names = get_unique_name_list_from_class_list(self.cls_modules)
         for cls, name in zip(self.cls_modules, names):

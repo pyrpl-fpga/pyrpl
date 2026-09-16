@@ -89,7 +89,7 @@ ipython = [
 packages = { find = {} }
 
 [tool.setuptools.package-data]
-pyrpl = ["fpga/*", "monitor_server/*", "config/*", "widgets/images/*"]
+pyrpl = ["fpga/*", "fpga/bitstreams/*/*", "fpga/profiles/*/*", "fpga/rtl_legacy/*", "fpga/rtl_profiles/*/*", "monitor_server/*", "config/*", "widgets/images/*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "pyrpl._version.__version__" }

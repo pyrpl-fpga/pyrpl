@@ -23,6 +23,13 @@ def pytest_report_header(config):
     return f"PyRPL runtime: Qt={qtpy.API_NAME}, NumPy={np.__version__}"
 
 
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "requires_fpga(*capabilities): skip unless the selected FPGA profile provides them",
+    )
+
+
 # Global state to determine what we need to build
 _source_config_file = "nosetests_source.yml"
 _require_full_pyrpl = False
@@ -135,6 +142,8 @@ def hardware_session():
         # Assuming 'hostname' is handled by RedPitaya's internal logic checking env vars
         rp_obj = RedPitaya(config=None, autostart=True, reloadfpga=True)
 
+    os.environ.setdefault("PYRPL_BITSTREAM_LABEL", rp_obj.fpga_profile.id)
+
     # --- APPLY FIXES ---
     _apply_keepalive(rp_obj)
 
@@ -177,6 +186,21 @@ def hardware_session():
         if not os.path.exists(tmp_conf):
             break
         sleep(0.1)
+
+
+@pytest.fixture(autouse=True)
+def require_fpga_capabilities(request, hardware_session):
+    """Skip tests whose declared FPGA capabilities are unavailable."""
+    marker = request.node.get_closest_marker("requires_fpga")
+    if marker is None:
+        return
+    required = set(marker.args)
+    missing = required - hardware_session.rp.fpga_profile.capabilities
+    if missing:
+        pytest.skip(
+            f"FPGA profile {hardware_session.rp.fpga_profile.id!r} lacks capabilities: "
+            f"{', '.join(sorted(missing))}"
+        )
 
 
 @pytest.fixture(scope="session", autouse=True)

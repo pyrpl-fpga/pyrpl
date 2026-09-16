@@ -1,0 +1,34 @@
+{
+  "id": "legacy",
+  "description": "Legacy 32-bit IIR profile with PID input filters",
+  "abi_version": 1,
+  "capabilities": ["iir", "iq", "pid", "three_pids", "pid_input_filters", "pwm"],
+  "hardware_modules": [
+    "HK", "AMS", "Scope", "Sampler", "Asg0", "Asg1",
+    "Pwm", "Pwm", "Iq", "Iq", "Iq", "Pid", "Pid", "Pid", "Trig", "IIR"
+  ],
+  "software_managers": ["Asgs", "Iqs", "Pids", "Scopes", "Iirs", "Trigs", "Pwms", "Hks"],
+  "timing": {
+    "iq": {"_delay": 5, "_quadrature_delay": 2},
+    "iir": {"_delay": 5.5, "_minloops": 3}
+  },
+  "hardware": {
+    "dsp_inputs": [
+      "in1", "in2", "out1", "out2", "iq0", "iq1", "iq2", "iq2_2",
+      "pid0", "pid1", "pid2", "asg0", "asg1", "trig", "iir", "off"
+    ],
+    "iir_bits": 32,
+    "iir_shift": 29,
+    "iir_stages": 14,
+    "pid_input_filter_stages": 4
+  },
+  "bitstream": {
+    "filename": "red_pitaya.bin",
+    "sha256": "4894f44b7611f2f0cbc18d339596f28476e452de1bac01a30206864ccd92fffe"
+  },
+  "dtbo": {
+    "filename": "red_pitaya.dtbo",
+    "sha256": "9c19b99bef128d6069d44e8294ce6f118ee8513e523673ec02e1510d76877020"
+  }
+}
+

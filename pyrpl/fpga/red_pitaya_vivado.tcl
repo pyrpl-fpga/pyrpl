@@ -2,19 +2,55 @@
 # Vivado tcl script for building RedPitaya FPGA in non project mode
 #
 # Usage:
-# vivado -mode tcl -source red_pitaya_vivado.tcl
+# vivado -mode batch -source red_pitaya_vivado.tcl -tclargs default build/default
 ################################################################################
 
 ################################################################################
 # define paths
 ################################################################################
 
+# Resolve every source relative to this script, not Vivado's launch directory.
+# Avoid `file normalize` here: some sandboxed Windows launchers canonicalize a
+# mapped workspace incorrectly. Tcl and Vivado accept forward-slash paths.
+set script_dir [string map {\\ /} [file dirname [info script]]]
+cd $script_dir
+
+set profile [lindex $argv 0]
+if {$profile eq ""} {
+    set profile default
+}
+set profile_script [file join profiles $profile profile.tcl]
+if {![file exists $profile_script]} {
+    error "Unknown FPGA profile '$profile': missing $profile_script"
+}
+source $profile_script
+if {$profile_id ne $profile} {
+    error "Profile file $profile_script declares '$profile_id', expected '$profile'"
+}
+
 set path_rtl rtl
 set path_ip  ip
 set path_sdc sdc
 
-set path_out out
-set path_sdk sdk
+set path_out [lindex $argv 1]
+if {$path_out eq ""} {
+    # Preserve the historical direct-script/Makefile output locations. The
+    # profile-aware wrappers always pass an isolated path explicitly.
+    set path_out out
+    set path_sdk sdk
+} else {
+    set path_sdk [file join $path_out sdk]
+}
+# Windows batch files naturally pass backslashes. Convert them without asking
+# Tcl to canonicalize the workspace path, then make relative paths script-local.
+set path_out [string map {\\ /} $path_out]
+set path_sdk [string map {\\ /} $path_sdk]
+if {[file pathtype $path_out] eq "relative"} {
+    set path_out [file join $script_dir $path_out]
+}
+if {[file pathtype $path_sdk] eq "relative"} {
+    set path_sdk [file join $script_dir $path_sdk]
+}
 
 file mkdir $path_out
 file mkdir $path_sdk
@@ -25,7 +61,30 @@ file mkdir $path_sdk
 
 set part xc7z010clg400-1
 
+# Some non-interactive Windows launchers cannot create Vivado's per-user Tcl
+# store. Ensure the bundled simulator app needed by project initialization is
+# discoverable directly from the installation in that case.
+set bundled_xsim [file join $::env(XILINX_VIVADO) data XilinxTclStore tclapp xilinx xsim]
+if {[file isdirectory $bundled_xsim]} {
+    lappend auto_path $bundled_xsim
+    package require ::tclapp::xilinx::xsim
+}
+
 create_project -in_memory -part $part
+
+# Return a profile-specific implementation when one exists, otherwise use the
+# shared timing-optimized RTL. Module names and addresses remain unchanged.
+proc rtl_source {path_rtl overrides filename} {
+    if {[dict exists $overrides $filename]} {
+        set source [dict get $overrides $filename]
+    } else {
+        set source [file join $path_rtl $filename]
+    }
+    if {![file exists $source]} {
+        error "RTL source does not exist: $source"
+    }
+    return $source
+}
 
 # experimental attempts to avoid a warning
 #get_projects
@@ -66,11 +125,11 @@ read_verilog                      $path_rtl/red_pitaya_asg_ch.v
 read_verilog                      $path_rtl/red_pitaya_asg.v
 read_verilog                      $path_rtl/red_pitaya_dfilt1.v
 read_verilog                      $path_rtl/red_pitaya_hk.v
-read_verilog                      $path_rtl/red_pitaya_pid_block.v
-read_verilog                      $path_rtl/red_pitaya_dsp.v
+read_verilog                      [rtl_source $path_rtl $rtl_overrides red_pitaya_pid_block.v]
+read_verilog                      [rtl_source $path_rtl $rtl_overrides red_pitaya_dsp.v]
 read_verilog                      $path_rtl/red_pitaya_pll.sv
 read_verilog                      $path_rtl/red_pitaya_ps.v
-read_verilog                      $path_rtl/red_pitaya_pwm.sv
+read_verilog                      [rtl_source $path_rtl $rtl_overrides red_pitaya_pwm.sv]
 read_verilog                      $path_rtl/red_pitaya_scope.v
 read_verilog                      $path_rtl/red_pitaya_top.v
 
@@ -78,8 +137,8 @@ read_verilog                      $path_rtl/red_pitaya_top.v
 read_verilog                      $path_rtl/red_pitaya_adv_trigger.v
 read_verilog                      $path_rtl/red_pitaya_saturate.v
 read_verilog                      $path_rtl/red_pitaya_product_sat.v
-read_verilog                      $path_rtl/red_pitaya_iir_block.v
-read_verilog                      $path_rtl/red_pitaya_iq_modulator_block.v
+read_verilog                      [rtl_source $path_rtl $rtl_overrides red_pitaya_iir_block.v]
+read_verilog                      [rtl_source $path_rtl $rtl_overrides red_pitaya_iq_modulator_block.v]
 read_verilog                      $path_rtl/red_pitaya_lpf_block.v
 read_verilog                      $path_rtl/red_pitaya_filter_block.v
 #read_verilog                     $path_rtl/red_pitaya_iq_lpf_block.v
@@ -118,8 +177,8 @@ power_opt_design
 # The design is routing-limited at high slice utilization. Give placement more
 # weight to estimated net delay, then use the most timing-focused physical
 # optimization pass before routing.
-place_design            -directive ExtraNetDelay_high
-phys_opt_design         -directive AggressiveExplore
+place_design            -directive $place_directive
+phys_opt_design         -directive $phys_opt_directive
 write_checkpoint         -force   $path_out/post_place
 report_timing_summary    -file    $path_out/post_place_timing_summary.rpt
 #write_hwdef              -file    $path_sdk/red_pitaya.hwdef
@@ -133,10 +192,14 @@ report_timing_summary    -file    $path_out/post_place_timing_summary.rpt
 
 # Explore additional timing-driven routes, then optimize the real routed
 # critical paths. The post-route pass does not alter RTL pipeline latency.
-route_design             -directive AggressiveExplore
+route_design             -directive $route_directive
 # On Vivado 2024.2, phys_opt_design detects that the design is routed; there is
-# no separate -post_route command-line option.
-phys_opt_design          -directive AggressiveExplore
+# no separate -post_route command-line option. The pass count is profile-specific
+# because dense profiles may need another iteration to close the routed design.
+for {set pass 0} {$pass < $post_route_phys_opt_passes} {incr pass} {
+    puts "Running post-route physical optimization pass [expr {$pass + 1}] of $post_route_phys_opt_passes"
+    phys_opt_design      -directive $phys_opt_directive
+}
 write_checkpoint         -force   $path_out/post_route
 report_timing_summary    -file    $path_out/post_route_timing_summary.rpt
 report_timing            -file    $path_out/post_route_timing.rpt -sort_by group -max_paths 100 -path_type summary

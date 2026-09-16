@@ -1,0 +1,79 @@
+{
+  "id": "iir32",
+  "description": "Pipelined 32-bit/14-stage IIR profile with two PIDs and three IQs",
+  "abi_version": 1,
+  "capabilities": [
+    "iir",
+    "iq",
+    "pid",
+    "pwm"
+  ],
+  "hardware_modules": [
+    "HK",
+    "AMS",
+    "Scope",
+    "Sampler",
+    "Asg0",
+    "Asg1",
+    "Pwm",
+    "Pwm",
+    "Iq",
+    "Iq",
+    "Iq",
+    "Pid",
+    "Pid",
+    "Trig",
+    "IIR"
+  ],
+  "software_managers": [
+    "Asgs",
+    "Iqs",
+    "Pids",
+    "Scopes",
+    "Iirs",
+    "Trigs",
+    "Pwms",
+    "Hks"
+  ],
+  "timing": {
+    "iq": {
+      "_delay": 7,
+      "_quadrature_delay": 4
+    },
+    "iir": {
+      "_delay": 6.5,
+      "_minloops": 4
+    }
+  },
+  "hardware": {
+    "dsp_inputs": [
+      "in1",
+      "in2",
+      "out1",
+      "out2",
+      "iq0",
+      "iq1",
+      "iq2",
+      "iq2_2",
+      "pid0",
+      "pid1",
+      "asg0",
+      "asg1",
+      "trig",
+      "iir",
+      "off"
+    ],
+    "iir_bits": 32,
+    "iir_shift": 29,
+    "iir_stages": 14,
+    "pid_input_filter_stages": 0
+  },
+  "bitstream": {
+    "filename": "red_pitaya.bin",
+    "sha256": "d2f81453596465ad6860c620377a71de52c8580229c9cf47df79d85775ed1d9f"
+  },
+  "dtbo": {
+    "filename": "red_pitaya.dtbo",
+    "sha256": "9c19b99bef128d6069d44e8294ce6f118ee8513e523673ec02e1510d76877020"
+  }
+}

@@ -99,7 +99,6 @@ reg     		shortcut;
 //reg     		copydata;
 reg [32-1:0]    overflow;   // accumulated overflows
 wire [7-1:0]    overflow_i; // instantaneous overflows
-reg  [7-1:0]    overflow_i_reg; // registered to break multiplier-to-accumulator timing paths
 reg [32-1:0]    iir_coefficients [0:IIRSTAGES*4*2-1];
 reg [ 32-1: 0]  set_filter;   // input filter setting
 
@@ -213,18 +212,15 @@ reg [LOOPBITS-1:0] stage6;
 always @(posedge clk_i) begin
     if (on==1'b0) begin
         overflow <= 32'h00000000;
-        overflow_i_reg <= 7'h00;
         stage0 <= loops;
         stage1 <= {LOOPBITS{1'b0}};
         stage2 <= {LOOPBITS{1'b0}};
         stage3 <= {LOOPBITS{1'b0}};
         stage4 <= {LOOPBITS{1'b0}};
-        stage5 <= {LOOPBITS{1'b0}};
         //stage6 <= {LOOPBITS{1'b0}};
     end
     else begin
-        overflow_i_reg <= overflow_i;
-        overflow <= overflow | overflow_i_reg;
+        overflow <= overflow | overflow_i;
         if (stage0 == 8'h00)
             stage0 <= loops - {{LOOPBITS-1{1'b0}},1'b1};
         else
@@ -234,7 +230,6 @@ always @(posedge clk_i) begin
     stage2 <= stage1;
     stage3 <= stage2;
     stage4 <= stage3;
-    stage5 <= stage4;
     //stage6 <= stage5;
 end
 
@@ -272,45 +267,38 @@ wire signed [IIRSIGNALBITS-1:0] p_ay2_full;
 wire signed [IIRSIGNALBITS-1:0] p_bx0_full;
 wire signed [IIRSIGNALBITS-1:0] p_bx1_full;
 
-localparam MULTBITS = IIRSIGNALBITS + IIRBITS;
-
-// Register the full multiplier results before saturation. This lets Vivado use
-// the DSP output pipeline and keeps overflow reduction out of the same cycle.
-(* use_dsp = "yes" *) wire signed [MULTBITS-1:0] p_ay1_mult = y1a * a1;
-(* use_dsp = "yes" *) wire signed [MULTBITS-1:0] p_ay2_mult = y2a * a2;
-(* use_dsp = "yes" *) wire signed [MULTBITS-1:0] p_bx0_mult = x0b * b0;
-(* use_dsp = "yes" *) wire signed [MULTBITS-1:0] p_bx1_mult = x1b * b1;
-
-reg signed [MULTBITS-1:0] p_ay1_mult_reg;
-reg signed [MULTBITS-1:0] p_ay2_mult_reg;
-reg signed [MULTBITS-1:0] p_bx0_mult_reg;
-reg signed [MULTBITS-1:0] p_bx1_mult_reg;
-
-red_pitaya_saturate #( .BITS_IN(MULTBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
+red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
  p_ay1_module (
-  .input_i(p_ay1_mult_reg),
-  .output_o(p_ay1_full),
+  .factor1_i(y1a),
+  .factor2_i(a1),
+  .product_o(p_ay1_full),
   .overflow (overflow_i[0])
   );
 
-red_pitaya_saturate #( .BITS_IN(MULTBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
-   p_ay2_module (
-    .input_i(p_ay2_mult_reg),
-    .output_o(p_ay2_full),
-    .overflow (overflow_i[1])
-    );
-red_pitaya_saturate #( .BITS_IN(MULTBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
+red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
+ p_ay2_module (
+  .factor1_i(y2a),
+  .factor2_i(a2),
+  .product_o(p_ay2_full),
+  .overflow (overflow_i[1])
+  );
+
+red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
  p_bx0_module (
-  .input_i(p_bx0_mult_reg),
-  .output_o(p_bx0_full),
+  .factor1_i(x0b),
+  .factor2_i(b0),
+  .product_o(p_bx0_full),
   .overflow (overflow_i[3])
-   );
-red_pitaya_saturate #( .BITS_IN(MULTBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
-   p_bx1_module (
-    .input_i(p_bx1_mult_reg),
-    .output_o(p_bx1_full),
-    .overflow (overflow_i[4])
-     );
+  );
+
+red_pitaya_product_sat #( .BITS_IN1(IIRSIGNALBITS), .BITS_IN2(IIRBITS), .SHIFT(IIRSHIFT), .BITS_OUT(IIRSIGNALBITS))
+ p_bx1_module (
+  .factor1_i(x1b),
+  .factor2_i(b1),
+  .product_o(p_bx1_full),
+  .overflow (overflow_i[4])
+  );
+
 reg signed [IIRSIGNALBITS-1:0] p_ay1;
 reg signed [IIRSIGNALBITS-1:0] p_ay2;
 reg signed [IIRSIGNALBITS-1:0] p_bx0;
@@ -401,10 +389,6 @@ always @(posedge clk_i) begin
         p_ay2 <= {IIRSIGNALBITS{1'b0}};
         p_bx0 <= {IIRSIGNALBITS{1'b0}};
         p_bx1 <= {IIRSIGNALBITS{1'b0}};
-        p_ay1_mult_reg <= {MULTBITS{1'b0}};
-        p_ay2_mult_reg <= {MULTBITS{1'b0}};
-        p_bx0_mult_reg <= {MULTBITS{1'b0}};
-        p_bx1_mult_reg <= {MULTBITS{1'b0}};
         signal_o <= {SIGNALBITS{1'b0}};
         //x0 <= {IIRSIGNALBITS{1'b0}};
         end
@@ -428,27 +412,19 @@ always @(posedge clk_i) begin
         end
         //cycle n+1
         if (stage1<IIRSTAGES) begin
-            p_ay1_mult_reg <= p_ay1_mult;
-            p_ay2_mult_reg <= p_ay2_mult;
-
-            p_bx0_mult_reg <= p_bx0_mult;
-            p_bx1_mult_reg <= p_bx1_mult;
-        end
-
-        //cycle n+2
-        if (stage2<IIRSTAGES) begin
             p_ay1 <= p_ay1_full;
             p_ay2 <= p_ay2_full;
 
             p_bx0 <= p_bx0_full;
             p_bx1 <= p_bx1_full;
         end
-        //cycle n+3
-        if (stage3<IIRSTAGES) begin
-            //y0 <= y0_full;//no saturation here, because y0 is two bits longer than other signals
-            y1_i[stage3] <= y_full; //update y1 memory
-            y2_i[stage3] <= y1_i[stage3]; //update y2 memory
-            x1_i[stage3] <= x0_i[stage3];
+
+
+        //cycle n+2
+        if (stage2<IIRSTAGES) begin
+            y1_i[stage2] <= y_full;
+            y2_i[stage2] <= y1_i[stage2];
+            x1_i[stage2] <= x0_i[stage2];
             z0 <= y_full;
         end
         //cycle n+3
@@ -467,7 +443,7 @@ always @(posedge clk_i) begin
         //cycle n+5
         // start with a reset when the highest stage corresponding to an iir
         // filter being executed
-        if (stage4 == (loops-1) || stage4 == (IIRSTAGES-1)) begin
+        if (stage3 == (loops-1) || stage3 == (IIRSTAGES-1)) begin
             dat_o_sum <= z0;
         end
         // then increment
@@ -475,7 +451,7 @@ always @(posedge clk_i) begin
             dat_o_sum <= dat_o_sum + z0;
         end
         // once cycle of 5 is complete, output the fresh sum (after saturation)
-        if (stage5 == 0) begin
+        if (stage4 == 0) begin
             signal_o <= dat_o_full;
         end
     end
@@ -483,3 +459,4 @@ always @(posedge clk_i) begin
 end
 
 endmodule
+

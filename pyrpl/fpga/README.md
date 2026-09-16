@@ -6,12 +6,16 @@
 | `fpga/*.tcl`      | TCL scripts to be run inside FPGA tools
 | `fpga/ip/`        | third party IP, for now Zynq block diagrams
 | `fpga/rtl/`       | Verilog (SystemVerilog) "Register-Transfer Level"
+| `fpga/rtl_legacy/` | frozen source overrides used only by the legacy profile
+| `fpga/rtl_profiles/` | minimal source overrides for specialized profiles
+| `fpga/profiles/`  | synthesis settings and runtime-manifest templates
+| `fpga/bitstreams/`| published, tested images grouped by runtime profile
 | `fpga/sdc/`       | "Synopsys Design Constraints" contains Xilinx design constraints
 | `fpga/sim/`       | simulation scripts
 | `fpga/tbn/`       | Verilog (SystemVerilog) "test bench"
 |                   |
-| `fpga/sdk/`       | generated red_pitaya.xsa file used to create a Vitis project
-| `fpga/out`        | generated logs and other significant artifacts from the build
+| `fpga/build/<profile>/sdk/` | generated platform files for one profile
+| `fpga/build/<profile>/` | ignored bitstream, reports, checkpoints, and build log
 
 # Build process
 
@@ -35,6 +39,69 @@ set scripts_vivado_version 2023.2
 ```
 
 The default mode for building the FPGA is to run a TCL script inside Vivado. Non project mode is used, to avoid the generation of project files, which are too many and difficult to handle. This allows us to only place source files and scripts under version control.
+
+On Windows, select the hardware source profile explicitly:
+
+```bat
+cd pyrpl\fpga
+make_bin.bat default
+make_bin.bat legacy
+make_bin.bat no_iir
+make_bin.bat iir32
+```
+
+Calling `make_bin.bat` without an argument builds `default`. Results are kept
+in `build\<profile>`. A build never overwrites the tested files under
+`bitstreams`.
+
+Implementation directives are selected by each profile. The `no_iir` profile
+runs two post-route physical-optimization passes; `default` and `iir32` run one,
+while the compatibility-only `legacy` profile skips that expensive step.
+
+| Build profile | IIR | PID prefilters | DSP modules |
+|---------------|-----|----------------|-------------|
+| `default` | 24-bit, 8-stage | none | 3 PID, 3 IQ |
+| `legacy` | original 32-bit, 14-stage | 4 stages | 3 PID, 3 IQ |
+| `no_iir` | none | 4 stages | 3 PID, 3 IQ |
+| `iir32` | pipelined 32-bit, 14-stage | none | 2 PID, 3 IQ |
+
+The specialized profiles retain the established FPGA address map. `no_iir`
+leaves address slot 4 inactive, while `iir32` leaves PID slot 2 inactive. IQ2
+is retained because it is used by the network analyzer.
+
+To load an unpublished build for hardware testing while retaining the correct
+Python contract, select its profile and override only the binary path:
+
+```python
+p = Pyrpl(
+    hostname=HOSTNAME,
+    fpga_profile="legacy",
+    filename="fpga/build/legacy/red_pitaya.bin",
+    reloadfpga=True,
+)
+```
+
+The equivalent direct Vivado commands are:
+
+```text
+vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs default build/default
+vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs legacy build/legacy
+vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs no_iir build/no_iir
+vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs iir32 build/iir32
+```
+
+After building a new profile, stage it for runtime hardware tests. This copies
+the binary and shared device-tree overlay, and generates their SHA-256 hashes:
+
+```text
+python publish_fpga_profile.py no_iir
+python publish_fpga_profile.py iir32
+```
+
+The staged directory appears under `bitstreams/<profile>` and makes the profile
+available through `fpga_profile`. Hardware-test it before committing those
+generated runtime artifacts. Use `--force` only when deliberately replacing an
+already staged profile.
 
 The next scripts perform various tasks for the xc7z010clg400-1 part:
 
@@ -62,6 +129,57 @@ p = Pyrpl(hostname=HOSTNAME,
     )
 ```
 The pre-built .bin file and device tree are used if these files are not specified.  You can avoid reloading the fpga files each time you run your script by setting reloadfpga = False.  If you use the config, configuration file attribute, then the attributes that are used are stored in a .yaml file in the PYRPL_USER_DIR so next time you start your application the settings including reloadfpga will be restored.
+
+## FPGA profiles
+
+The `fpga_profile` setting selects a published, tested bitstream together with
+its Python hardware contract. The source tree contains four build profiles,
+but `available_fpga_profiles()` only lists profiles that have been staged under
+`bitstreams`.
+
+```python
+from pyrpl import Pyrpl
+from pyrpl import available_fpga_profiles
+
+print(available_fpga_profiles())  # ('default', 'legacy')
+
+# The timing-optimized profile is the default.
+p = Pyrpl(hostname=HOSTNAME, fpga_profile="default")
+
+# Select this only when the wider IIR or PID prefilters are required.
+p = Pyrpl(hostname=HOSTNAME, fpga_profile="legacy")
+```
+
+The same selection is available on the command line:
+
+```text
+python -m pyrpl my_config fpga_profile=legacy
+```
+
+For hardware tests, the equivalent PowerShell selection is:
+
+```powershell
+$env:REDPITAYA_FPGA_PROFILE = "legacy"
+pytest pyrpl/test/test_hardware_modules
+```
+
+Tests marked with `requires_fpga` are skipped when the selected profile does
+not provide the requested capability. Frequency-response artifacts use the
+profile ID as their label unless `PYRPL_BITSTREAM_LABEL` is set explicitly.
+
+The setting is persisted under the `redpitaya` configuration branch:
+
+```yaml
+redpitaya:
+  fpga_profile: legacy
+  reloadfpga: auto
+```
+
+With `reloadfpga: auto`, changing profile reloads the corresponding packaged
+image. Explicit `filename` and `dtbo_filename` arguments remain available for
+development images, but their register map must match the selected profile.
+At startup PyRPL checks the IIR constants and PID filter count and rejects a
+mismatched image.
 
 # Signal mapping
 

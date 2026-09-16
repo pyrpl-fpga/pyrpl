@@ -380,16 +380,7 @@ class Pyrpl:
         """
         self.software_modules = []
         # software modules are Managers for various modules plus those defined in the config file
-        soft_mod_names = [
-            "Asgs",
-            "Iqs",
-            "Pids",
-            "Scopes",
-            "Iirs",
-            "Trigs",
-            "Pwms",
-            "Hks",
-        ] + self.c.pyrpl.modules
+        soft_mod_names = list(self.rp.fpga_profile.software_managers) + self.c.pyrpl.modules
         module_classes = [get_module(cls_name) for cls_name in soft_mod_names]
         module_names = pyrpl_utils.get_unique_name_list_from_class_list(module_classes)
         for cls, name in zip(module_classes, module_names):
@@ -422,6 +413,11 @@ class Pyrpl:
             return list(self.rp.modules.values())
         else:
             return []
+
+    @property
+    def fpga_profile(self):
+        """The hardware/software contract selected for this instance."""
+        return self.rp.fpga_profile
 
     @property
     def modules(self):

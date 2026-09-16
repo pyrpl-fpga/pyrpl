@@ -274,6 +274,7 @@ class Iq(FilterModule):
     # Two pipeline cycles were added before the IQ gain/saturation datapaths:
     # one at the modulator inputs and one at the full-width product outputs.
     _delay = 7  # bare delay of IQ module with no filters set (cycles)
+    _quadrature_delay = 4
 
     _output_signals = sorted_dict(quadrature=0, output_direct=1, pfd=2, off=3, quadrature_hf=4)
 
@@ -607,7 +608,7 @@ class Iq(FilterModule):
         # the carrier itself.  Keeping these cycles in ``module_delay`` would
         # incorrectly predict an extra 57.6 degrees at a 10 MHz center
         # frequency.
-        quadrature_delay = 4
+        quadrature_delay = self._quadrature_delay
         # Delay experienced while the signal is represented as a quadrature
         # (= lower frequency, hence less phase shift).
         # the remaining delay of the module

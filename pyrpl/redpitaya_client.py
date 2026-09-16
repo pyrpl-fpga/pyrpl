@@ -214,6 +214,9 @@ class DummyClient:  # pragma: no cover
 
     fpgamemory = fpgadict({str(0x40100014): 1})  # scope decimation initial value
 
+    def __init__(self, fpga_profile=None):
+        self.fpga_profile = fpga_profile
+
     def read_fpgamemory(self, addr):
         # here we implement a fraction of the memory map to simulate the actual redpitaya
         # scope
@@ -247,14 +250,19 @@ class DummyClient:  # pragma: no cover
             offset = addr - dsp_addr_base(module)
             if module.startswith("pid"):
                 if offset == 0x220:  # FILTERSTAGES
+                    if self.fpga_profile is not None:
+                        return self.fpga_profile.hardware["pid_input_filter_stages"]
                     return 4
                 elif offset == 0x228:  # MINBW
                     return 1
             elif module.startswith("iir"):
+                profile_hardware = (
+                    self.fpga_profile.hardware if self.fpga_profile is not None else {}
+                )
                 iir_map = {
-                    0x200: 64,  # IIRBITS
-                    0x204: 32,  # IIRSHIFT
-                    0x208: 16,  # IIRSTAGES
+                    0x200: profile_hardware.get("iir_bits", 32),
+                    0x204: profile_hardware.get("iir_shift", 29),
+                    0x208: profile_hardware.get("iir_stages", 14),
                     0x220: 1,  # filterstages
                     0x108: 0,  # overflow
                 }

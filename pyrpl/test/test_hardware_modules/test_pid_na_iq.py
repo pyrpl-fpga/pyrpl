@@ -113,6 +113,7 @@ class TestPidNaIq(TestPyrpl):
                 c.add_child(CurveDB.create(f, relerror, name="test_na-failed-relerror"))
                 raise AssertionError(maxerror)
 
+    @pytest.mark.requires_fpga("pid_input_filters")
     def test_inputfilter(self):
         """
         tests whether the modeled transfer function of pid module with
@@ -290,6 +291,7 @@ class TestPidNaIq(TestPyrpl):
                 print("Saturation has occured. Data not reliable.")
             assert abs(pid.ival) <= 1.0, pid.ival
 
+    @pytest.mark.requires_fpga("pid_input_filters")
     def test_pid_na3(self):
         # setup a pid module with a bunch of different settings and measure
         # its transfer function, and compare it to the model.
@@ -435,6 +437,7 @@ class TestPidNaIq(TestPyrpl):
                     # c.add_child(CurveDB.create(f,relerror,name='test_iq_na-failed-abserror'))
                     raise AssertionError((maxerror, phase, bpf.name))
 
+    @pytest.mark.requires_fpga("three_pids")
     def test_diff_pid(self):
         """
         tests the differential pid feature of pid0 and pid1
@@ -513,8 +516,7 @@ class TestPidNaIq(TestPyrpl):
         """
         tests the sync feature of different pid modules
         """
-        rp = self.pyrpl.rp
-        pids = [rp.pid0, rp.pid1, rp.pid2]
+        pids = self.pyrpl.pids.all_modules
         for pid in pids:
             # we start with all gains off and ival reset, so the output should be 0
             pid.setup(

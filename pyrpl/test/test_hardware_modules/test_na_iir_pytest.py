@@ -10,6 +10,8 @@ from pyrpl.test.test_base import TestPyrpl
 
 logger = logging.getLogger(name=__name__)
 
+pytestmark = pytest.mark.requires_fpga("iir")
+
 
 @pytest.fixture(autouse=True, scope="class")
 def setup_iir(hardware_session):
