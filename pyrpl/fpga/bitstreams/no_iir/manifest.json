@@ -1,0 +1,72 @@
+{
+  "id": "no_iir",
+  "description": "Three-IQ profile without IIR and with four-stage PID input filters",
+  "abi_version": 1,
+  "capabilities": [
+    "iq",
+    "pid",
+    "three_pids",
+    "pid_input_filters",
+    "pwm"
+  ],
+  "hardware_modules": [
+    "HK",
+    "AMS",
+    "Scope",
+    "Sampler",
+    "Asg0",
+    "Asg1",
+    "Pwm",
+    "Pwm",
+    "Iq",
+    "Iq",
+    "Iq",
+    "Pid",
+    "Pid",
+    "Pid",
+    "Trig"
+  ],
+  "software_managers": [
+    "Asgs",
+    "Iqs",
+    "Pids",
+    "Scopes",
+    "Trigs",
+    "Pwms",
+    "Hks"
+  ],
+  "timing": {
+    "iq": {
+      "_delay": 7,
+      "_quadrature_delay": 4
+    }
+  },
+  "hardware": {
+    "dsp_inputs": [
+      "in1",
+      "in2",
+      "out1",
+      "out2",
+      "iq0",
+      "iq1",
+      "iq2",
+      "iq2_2",
+      "pid0",
+      "pid1",
+      "pid2",
+      "asg0",
+      "asg1",
+      "trig",
+      "off"
+    ],
+    "pid_input_filter_stages": 4
+  },
+  "bitstream": {
+    "filename": "red_pitaya.bin",
+    "sha256": "2f8ccfd7f017884612f0659989f4ecea15d2455e3e5a684880db0e55854acf7d"
+  },
+  "dtbo": {
+    "filename": "red_pitaya.dtbo",
+    "sha256": "9c19b99bef128d6069d44e8294ce6f118ee8513e523673ec02e1510d76877020"
+  }
+}

@@ -68,6 +68,8 @@ module red_pitaya_pid_block #(
    parameter     DSR = 10         ,
    parameter     GAINBITS = 24    ,
    parameter     DERIVATIVE = 0   , //disables differential gain if 0
+   parameter     DERIVATIVE_FILTER_SHIFT = 4,
+   parameter     INPUT_REGISTER = 0,
    
    //parameters for input pre-filter
    parameter     FILTERSTAGES = 0 ,
@@ -110,6 +112,8 @@ assign pause_d = pause_pid_on_sync[2] & !sync_i;
 reg [ GAINBITS-1: 0] set_kp;   // Kp
 reg [ GAINBITS-1: 0] set_ki;   // Ki
 reg [ GAINBITS-1: 0] set_kd;   // Kd
+reg [ 32-1: 0] set_filter;
+reg [  6-1: 0] set_derivative_filter_shift;
 wire signed [16-1:0] int_shr;   // integral readback; declared before bus use
 // limits if arbitrary saturation is enabled
 reg signed [ 14-1:0] out_max;
@@ -125,6 +129,8 @@ always @(posedge clk_i) begin
       set_kp <= {GAINBITS{1'b0}};
       set_ki <= {GAINBITS{1'b0}};
       set_kd <= {GAINBITS{1'b0}};
+      set_filter <= 32'd0;
+      set_derivative_filter_shift <= DERIVATIVE_FILTER_SHIFT;
       ival_write <= 1'b0;
       out_min <= {1'b1,{14-1{1'b0}}};
       out_max <= {1'b0,{14-1{1'b1}}};
@@ -136,6 +142,10 @@ always @(posedge clk_i) begin
          if (addr==16'h108)   set_kp  <= wdata[GAINBITS-1:0];
          if (addr==16'h10C)   set_ki  <= wdata[GAINBITS-1:0];
          if (addr==16'h110)   set_kd  <= wdata[GAINBITS-1:0];
+         if ((DERIVATIVE != 0) && (addr==16'h114))
+            set_derivative_filter_shift <= wdata[6-1:0];
+         if ((FILTERSTAGES > 0) && (addr==16'h120))
+            set_filter <= wdata;
          if (addr==16'h124)   out_min  <= wdata;
          if (addr==16'h128)   out_max  <= wdata;
          if (addr==16'h12C)   {enable_differential_mode,pause_pid_on_sync} <= wdata[4-1:0];
@@ -151,7 +161,9 @@ always @(posedge clk_i) begin
 	     16'h108 : begin ack <= wen|ren; rdata <= {{32-GAINBITS{1'b0}},set_kp}; end
 	     16'h10C : begin ack <= wen|ren; rdata <= {{32-GAINBITS{1'b0}},set_ki}; end
 	     16'h110 : begin ack <= wen|ren; rdata <= {{32-GAINBITS{1'b0}},set_kd}; end
-	     16'h120 : begin ack <= wen|ren; rdata <= 32'd0; end
+	     16'h114 : begin ack <= wen|ren; rdata <= (DERIVATIVE != 0) ?
+                    {{32-6{1'b0}},set_derivative_filter_shift} : DERIVATIVE_FILTER_SHIFT; end
+	     16'h120 : begin ack <= wen|ren; rdata <= (FILTERSTAGES > 0) ? set_filter : 32'd0; end
 	     16'h124 : begin ack <= wen|ren; rdata <= {{32-14{1'b0}},out_min}; end
 	     16'h128 : begin ack <= wen|ren; rdata <= {{32-14{1'b0}},out_max}; end
 	     16'h12C : begin ack <= wen|ren; rdata <= {{32-4{1'b0}},enable_differential_mode,pause_pid_on_sync}; end
@@ -159,6 +171,8 @@ always @(posedge clk_i) begin
 	     16'h204 : begin ack <= wen|ren; rdata <= ISR; end
 	     16'h208 : begin ack <= wen|ren; rdata <= DSR; end
 	     16'h20C : begin ack <= wen|ren; rdata <= GAINBITS; end
+	     16'h210 : begin ack <= wen|ren; rdata <= DERIVATIVE; end
+	     16'h214 : begin ack <= wen|ren; rdata <= DERIVATIVE_FILTER_SHIFT; end
 	     16'h220 : begin ack <= wen|ren; rdata <= FILTERSTAGES; end
 	     16'h224 : begin ack <= wen|ren; rdata <= FILTERSHIFTBITS; end
 	     16'h228 : begin ack <= wen|ren; rdata <= FILTERMINBW; end
@@ -169,10 +183,45 @@ always @(posedge clk_i) begin
 end
 
 
+wire signed [14-1:0] dat_i_registered;
 wire signed [14-1:0] dat_i_filtered;
-// Filtering is intentionally omitted in the timing-optimized profile. Keep
-// its capability registers so software discovers zero available stages.
-assign dat_i_filtered = dat_i;
+
+// Break the timing path from the DSP input selector and output saturation
+// logic into the cascaded PID input filters.  This is enabled only by the
+// full-featured derivative profile and adds one sample of fixed PID latency.
+generate
+   if (INPUT_REGISTER > 0) begin: pid_input_register
+      reg signed [14-1:0] dat_i_reg;
+      always @(posedge clk_i) begin
+         if (rstn_i == 1'b0)
+            dat_i_reg <= 14'd0;
+         else
+            dat_i_reg <= dat_i;
+      end
+      assign dat_i_registered = dat_i_reg;
+   end else begin: no_pid_input_register
+      assign dat_i_registered = dat_i;
+   end
+endgenerate
+
+generate
+   if (FILTERSTAGES > 0) begin: pid_input_filter
+      red_pitaya_filter_block #(
+         .STAGES(FILTERSTAGES),
+         .SHIFTBITS(FILTERSHIFTBITS),
+         .SIGNALBITS(14),
+         .MINBW(FILTERMINBW)
+      ) inputfilter (
+         .clk_i(clk_i),
+         .rstn_i(rstn_i),
+         .set_filter(set_filter),
+         .dat_i(dat_i_registered),
+         .dat_o(dat_i_filtered)
+      );
+   end else begin: no_pid_input_filter
+      assign dat_i_filtered = dat_i_registered;
+   end
+endgenerate
 
 //---------------------------------------------------------------------------------
 //  Set point error calculation - 1 cycle delay
@@ -245,39 +294,65 @@ assign int_sum = (pause_i==1'b1) ? $signed(int_reg) : $signed(ki_mult) + $signed
 assign int_shr = $signed(int_reg[IBW-1:ISR]) ;
 
 //---------------------------------------------------------------------------------
-//  Derivative - 2 cycles delay (but treat as 1 cycle because its not
-//  functional at the moment
+// Band-limited derivative. One DSP computes Kd * (error[n]-error[n-1]).
+// A shift-based pipelined low-pass then limits ADC and quantization noise.
+// Its transfer function is modeled exactly in Pid._pid_transfer_function.
 
-wire signed [    39-1: 0] kd_mult       ;
-reg signed  [39-DSR-1: 0] kd_reg        ;
-reg signed  [39-DSR-1: 0] kd_reg_r      ;
-reg signed  [39-DSR  : 0] kd_reg_s      ;
+localparam DERIVATIVE_BITS = 16+GAINBITS-DSR;
+localparam DERIVATIVE_FILTER_MAX_SHIFT = 24;
+wire signed [DERIVATIVE_BITS-1:0] derivative_term;
 
-generate 
-	if (DERIVATIVE == 1) begin
-		wire  [15+GAINBITS-1: 0] kd_mult;
-		reg   [15+GAINBITS-DSR-1: 0] kd_reg;
-		reg   [15+GAINBITS-DSR-1: 0] kd_reg_r;
-		reg   [15+GAINBITS-DSR  : 0] kd_reg_s;
-		always @(posedge clk_i) begin
-		   if (rstn_i == 1'b0) begin
-		      kd_reg   <= {15+GAINBITS-DSR{1'b0}};
-		      kd_reg_r <= {15+GAINBITS-DSR{1'b0}};
-		      kd_reg_s <= {15+GAINBITS-DSR+1{1'b0}};
-		   end
-		   else begin
-		      kd_reg   <= kd_mult[15+GAINBITS-1:DSR] ;
-		      kd_reg_r <= kd_reg;
-		      kd_reg_s <= $signed(kd_reg) - $signed(kd_reg_r); //this is the end result
-		   end
-		end
-        assign kd_mult = (pause_d==1'b1) ? $signed({15+GAINBITS-1{1'b0}}) : $signed(error) * $signed(set_kd);
-	end
-	else begin
-		wire [15+GAINBITS-DSR:0] kd_reg_s;
-		assign kd_reg_s = {15+GAINBITS-DSR+1{1'b0}};
-	end
-endgenerate 
+generate
+   if (DERIVATIVE == 1) begin: derivative
+      reg signed [15-1:0] error_previous;
+      wire signed [16-1:0] error_delta;
+      reg signed [16+GAINBITS-1:0] kd_product;
+      wire signed [DERIVATIVE_BITS-1:0] derivative_target;
+      reg signed [DERIVATIVE_BITS:0] filter_delta;
+      reg signed [DERIVATIVE_BITS+DERIVATIVE_FILTER_MAX_SHIFT-1:0] filter_accumulator;
+      wire signed [DERIVATIVE_BITS-1:0] filter_output;
+      wire [6-1:0] filter_shift;
+      wire signed [DERIVATIVE_BITS+DERIVATIVE_FILTER_MAX_SHIFT-1:0] filter_delta_extended;
+      wire signed [DERIVATIVE_BITS+DERIVATIVE_FILTER_MAX_SHIFT-1:0] shifted_filter_delta;
+
+      assign error_delta = $signed({error[14], error})
+                         - $signed({error_previous[14], error_previous});
+      assign derivative_target = kd_product[16+GAINBITS-1:DSR];
+      assign filter_output = filter_accumulator[
+         DERIVATIVE_BITS+DERIVATIVE_FILTER_MAX_SHIFT-1:DERIVATIVE_FILTER_MAX_SHIFT];
+      assign filter_shift = (set_derivative_filter_shift < 1) ? 1 :
+                            (set_derivative_filter_shift > DERIVATIVE_FILTER_MAX_SHIFT) ?
+                            DERIVATIVE_FILTER_MAX_SHIFT : set_derivative_filter_shift;
+      assign filter_delta_extended = {{DERIVATIVE_FILTER_MAX_SHIFT-1{filter_delta[DERIVATIVE_BITS]}},
+                                      filter_delta};
+      assign shifted_filter_delta = $signed(filter_delta_extended)
+                                  <<< (DERIVATIVE_FILTER_MAX_SHIFT-filter_shift);
+      assign derivative_term = pause_d ? {DERIVATIVE_BITS{1'b0}} : filter_output;
+
+      always @(posedge clk_i) begin
+         if (rstn_i == 1'b0) begin
+            error_previous <= 15'd0;
+            kd_product <= {(16+GAINBITS){1'b0}};
+            filter_delta <= {(DERIVATIVE_BITS+1){1'b0}};
+            filter_accumulator <= {(DERIVATIVE_BITS+DERIVATIVE_FILTER_MAX_SHIFT){1'b0}};
+         end else begin
+            error_previous <= error;
+            if (pause_d) begin
+               kd_product <= {(16+GAINBITS){1'b0}};
+               filter_delta <= {(DERIVATIVE_BITS+1){1'b0}};
+               filter_accumulator <= {(DERIVATIVE_BITS+DERIVATIVE_FILTER_MAX_SHIFT){1'b0}};
+            end else begin
+               kd_product <= $signed(error_delta) * $signed(set_kd);
+               filter_delta <= $signed({derivative_target[DERIVATIVE_BITS-1], derivative_target})
+                             - $signed({filter_output[DERIVATIVE_BITS-1], filter_output});
+               filter_accumulator <= $signed(filter_accumulator) + $signed(shifted_filter_delta);
+            end
+         end
+      end
+   end else begin: no_derivative
+      assign derivative_term = {DERIVATIVE_BITS{1'b0}};
+   end
+endgenerate
 
 //---------------------------------------------------------------------------------
 //  Sum together - saturate output - 1 cycle delay
@@ -286,8 +361,8 @@ endgenerate
 //maximum possible bitwidth for pid_sum
 // = max( 15+GAINBITS(24)-PSR(12) = 27, // from kp_reg
 //        IBW(48)-ISR(32) = 16,         // from int_shr
-//        39-DSR(10) = 29 but disabled)         // from kd_reg_s
-localparam MAXBW = 28; //17
+//        16+GAINBITS-DSR = 30)                 // from derivative_term
+localparam MAXBW = (DERIVATIVE == 1) ? DERIVATIVE_BITS : 28;
 
 wire signed [   MAXBW-1: 0] pid_sum;
 reg signed  [   14-1: 0] pid_out;
@@ -306,7 +381,7 @@ always @(posedge clk_i) begin
    end
 end
 
-assign pid_sum = $signed(kp_reg) + $signed(int_shr) + $signed(kd_reg_s);
+assign pid_sum = $signed(kp_reg) + $signed(int_shr) + $signed(derivative_term);
 
 
 generate 

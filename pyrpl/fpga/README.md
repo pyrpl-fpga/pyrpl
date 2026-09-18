@@ -48,6 +48,7 @@ make_bin.bat default
 make_bin.bat legacy
 make_bin.bat no_iir
 make_bin.bat iir32
+make_bin.bat pid_derivative
 ```
 
 Calling `make_bin.bat` without an argument builds `default`. Results are kept
@@ -55,19 +56,37 @@ in `build\<profile>`. A build never overwrites the tested files under
 `bitstreams`.
 
 Implementation directives are selected by each profile. The `no_iir` profile
-runs two post-route physical-optimization passes; `default` and `iir32` run one,
-while the compatibility-only `legacy` profile skips that expensive step.
+runs two post-route physical-optimization passes; `pid_derivative` also runs
+two because of its extra DSP paths, `default` and `iir32` run one, while the
+compatibility-only `legacy` profile skips that expensive step.
 
-| Build profile | IIR | PID prefilters | DSP modules |
-|---------------|-----|----------------|-------------|
+| Build profile | IIR | PID filters | DSP modules |
+|---------------|-----|-------------|-------------|
 | `default` | 24-bit, 8-stage | none | 3 PID, 3 IQ |
-| `legacy` | original 32-bit, 14-stage | 4 stages | 3 PID, 3 IQ |
-| `no_iir` | none | 4 stages | 3 PID, 3 IQ |
+| `pid_derivative` | none | 4 input stages plus band-limited D | 3 PID, 3 IQ |
+| `legacy` | original 32-bit, 14-stage | 4 input stages | 3 PID, 3 IQ |
+| `no_iir` | none | 4 input stages | 3 PID, 3 IQ |
 | `iir32` | pipelined 32-bit, 14-stage | none | 2 PID, 3 IQ |
 
+`pid_derivative` combines the no-IIR topology with the current PID RTL. Each of
+its three PIDs has the original four-stage input prefilter and one derivative
+multiplier. Its `derivative_filter_ratio` setting is constrained to 3 through
+10, corresponding to a roll-off angular frequency between `3 / tau_d` and
+`10 / tau_d`. The FPGA uses the nearest available shift-filter cutoff and
+Python models that discrete filter exactly. A register before each PID input
+filter breaks the otherwise long four-stage bypass path and adds one 8 ns cycle
+to the PID latency; the profile manifest includes this delay in the Python
+transfer-function model.
+
+The normalized cutoff calculation performs a numerical search. It is decorated
+with `@lru_cache(maxsize=None)`, so each of the 24 possible shift values is
+calculated only once per Python process. `maxsize=None` disables cache eviction;
+the cache is nevertheless bounded in practice by those 24 shift values. This
+is only a Python performance optimization and does not cache FPGA state.
+
 The specialized profiles retain the established FPGA address map. `no_iir`
-leaves address slot 4 inactive, while `iir32` leaves PID slot 2 inactive. IQ2
-is retained because it is used by the network analyzer.
+and `pid_derivative` leave address slot 4 inactive, while `iir32` leaves PID
+slot 2 inactive. IQ2 is retained because it is used by the network analyzer.
 
 To load an unpublished build for hardware testing while retaining the correct
 Python contract, select its profile and override only the binary path:
@@ -88,6 +107,7 @@ vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs defa
 vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs legacy build/legacy
 vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs no_iir build/no_iir
 vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs iir32 build/iir32
+vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs pid_derivative build/pid_derivative
 ```
 
 After building a new profile, stage it for runtime hardware tests. This copies
@@ -96,6 +116,7 @@ the binary and shared device-tree overlay, and generates their SHA-256 hashes:
 ```text
 python publish_fpga_profile.py no_iir
 python publish_fpga_profile.py iir32
+python publish_fpga_profile.py pid_derivative
 ```
 
 The staged directory appears under `bitstreams/<profile>` and makes the profile
@@ -133,7 +154,7 @@ The pre-built .bin file and device tree are used if these files are not specifie
 ## FPGA profiles
 
 The `fpga_profile` setting selects a published, tested bitstream together with
-its Python hardware contract. The source tree contains four build profiles,
+its Python hardware contract. The source tree contains five build profiles,
 but `available_fpga_profiles()` only lists profiles that have been staged under
 `bitstreams`.
 
@@ -156,16 +177,77 @@ The same selection is available on the command line:
 python -m pyrpl my_config fpga_profile=legacy
 ```
 
-For hardware tests, the equivalent PowerShell selection is:
+## Testing FPGA profiles
+
+FPGA profile selection and test filtering are separate operations:
+
+1. `REDPITAYA_FPGA_PROFILE` selects the packaged profile requested for the
+   pytest session.
+2. The session-scoped hardware fixture currently creates PyRPL with
+   `reloadfpga=True`, so it loads that profile at session startup rather than
+   merely inspecting the image that happened to be loaded previously.
+3. PyRPL validates the loaded register-map constants against the selected
+   manifest.
+4. The autouse pytest fixture examines `requires_fpga` markers. A test such as
+   `@pytest.mark.requires_fpga("pid_derivative")` is skipped when the selected
+   manifest does not advertise that capability. Unmarked tests still run.
+
+The profile is therefore selected first; pytest does not discover a profile
+from arbitrary FPGA logic and then select tests from that. One pytest process
+uses one profile because the hardware fixture is session-scoped.
+
+Select a profile in PowerShell with:
 
 ```powershell
+$env:REDPITAYA_HOSTNAME = "169.254.101.38"
 $env:REDPITAYA_FPGA_PROFILE = "legacy"
 pytest pyrpl/test/test_hardware_modules
+```
+
+The equivalent `cmd.exe` syntax is:
+
+```bat
+set REDPITAYA_HOSTNAME=169.254.101.38
+set REDPITAYA_FPGA_PROFILE=legacy
+pytest pyrpl\test\test_hardware_modules
+```
+
+Do not put spaces around `=` in `cmd.exe`; doing so changes the environment
+variable name. To run only derivative-specific tests:
+
+```powershell
+$env:REDPITAYA_FPGA_PROFILE = "pid_derivative"
+pytest pyrpl/test/test_hardware_modules/test_pid_na_iq.py -k pid_derivative
+```
+
+An unpublished build is not selectable until it has a runtime manifest. After
+building it, stage it before hardware testing:
+
+```text
+cd pyrpl/fpga
+python publish_fpga_profile.py pid_derivative
+```
+
+Publishing copies `build/pid_derivative/red_pitaya.bin` into the corresponding
+`bitstreams` directory and creates checksum-locked runtime metadata. Staging a
+development build makes it selectable; it does not imply that the generated
+artifacts are ready to commit.
+
+Run several profiles as separate pytest sessions so each image is loaded and
+validated independently:
+
+```powershell
+foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative")) {
+    $env:REDPITAYA_FPGA_PROFILE = $profile
+    pytest pyrpl/test/test_hardware_modules
+}
 ```
 
 Tests marked with `requires_fpga` are skipped when the selected profile does
 not provide the requested capability. Frequency-response artifacts use the
 profile ID as their label unless `PYRPL_BITSTREAM_LABEL` is set explicitly.
+`PYRPL_BITSTREAM_LABEL` affects only the output directory name and never
+selects or loads a bitstream.
 
 The setting is persisted under the `redpitaya` configuration branch:
 

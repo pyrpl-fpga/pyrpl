@@ -25,6 +25,9 @@ REM both tools are run in batch mode with an option to avoid log/journal files
 
 REM Create output directory
 if not exist "%OUT_DIR%" mkdir "%OUT_DIR%"
+REM Never allow the publishing step to mistake an older image for the result
+REM of a failed rebuild.
+if exist "%FPGA_BIN%" del /Q "%FPGA_BIN%"
 
 REM Vivado's launcher records its initial working directory before loading Tcl.
 REM Start it in its installation directory; the Tcl script then anchors all
@@ -36,7 +39,7 @@ call c:\Xilinx\Vivado\%VIVADO_VER%\bin\vivado.bat -nolog -nojournal -mode batch 
 set "VIVADO_EXIT=%ERRORLEVEL%"
 popd
 if not "%VIVADO_EXIT%"=="0" (
-    echo FPGA compilation failed. See %OUT_DIR%\fpga.log
+    echo FPGA compilation failed with Vivado exit code %VIVADO_EXIT%. See %OUT_DIR%\fpga.log
     exit /b 1
 )
 

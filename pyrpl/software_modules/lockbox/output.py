@@ -39,8 +39,12 @@ class OutputSignal(Signal):
       - sweep_amplitude/offset/frequency/waveform: what properties to use when
         sweeping the output
       - output_channel: what physical output is used.
-      - p/i: the gains to use in a loop: those values are to be understood as
-        full loop gains (p in [1], i in [Hz])
+      - p/i/d: the gains to use in a loop: those values are to be understood as
+        full loop gains (p in [1], i and d in [Hz]). ``d`` is the derivative
+        unity-gain frequency, so smaller nonzero magnitudes mean more
+        derivative gain.
+      - derivative_filter_ratio: derivative roll-off frequency divided by
+        the derivative unity-gain frequency.
       - additional_filter: a filter (4 cut-off frequencies) to add to the loop
         (in sweep and lock mode)
       - extra_module: extra module to add just before the output (usually iir).
@@ -65,6 +69,8 @@ class OutputSignal(Signal):
         "output_channel",
         "p",
         "i",
+        "d",
+        "derivative_filter_ratio",
         "additional_filter",
         "analog_filter_cutoff",
         "extra_module",
@@ -100,6 +106,22 @@ class OutputSignal(Signal):
     )
     p = FloatProperty(min=-1e10, max=1e10, call_setup=True)
     i = FloatProperty(min=-1e10, max=1e10, call_setup=True)
+    d = FloatProperty(
+        default=0.0,
+        min=-Pid._DERIVATIVE_NORM,
+        max=Pid._DERIVATIVE_NORM,
+        increment=Pid.d.increment,
+        call_setup=True,
+        doc="Full-loop derivative unity-gain frequency [Hz]. Zero disables it.",
+    )
+    derivative_filter_ratio = FloatProperty(
+        default=5.0,
+        min=3.0,
+        max=10.0,
+        increment=0.1,
+        call_setup=True,
+        doc="Derivative roll-off divided by derivative unity-gain frequency.",
+    )
     # additional filter properties
     additional_filter = AdditionalFilterAttribute()  # call_setup=True)
     extra_module = SelectProperty(["None", "iir", "pid", "iq"], call_setup=True)
@@ -123,6 +145,163 @@ class OutputSignal(Signal):
 
     def signal(self):
         return self.pid.name
+
+    @property
+    def derivative_available(self):
+        """Whether the selected FPGA profile implements the PID derivative."""
+        return "pid_derivative" in self.pyrpl.rp.fpga_profile.capabilities
+
+    @staticmethod
+    def _scaled_pid_gains(p, i, d, external_loop_gain, gain_factor):
+        """Convert full-loop P/I/D settings into hardware PID settings.
+
+        P and I are ordinary gains and therefore scale with the requested
+        stage gain.  The hardware's D setting is an inverse gain (a unity-gain
+        frequency), so it scales by the reciprocal factor.
+        """
+        gain_scale = gain_factor / external_loop_gain
+        p_pid = p * gain_scale
+        i_pid = i * gain_scale
+        d_pid = 0.0 if d == 0 or gain_scale == 0 else d / gain_scale
+        return p_pid, i_pid, d_pid
+
+    @staticmethod
+    def _design_pid_response(
+        frequencies,
+        p,
+        i,
+        d,
+        derivative_filter_ratio,
+        analog_filter_cutoff,
+        frequency_correction=1.0,
+    ):
+        """Return the PID and single-pole actuator response used for design."""
+        derivative_filter_shift = 4
+        if d != 0:
+            derivative_filter_shift = Pid._select_derivative_filter_shift(
+                abs(d) * derivative_filter_ratio,
+                frequency_correction,
+            )
+        controller = Pid._pid_transfer_function(
+            frequencies,
+            p=p,
+            i=i,
+            d=d,
+            derivative_filter_shift=derivative_filter_shift,
+            frequency_correction=frequency_correction,
+        )
+        actuator = Pid._filter_transfer_function(
+            frequencies,
+            analog_filter_cutoff,
+            frequency_correction=frequency_correction,
+        )
+        return controller * actuator
+
+    @classmethod
+    def _assisted_pi_gains(
+        cls,
+        unity_frequency,
+        analog_filter_cutoff,
+        d=0,
+        derivative_filter_ratio=5.0,
+        frequency_correction=1.0,
+    ):
+        """Choose P and I while accounting for a configured derivative term.
+
+        The PI zero remains at the actuator pole.  Its common amplitude is
+        then chosen so that the complete PID/actuator model has unit magnitude
+        at ``unity_frequency``.
+        """
+        if unity_frequency <= 0:
+            return 0.0, 0.0
+        if d == 0:
+            i = unity_frequency
+            return (0.0 if analog_filter_cutoff == 0 else i / analog_filter_cutoff), i
+
+        frequency = np.asarray([unity_frequency], dtype=float)
+        p_per_i = 0.0 if analog_filter_cutoff == 0 else 1.0 / analog_filter_cutoff
+        pi_basis = cls._design_pid_response(
+            frequency,
+            p=p_per_i,
+            i=1.0,
+            d=0,
+            derivative_filter_ratio=derivative_filter_ratio,
+            analog_filter_cutoff=analog_filter_cutoff,
+            frequency_correction=frequency_correction,
+        )[0]
+        derivative = cls._design_pid_response(
+            frequency,
+            p=0,
+            i=0,
+            d=d,
+            derivative_filter_ratio=derivative_filter_ratio,
+            analog_filter_cutoff=analog_filter_cutoff,
+            frequency_correction=frequency_correction,
+        )[0]
+
+        # |i * PI_basis + derivative| == 1 is a quadratic in the real
+        # integral setting i.  Prefer the non-negative solution nearest the
+        # legacy PI-only value (the requested crossover frequency).
+        a = abs(pi_basis) ** 2
+        b = 2.0 * np.real(pi_basis * np.conj(derivative))
+        c = abs(derivative) ** 2 - 1.0
+        discriminant = b * b - 4.0 * a * c
+        if a == 0 or discriminant < 0:
+            i = max(0.0, -b / (2.0 * a)) if a != 0 else 0.0
+        else:
+            root = np.sqrt(discriminant)
+            roots = ((-b + root) / (2.0 * a), (-b - root) / (2.0 * a))
+            candidates = [value for value in roots if value >= 0]
+            i = (
+                min(candidates, key=lambda value: abs(value - unity_frequency))
+                if candidates
+                else 0.0
+            )
+        p = 0.0 if analog_filter_cutoff == 0 else i / analog_filter_cutoff
+        return p, i
+
+    @classmethod
+    def _pid_unity_frequency(
+        cls,
+        p,
+        i,
+        d,
+        derivative_filter_ratio,
+        analog_filter_cutoff,
+        frequency_correction=1.0,
+    ):
+        """Estimate the crossover nearest the PI-only crossover."""
+        if d == 0:
+            return abs(i)
+        sample_rate = 125e6 * frequency_correction
+        frequencies = np.logspace(-3, np.log10(0.495 * sample_rate), 4096)
+        magnitude = np.abs(
+            cls._design_pid_response(
+                frequencies,
+                p=p,
+                i=i,
+                d=d,
+                derivative_filter_ratio=derivative_filter_ratio,
+                analog_filter_cutoff=analog_filter_cutoff,
+                frequency_correction=frequency_correction,
+            )
+        )
+        error = np.log(np.maximum(magnitude, np.finfo(float).tiny))
+        crossings = np.flatnonzero(error[:-1] * error[1:] <= 0)
+        if len(crossings) == 0:
+            return float(frequencies[np.argmin(abs(error))])
+        estimates = []
+        log_frequencies = np.log(frequencies)
+        for index in crossings:
+            fraction = -error[index] / (error[index + 1] - error[index])
+            estimates.append(
+                np.exp(
+                    log_frequencies[index]
+                    + fraction * (log_frequencies[index + 1] - log_frequencies[index])
+                )
+            )
+        reference = max(abs(i), frequencies[0])
+        return float(min(estimates, key=lambda value: abs(np.log(value / reference))))
 
     @property
     def pid(self):
@@ -175,6 +354,7 @@ class OutputSignal(Signal):
     def unlock(self, reset_offset=False):
         self.pid.p = 0
         self.pid.i = 0
+        self.pid.d = 0
         if reset_offset:
             self.pid.ival = 0
         self.current_state = "unlock"
@@ -247,6 +427,7 @@ class OutputSignal(Signal):
             # to avoid huge gains while transiting
             self.pid.p = 0
             self.pid.i = 0
+            self.pid.d = 0
             self.pid.setpoint = (
                 input.expected_signal(setpoint) + input.calibration_data._analog_offset
             )
@@ -263,10 +444,18 @@ class OutputSignal(Signal):
             if offset is not None:
                 self.pid.ival = offset
             # set gains
-            p_pid = self.p / external_loop_gain * gain_factor
-            i_pid = self.i / external_loop_gain * gain_factor
+            p_pid, i_pid, d_pid = self._scaled_pid_gains(
+                self.p,
+                self.i,
+                self.d,
+                external_loop_gain,
+                gain_factor,
+            )
             self.pid.p = p_pid
             self.pid.i = i_pid
+            if self.derivative_available:
+                self.pid.derivative_filter_ratio = self.derivative_filter_ratio
+                self.pid.d = d_pid
             if (
                 np.abs(p_pid) < self.pid.__class__.p.increment
                 or p_pid > self.pid.__class__.p.max
@@ -290,18 +479,28 @@ class OutputSignal(Signal):
     def _setup(self):
         # synchronize assisted_design parameters with p/i setting
         self._setup_ongoing = True
+        design_d = self.d if self.derivative_available else 0
         if self.assisted_design:
-            self.i = self.desired_unity_gain_frequency
-            if self.analog_filter_cutoff == 0:
-                self.p = 0
-            else:
-                self.p = self.i / self.analog_filter_cutoff
+            self.p, self.i = self._assisted_pi_gains(
+                self.desired_unity_gain_frequency,
+                self.analog_filter_cutoff,
+                d=design_d,
+                derivative_filter_ratio=self.derivative_filter_ratio,
+                frequency_correction=self.pid._frequency_correction,
+            )
         else:
-            self.desired_unity_gain_frequency = self.i
             if self.p == 0:
                 self.analog_filter_cutoff = 0
             else:
                 self.analog_filter_cutoff = self.i / self.p
+            self.desired_unity_gain_frequency = self._pid_unity_frequency(
+                self.p,
+                self.i,
+                design_d,
+                self.derivative_filter_ratio,
+                self.analog_filter_cutoff,
+                frequency_correction=self.pid._frequency_correction,
+            )
         self._setup_ongoing = False
         # re-enable lock/sweep/unlock with new parameters
         if self.current_state == "sweep":
@@ -344,18 +543,36 @@ class OutputSignal(Signal):
             * input.expected_slope(stage.setpoint)
             * self.lockbox._unit_in_setpoint_unit(output_unit)
         )
-        p = self.p / external_loop_gain * stage.gain_factor
-        i = self.i / external_loop_gain * stage.gain_factor
+        p, i, d = self._scaled_pid_gains(
+            self.p,
+            self.i,
+            self.d,
+            external_loop_gain,
+            stage.gain_factor,
+        )
 
         p = Pid.p.validate_and_normalize(self.pid, p)
         i = Pid.i.validate_and_normalize(self.pid, i)
+        derivative_filter_shift = 4
+        if self.derivative_available:
+            d = Pid.d.validate_and_normalize(self.pid, d)
+            if d != 0:
+                derivative_filter_shift = Pid._select_derivative_filter_shift(
+                    abs(d) * self.derivative_filter_ratio,
+                    self.pid._frequency_correction,
+                )
+        else:
+            d = 0
 
         result = Pid._transfer_function(
             freqs,
             p=p,
             i=i,
+            d=d,
+            derivative_filter_shift=derivative_filter_shift,
             frequency_correction=self.pid._frequency_correction,
             filter_values=self.additional_filter,
+            module_delay_cycle=self.pid._delay,
         )
         if self.extra_module == "iir":
             result *= self.pyrpl.rp.iir.transfer_function(freqs)
@@ -379,12 +596,22 @@ class OutputSignal(Signal):
             analog_tf = ampl * np.exp(1j * phase)
         # multiply by PID transfer function to get the loop transfer function
         # same as Pid.transfer_function(freqs) but avoids reading registers form FPGA
+        d = self.d if self.derivative_available else 0
+        derivative_filter_shift = 4
+        if d != 0:
+            derivative_filter_shift = Pid._select_derivative_filter_shift(
+                abs(d) * self.derivative_filter_ratio,
+                self.pid._frequency_correction,
+            )
         result = analog_tf * Pid._transfer_function(
             freqs,
             p=self.p,
             i=self.i,
+            d=d,
+            derivative_filter_shift=derivative_filter_shift,
             frequency_correction=self.pid._frequency_correction,
             filter_values=self.additional_filter,
+            module_delay_cycle=self.pid._delay,
         )
         if self.extra_module == "iir":
             result *= self.pyrpl.rp.iir.transfer_function(freqs) / self.pyrpl.rp.iir.gain

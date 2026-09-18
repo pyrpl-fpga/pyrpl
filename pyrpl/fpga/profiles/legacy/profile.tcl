@@ -6,6 +6,7 @@ set rtl_overrides [dict create \
     red_pitaya_iq_modulator_block.v rtl_legacy/red_pitaya_iq_modulator_block.v \
     red_pitaya_pid_block.v rtl_legacy/red_pitaya_pid_block.v \
     red_pitaya_pwm.sv rtl_legacy/red_pitaya_pwm.sv]
+set synth_generics {PID_DERIVATIVE=0 PID_FILTERSTAGES=4 PID_DERIVATIVE_FILTER_SHIFT=4}
 set place_directive ExtraNetDelay_high
 set phys_opt_directive AggressiveExplore
 set route_directive AggressiveExplore

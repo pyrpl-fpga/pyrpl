@@ -7,3 +7,4 @@ User's guide to PyRPL
    installation/index
    tutorial/index
    basics/index
+   fpga_profiles

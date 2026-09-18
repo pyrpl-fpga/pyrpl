@@ -160,7 +160,11 @@ read_xdc                          $path_sdc/red_pitaya.xdc
 ################################################################################
 
 #synth_design -top red_pitaya_top
-synth_design -top red_pitaya_top -flatten_hierarchy none -bufg 16 -keep_equivalent_registers
+set synth_args [list -top red_pitaya_top -flatten_hierarchy none -bufg 16 -keep_equivalent_registers]
+if {[info exists synth_generics] && [llength $synth_generics] > 0} {
+    lappend synth_args -generic $synth_generics
+}
+synth_design {*}$synth_args
 
 write_checkpoint         -force   $path_out/post_synth
 report_timing_summary    -file    $path_out/post_synth_timing_summary.rpt
@@ -193,12 +197,22 @@ report_timing_summary    -file    $path_out/post_place_timing_summary.rpt
 # Explore additional timing-driven routes, then optimize the real routed
 # critical paths. The post-route pass does not alter RTL pipeline latency.
 route_design             -directive $route_directive
+# Preserve the expensive routed result before post-route optimization.  This
+# also makes an abrupt Vivado termination diagnosable and recoverable.
+write_checkpoint         -force   $path_out/post_route_unoptimized
+report_timing_summary    -file    $path_out/post_route_unoptimized_timing_summary.rpt
 # On Vivado 2024.2, phys_opt_design detects that the design is routed; there is
 # no separate -post_route command-line option. The pass count is profile-specific
 # because dense profiles may need another iteration to close the routed design.
+if {[info exists post_route_phys_opt_max_threads]} {
+    set_param general.maxThreads $post_route_phys_opt_max_threads
+}
 for {set pass 0} {$pass < $post_route_phys_opt_passes} {incr pass} {
     puts "Running post-route physical optimization pass [expr {$pass + 1}] of $post_route_phys_opt_passes"
     phys_opt_design      -directive $phys_opt_directive
+    set completed_pass [expr {$pass + 1}]
+    write_checkpoint -force $path_out/post_route_phys_opt_${completed_pass}
+    report_timing_summary -file $path_out/post_route_phys_opt_${completed_pass}_timing_summary.rpt
 }
 write_checkpoint         -force   $path_out/post_route
 report_timing_summary    -file    $path_out/post_route_timing_summary.rpt

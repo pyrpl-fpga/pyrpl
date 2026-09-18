@@ -80,7 +80,11 @@
  * 
  */
 
-module red_pitaya_top (
+module red_pitaya_top #(
+   parameter PID_DERIVATIVE = 0,
+   parameter PID_FILTERSTAGES = 0,
+   parameter PID_DERIVATIVE_FILTER_SHIFT = 4
+) (
    // PS connections
    inout  [54-1: 0] FIXED_IO_mio       ,
    inout            FIXED_IO_ps_clk    ,
@@ -497,7 +501,11 @@ red_pitaya_asg i_asg (
 //---------------------------------------------------------------------------------
 //  DSP module
 
-red_pitaya_dsp i_dsp (
+red_pitaya_dsp #(
+  .PID_DERIVATIVE              ( PID_DERIVATIVE              ),
+  .PID_FILTERSTAGES            ( PID_FILTERSTAGES            ),
+  .PID_DERIVATIVE_FILTER_SHIFT ( PID_DERIVATIVE_FILTER_SHIFT )
+) i_dsp (
    // signals
   .clk_i           (  adc_clk                    ),  // clock
   .rstn_i          (  adc_rstn                   ),  // reset - active low

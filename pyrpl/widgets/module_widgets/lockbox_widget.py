@@ -368,6 +368,24 @@ class WidgetAssisted(QtWidgets.QWidget):
         self.v2.addWidget(self.analog_filter)
 
 
+class WidgetDerivative(QtWidgets.QWidget):
+    """Derivative settings shared by manual and assisted PID design."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.layout = QtWidgets.QVBoxLayout(self)
+        attributes = parent.parent.attribute_widgets
+        self.d = attributes["d"]
+        self.ratio = attributes["derivative_filter_ratio"]
+        self.d.label.setText("derivative unity-gain (Hz)")
+        self.ratio.label.setText("derivative roll-off ratio")
+        self.d.widget.set_log_increment()
+        self.layout.addWidget(self.d)
+        self.layout.addWidget(self.ratio)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+
+
 class PidProperties(QtWidgets.QGroupBox):
     def __init__(self, parent):
         super().__init__(parent)
@@ -378,6 +396,8 @@ class PidProperties(QtWidgets.QGroupBox):
         self.layout.addLayout(self.v2)
         self.v1 = QtWidgets.QVBoxLayout()
         self.layout.addLayout(self.v1)
+        self.v3 = QtWidgets.QVBoxLayout()
+        self.layout.addLayout(self.v3)
 
         self.radio_group = QtWidgets.QButtonGroup()
         self.manual = QtWidgets.QRadioButton("manual design")
@@ -398,9 +418,14 @@ class PidProperties(QtWidgets.QGroupBox):
         self.v2.addWidget(self.assisted_widget)
         self.v2.addStretch(5)
 
+        self.derivative_widget = WidgetDerivative(self)
+        self.v3.addWidget(self.derivative_widget)
+        self.v3.addStretch(5)
+        self.derivative_widget.setVisible(self.module.derivative_available)
+
         self.setTitle("Pid control")
 
-        for v in (self.v1, self.v2, self.layout):
+        for v in (self.v1, self.v2, self.v3, self.layout):
             v.setSpacing(0)
             v.setContentsMargins(5, 1, 0, 0)
 

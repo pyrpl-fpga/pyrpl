@@ -249,7 +249,13 @@ class DummyClient:  # pragma: no cover
         for module in DSP_INPUTS:
             offset = addr - dsp_addr_base(module)
             if module.startswith("pid"):
-                if offset == 0x220:  # FILTERSTAGES
+                if offset == 0x210:  # DERIVATIVE
+                    if self.fpga_profile is not None:
+                        return self.fpga_profile.hardware.get("pid_derivative", 0)
+                    return 0
+                elif offset == 0x214:  # DERIVATIVE_FILTER_SHIFT reset value
+                    return 4
+                elif offset == 0x220:  # FILTERSTAGES
                     if self.fpga_profile is not None:
                         return self.fpga_profile.hardware["pid_input_filter_stages"]
                     return 4

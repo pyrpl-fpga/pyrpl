@@ -525,7 +525,13 @@ class InputFromOutput(InputDirect):
         return None
 
     input_signal = InputSelectProperty(
-        options=(lambda instance: ["lockbox.outputs." + key for key in instance.lockbox.outputs]),
+        options=(
+            lambda instance: [
+                "lockbox.outputs." + key
+                # ModuleDict iteration yields modules rather than dictionary keys.
+                for key in instance.lockbox.outputs.keys()  # noqa: SIM118
+            ]
+        ),
         doc="lockbox signal used as input",
     )
 

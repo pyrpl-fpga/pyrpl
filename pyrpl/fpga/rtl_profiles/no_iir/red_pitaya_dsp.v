@@ -52,7 +52,10 @@ should not be used.
 
 
 module red_pitaya_dsp #(
-	parameter MODULES = 8
+	parameter MODULES = 8,
+	parameter PID_DERIVATIVE = 0,
+	parameter PID_FILTERSTAGES = 4,
+	parameter PID_DERIVATIVE_FILTER_SHIFT = 4
 )
 (
    // signals
@@ -318,7 +321,12 @@ assign diff_input_signal[1] = diff_output_signal[0]; // difference input of PID1
 assign diff_input_signal[2] = {14{1'b0}};      // difference input of PID2 is zero
 
 generate for (j = 0; j < 3; j = j+1) begin
-   red_pitaya_pid_block i_pid (
+   red_pitaya_pid_block #(
+     .DERIVATIVE              ( PID_DERIVATIVE              ),
+     .INPUT_REGISTER          ( PID_DERIVATIVE && (PID_FILTERSTAGES > 0) ),
+     .FILTERSTAGES            ( PID_FILTERSTAGES            ),
+     .DERIVATIVE_FILTER_SHIFT ( PID_DERIVATIVE_FILTER_SHIFT )
+   ) i_pid (
      // data
      .clk_i        (  clk_i          ),  // clock
      .rstn_i       (  rstn_i         ),  // reset - active low

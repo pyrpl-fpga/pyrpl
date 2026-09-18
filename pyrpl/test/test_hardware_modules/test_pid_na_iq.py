@@ -45,6 +45,7 @@ def setup_na(hardware_session):
         pid.input = "off"
         pid.p = 0
         pid.i = 0
+        pid.d = 0
         pid.ival = 0
         pid.output_direct = "off"
         pid.setpoint = 0
@@ -135,8 +136,7 @@ class TestPidNaIq(TestPyrpl):
             input=pid,
             output_direct="off",
             acbandwidth=0,
-            logscale=True,
-            paused=False,
+            logscale=True
         )
 
         # setup pid: input is the network analyzer output.
@@ -563,6 +563,132 @@ class TestPidNaIq(TestPyrpl):
             pid.pause_gains = "off"
             assert pid.current_output_signal >= pid.max_voltage, pid.current_output_signal
             # un-pause for later
+            pid.paused = False
+
+    @pytest.mark.requires_fpga("pid_derivative")
+    def test_pid_derivative_frequency_response(self):
+        """Check derivative sign, coefficient, latency and combined PID response."""
+        na = self.na
+        error_threshold = 0.05  # relative complex error, including phase/latency
+        for pid in self.pyrpl.pids.all_modules:
+            na.setup(
+                start_freq=10e3,
+                stop_freq=2e6,
+                points=31,
+                rbw=1e3,
+                average_per_point=3,
+                trace_average=1,
+                amplitude=0.02,
+                input=pid,
+                output_direct="off",
+                acbandwidth=0,
+                logscale=True,
+            )
+            pid.setup(
+                input=na.iq,
+                setpoint=0,
+                p=0.2,
+                i=2e3,
+                d=100e3,
+                derivative_filter_ratio=5,
+                inputfilter=0,
+                min_voltage=-1,
+                max_voltage=1,
+                pause_gains="off",
+                paused=False,
+            )
+            # test_pid_paused deliberately leaves the integrator saturated.
+            # The derivative response must not depend on that earlier test's
+            # hardware state, especially since changing i does not clear ival.
+            pid.ival = 0
+            assert pid.d == pytest.approx(100e3, rel=2e-4)
+            assert np.sign(pid.d) == 1
+            requested_cutoff = pid.derivative_filter_ratio * abs(pid.d)
+            assert pid.derivative_filter_bandwidth == pytest.approx(
+                pid._derivative_filter_cutoff(
+                    pid._derivative_filter_shift_register,
+                    pid._frequency_correction,
+                )
+            )
+            assert pid._derivative_filter_shift_register == pid._select_derivative_filter_shift(
+                requested_cutoff, pid._frequency_correction
+            )
+
+            data = na.single()
+            frequencies = na.data_x
+            theory = pid.transfer_function(frequencies, extradelay=self.extradelay)
+            relative_error = np.abs((data - theory) / theory)
+            artifact = save_frequency_response(
+                f"pid_derivative_{pid.name}",
+                frequencies,
+                data,
+                theory,
+                metadata={
+                    "d_hz": pid.d,
+                    "filter_ratio": pid.derivative_filter_ratio,
+                    "filter_bandwidth_hz": pid.derivative_filter_bandwidth,
+                    "filter_shift": pid._derivative_filter_shift_register,
+                    "error_threshold": error_threshold,
+                    "error_kind": "relative_complex",
+                },
+            )
+            logger.info("Saved derivative response artifacts to %s.*", artifact)
+            assert np.max(relative_error) < error_threshold
+
+            pid.p = 0
+            pid.i = 0
+            pid.ival = 0
+            positive = na.single()
+            pid.d = -100e3
+            negative = na.single()
+            active = np.abs(positive) > 0.02
+            assert np.max(np.abs(positive[active] + negative[active])) < 0.08
+
+    @pytest.mark.requires_fpga("pid_derivative")
+    def test_pid_derivative_saturation_and_pause(self):
+        """Exercise derivative limiting and ensure pause clears its state."""
+        rp = self.pyrpl.rp
+        for pid in self.pyrpl.pids.all_modules:
+            rp.asg0.setup(
+                waveform="square",
+                frequency=100e3,
+                amplitude=0.5,
+                offset=0,
+                output_direct="off",
+                trigger_source="immediately",
+            )
+            pid.setup(
+                input="asg0",
+                setpoint=0,
+                p=0,
+                i=0,
+                d=20e3,
+                derivative_filter_ratio=10,
+                inputfilter=0,
+                min_voltage=-0.25,
+                max_voltage=0.25,
+                pause_gains="d",
+                paused=False,
+            )
+            # Keep this test independent of the preceding response test and
+            # of any PID state that was already present on the board.
+            pid.ival = 0
+            rp.scope.setup(
+                input1=pid.name,
+                input2="asg0",
+                duration=100e-6,
+                trigger_source="immediately",
+            )
+            derivative, _ = rp.scope.single(timeout=4)
+            tolerance = 2.0 / 2**13
+            assert np.max(derivative) <= pid.max_voltage + tolerance
+            assert np.min(derivative) >= pid.min_voltage - tolerance
+            assert np.max(derivative) > 0.95 * pid.max_voltage
+            assert np.min(derivative) < 0.95 * pid.min_voltage
+
+            pid.paused = True
+            paused, _ = rp.scope.single(timeout=4)
+            assert np.max(np.abs(paused)) < 5 * tolerance
             pid.paused = False
 
     def test_iq_sync(self):

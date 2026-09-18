@@ -860,6 +860,13 @@ class RedPitaya:
         module = cls(self, name)
         for attribute, value in self.fpga_profile.module_attributes(cls.__name__).items():
             setattr(module, attribute, value)
+        if cls.__name__ == "Pid" and "pid_derivative" in self.fpga_profile.capabilities:
+            derivative_attributes = ["d", "derivative_filter_ratio"]
+            for attribute_list_name in ("_setup_attributes", "_gui_attributes"):
+                attributes = list(getattr(module, attribute_list_name))
+                insertion_index = attributes.index("i") + 1
+                attributes[insertion_index:insertion_index] = derivative_attributes
+                setattr(module, attribute_list_name, attributes)
         setattr(self, name, module)
         self.modules[name] = module
 
@@ -875,6 +882,8 @@ class RedPitaya:
             )
         if hasattr(self, "pid0"):
             observed["pid_input_filter_stages"] = self.pid0._read(0x220)
+            if "pid_derivative" in expected:
+                observed["pid_derivative"] = self.pid0._read(0x210)
         mismatches = {
             key: (expected[key], observed[key])
             for key in expected

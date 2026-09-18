@@ -98,6 +98,22 @@ uv run pytest
 ```
 All tests should take about 3 minutes and finish without failures or errors. If there are errors, please report the console output as an issue (see the section "Issues" below for detailed explanations).
 
+Hardware tests use one FPGA profile per pytest session. Select a published
+profile with `REDPITAYA_FPGA_PROFILE`; the test fixture loads its bitstream and
+skips tests whose `requires_fpga` capabilities are unavailable:
+
+```bat
+set REDPITAYA_HOSTNAME=169.254.101.38
+set REDPITAYA_FPGA_PROFILE=pid_derivative
+uv run pytest pyrpl\test\test_hardware_modules\test_pid_na_iq.py
+```
+
+In PowerShell, use `$env:REDPITAYA_FPGA_PROFILE = "pid_derivative"`. The
+`PYRPL_BITSTREAM_LABEL` variable only labels saved frequency-response results;
+it does not select an FPGA image. See the
+[FPGA profile and test documentation](pyrpl/fpga/README.md#testing-fpga-profiles)
+for staging development builds and testing multiple profiles.
+
 ## Next steps / documentation
 The full html documentation is hosted at [http://pyrpl-fpga.github.io/pyrpl/](http://pyrpl-fpga.github.io/pyrpl/). Alternatively, you can download a .pdf version at [https://media.readthedocs.org/pdf/pyrpl/latest/pyrpl.pdf](https://media.readthedocs.org/pdf/pyrpl/latest/pyrpl.pdf). We are still in the process of creating an fully up-to-date version of the documentation of the current code. If the current documentation is wrong or insufficient, please post an [issue](https://github.com/pyrpl-fpga/pyrpl/issues/new) and we will prioritize documenting the part of code you need.
 

@@ -68,6 +68,7 @@ module red_pitaya_pid_block #(
    parameter     DSR = 10         ,
    parameter     GAINBITS = 24    ,
    parameter     DERIVATIVE = 0   , //disables differential gain if 0
+   parameter     DERIVATIVE_FILTER_SHIFT = 4,
    
    //parameters for input pre-filter
    parameter     FILTERSTAGES = 4 ,

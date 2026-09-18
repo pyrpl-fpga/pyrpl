@@ -138,6 +138,8 @@ around with the setting of these filters to convince yourself that they
 do what they are supposed to.
 """
 
+from functools import lru_cache
+
 import numpy as np
 from qtpy import QtCore
 
@@ -146,6 +148,7 @@ from ..attributes import (
     FloatProperty,
     FloatRegister,
     GainRegister,
+    IntRegister,
     SelectRegister,
 )
 from ..modules import SignalLauncher
@@ -192,6 +195,64 @@ class SignalLauncherPid(SignalLauncher):
         super()._clear()
 
 
+class DerivativeGainRegister(GainRegister):
+    """Derivative unity-gain frequency backed by an inverse gain register."""
+
+    def _capability_available(self, obj):
+        try:
+            return "pid_derivative" in obj._rp.fpga_profile.capabilities
+        except AttributeError:
+            return False
+
+    def _signed_register_value(self, value):
+        value = int(value) & (2**self.bits - 1)
+        if value >= 2 ** (self.bits - 1):
+            value -= 2**self.bits
+        return value
+
+    def to_python(self, obj, value):
+        value = self._signed_register_value(value)
+        if value == 0:
+            return 0.0
+        return self.norm * obj._frequency_correction / value
+
+    def get_value(self, obj):
+        if not self._capability_available(obj):
+            return 0.0
+        return super().get_value(obj)
+
+    def from_python(self, obj, value):
+        if value == 0:
+            return 0
+        raw = int(round(self.norm * obj._frequency_correction / float(value)))
+        raw = min(max(raw, -(2 ** (self.bits - 1))), 2 ** (self.bits - 1) - 1)
+        if raw == 0:
+            raw = 1 if value > 0 else -1
+        return raw & (2**self.bits - 1)
+
+    def validate_and_normalize(self, obj, value):
+        value = float(value)
+        if not np.isfinite(value):
+            raise ValueError("PID derivative frequency must be finite")
+        if value != 0 and not self._capability_available(obj):
+            raise ValueError(
+                "PID derivative gain requires the 'pid_derivative' FPGA profile"
+            )
+        return self.to_python(obj, self.from_python(obj, value))
+
+    def set_value(self, obj, value):
+        super().set_value(obj, value)
+        obj._update_derivative_filter_shift()
+
+
+class DerivativeFilterRatio(FloatProperty):
+    """Ratio N between derivative roll-off and unity-gain frequencies."""
+
+    def set_value(self, obj, value):
+        super().set_value(obj, value)
+        obj._update_derivative_filter_shift()
+
+
 class Pid(FilterModule):
     """
     A proportional/Integrator/Differential filter.
@@ -199,7 +260,9 @@ class Pid(FilterModule):
     The PID filter consists of a 4th order filter input stage, followed by a
     proportional and integral stage in parallel.
 
-    .. warning:: at the moment, the differential stage of PIDs is disabled.
+    The derivative stage is available only with the experimental
+    ``pid_derivative`` FPGA profile. Its noise-limiting roll-off can be set
+    between ``3 / tau_d`` and ``10 / tau_d``.
 
     Example:
 
@@ -265,6 +328,8 @@ class Pid(FilterModule):
     _DSR = 10  # Register(0x208)
 
     _GAINBITS = 24  # Register(0x20C)
+    _DERIVATIVE_FILTER_MAX_SHIFT = 24
+    _DERIVATIVE_NORM = 2**_DSR / (2.0 * np.pi * 8e-9)
 
     ival = IValAttribute(
         min=-4,
@@ -285,11 +350,98 @@ class Pid(FilterModule):
         norm=2**_ISR * 2.0 * np.pi * 8e-9,
         doc="pid integral unity-gain frequency [Hz]",
     )
-    # d = GainRegister(0x110, bits=_GAINBITS, norm= 2 ** _DSR /( 2.0 *np. pi *
-    #                                                        8e-9),
-    #                  invert=True,
-    #                  doc="pid derivative unity-gain frequency [Hz]. Off
-    # when 0.")
+    d = DerivativeGainRegister(
+        0x110,
+        bits=_GAINBITS,
+        norm=_DERIVATIVE_NORM,
+        invert=True,
+        min=-_DERIVATIVE_NORM,
+        max=_DERIVATIVE_NORM,
+        increment=_DERIVATIVE_NORM / (2 ** (_GAINBITS - 1) - 1),
+        log_increment=True,
+        doc="Derivative unity-gain frequency [Hz]. Zero disables it.",
+    )
+    derivative_filter_ratio = DerivativeFilterRatio(
+        default=5.0,
+        min=3.0,
+        max=10.0,
+        increment=0.1,
+        doc="Derivative roll-off frequency as a multiple of 1 / tau_d.",
+    )
+    _derivative_filter_shift_register = IntRegister(
+        0x114,
+        bits=6,
+        min=1,
+        max=_DERIVATIVE_FILTER_MAX_SHIFT,
+        doc="Internal quantized derivative-filter shift.",
+    )
+
+    @classmethod
+    @lru_cache(maxsize=None) # caches the result of the cutoff calculation.
+    def _derivative_filter_normalized_cutoff(cls, shift):
+        """Return the exact -3 dB angular cutoff in radians/sample."""
+        alpha = 2.0 ** (-int(shift))
+
+        def magnitude_squared(omega):
+            zinv = np.exp(-1j * omega)
+            response = alpha * zinv**2 / (1.0 - zinv + alpha * zinv**2)
+            return abs(response) ** 2
+
+        grid = np.concatenate(([0.0], np.geomspace(1e-12, np.pi, 2048)))
+        values = np.asarray([magnitude_squared(value) for value in grid])
+        crossings = np.flatnonzero(values <= 0.5)
+        if len(crossings) == 0:
+            return np.pi
+        upper_index = max(int(crossings[0]), 1)
+        lower, upper = grid[upper_index - 1], grid[upper_index]
+        for _ in range(60):
+            middle = (lower + upper) / 2.0
+            if magnitude_squared(middle) > 0.5:
+                lower = middle
+            else:
+                upper = middle
+        return (lower + upper) / 2.0
+
+    @classmethod
+    def _derivative_filter_cutoff(cls, shift, frequency_correction=1.0):
+        sample_rate = 125e6 * frequency_correction
+        return cls._derivative_filter_normalized_cutoff(shift) * sample_rate / (2 * np.pi)
+
+    @classmethod
+    def _select_derivative_filter_shift(cls, cutoff, frequency_correction=1.0):
+        if cutoff <= 0:
+            return 4
+        shifts = np.arange(1, cls._DERIVATIVE_FILTER_MAX_SHIFT + 1)
+        cutoffs = np.asarray(
+            [cls._derivative_filter_cutoff(shift, frequency_correction) for shift in shifts]
+        )
+        return int(shifts[np.argmin(np.abs(np.log(cutoffs / cutoff)))])
+
+    def _update_derivative_filter_shift(self):
+        try:
+            derivative_available = "pid_derivative" in self._rp.fpga_profile.capabilities
+        except AttributeError:
+            derivative_available = False
+        if not derivative_available:
+            return
+        derivative_frequency = abs(self.d)
+        if derivative_frequency == 0:
+            return
+        cutoff = derivative_frequency * self.derivative_filter_ratio
+        self._derivative_filter_shift_register = self._select_derivative_filter_shift(
+            cutoff, self._frequency_correction
+        )
+
+    @property
+    def derivative_filter_bandwidth(self):
+        """Actual quantized -3 dB roll-off frequency in Hz."""
+        if "pid_derivative" not in self._rp.fpga_profile.capabilities:
+            raise RuntimeError(
+                "Derivative filter bandwidth requires the 'pid_derivative' FPGA profile"
+            )
+        return self._derivative_filter_cutoff(
+            self._derivative_filter_shift_register, self._frequency_correction
+        )
 
     pause_gains = SelectRegister(
         0x12C,
@@ -393,11 +545,15 @@ class Pid(FilterModule):
         tf: np.array(..., dtype=complex)
             The complex open loop transfer function of the module.
         """
+        derivative_available = "pid_derivative" in self._rp.fpga_profile.capabilities
         return Pid._transfer_function(
             frequencies,
             p=self.p,
             i=self.i,
-            d=0,  # d is currently not available
+            d=self.d if derivative_available else 0,
+            derivative_filter_shift=(
+                self._derivative_filter_shift_register if derivative_available else 4
+            ),
             filter_values=self.inputfilter,
             extradelay_s=extradelay,
             module_delay_cycle=self._delay,
@@ -415,12 +571,18 @@ class Pid(FilterModule):
         module_delay_cycle=_delay,
         extradelay_s=0.0,
         frequency_correction=1.0,
+        derivative_filter_shift=4,
     ):
         if filter_values is None:
             filter_values = list()
         return (
             Pid._pid_transfer_function(
-                frequencies, p=p, i=i, d=d, frequency_correction=frequency_correction
+                frequencies,
+                p=p,
+                i=i,
+                d=d,
+                frequency_correction=frequency_correction,
+                derivative_filter_shift=derivative_filter_shift,
             )
             * Pid._filter_transfer_function(
                 frequencies,
@@ -436,7 +598,15 @@ class Pid(FilterModule):
         )
 
     @classmethod
-    def _pid_transfer_function(cls, frequencies, p, i, d=0, frequency_correction=1.0):
+    def _pid_transfer_function(
+        cls,
+        frequencies,
+        p,
+        i,
+        d=0,
+        frequency_correction=1.0,
+        derivative_filter_shift=4,
+    ):
         """
         returns the transfer function of a generic pid module
         delay is the module delay as found in pid._delay, p, i and d are the
@@ -446,19 +616,24 @@ class Pid(FilterModule):
         """
 
         frequencies = np.array(frequencies, dtype=complex)
+        sample_period = 8e-9 / frequency_correction
+        zinv = np.exp(-1j * sample_period * frequencies * 2 * np.pi)
         # integrator with one cycle of extra delay
         tf = (
             i
             / (frequencies * 1j)
-            * np.exp(-1j * 8e-9 * frequency_correction * frequencies * 2 * np.pi)
+            * zinv
         )
         # proportional (delay in self._delay included)
         tf += p
-        # derivative action with one cycle of extra delay
-        # if self.d != 0:
-        #    tf += frequencies*1j/self.d \
-        #          * np.exp(-1j * 8e-9 * self._frequency_correction *
-        #                   frequencies * 2 * np.pi)
+        if d != 0:
+            alpha = 2.0 ** (-int(derivative_filter_shift))
+            # The registered filter correction produces the exact transfer
+            # alpha*z^-2 / (1 - z^-1 + alpha*z^-2).
+            derivative_filter = alpha * zinv**2 / (
+                1.0 - zinv + alpha * zinv**2
+            )
+            tf += (1.0 - zinv) / (2.0 * np.pi * sample_period * d) * derivative_filter
         # add delay
         delay = 0  # module_delay * 8e-9 / self._frequency_correction
         tf *= np.exp(-1j * delay * frequencies * 2 * np.pi)
