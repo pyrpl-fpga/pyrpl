@@ -884,6 +884,8 @@ class RedPitaya:
             observed["pid_input_filter_stages"] = self.pid0._read(0x220)
             if "pid_derivative" in expected:
                 observed["pid_derivative"] = self.pid0._read(0x210)
+        if hasattr(self, "cordic") and "cordic_abi" in expected:
+            observed["cordic_abi"] = self.cordic.abi_version
         mismatches = {
             key: (expected[key], observed[key])
             for key in expected

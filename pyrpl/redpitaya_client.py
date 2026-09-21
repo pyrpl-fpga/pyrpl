@@ -282,6 +282,10 @@ class DummyClient:  # pragma: no cover
                     return 2
                 elif offset == 0x238:  # minbw = 0x238
                     return 1
+            elif module == "cordic" and offset == 0x18:
+                if self.fpga_profile is not None:
+                    return self.fpga_profile.hardware.get("cordic_abi", 0)
+                return 0
             for filter_module in ["iq", "pid", "iir"]:
                 if module.startswith(filter_module):
                     filter_map = {
