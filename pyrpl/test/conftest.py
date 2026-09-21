@@ -4,12 +4,13 @@ import logging
 import os
 import socket
 from collections import namedtuple
+from shutil import copyfile
 
 import pytest
 
 from .. import Pyrpl, RedPitaya, global_config
 from ..async_utils import sleep
-from ..directories import user_config_dir
+from ..directories import default_config_dir, user_config_dir
 from ..pyrpl_utils import time
 
 logger = logging.getLogger(name=__name__)
@@ -37,6 +38,33 @@ _require_full_pyrpl = False
 # A container to standardize what the fixture returns
 # rp is always present; pyrpl is None if running in light mode
 HardwareSession = namedtuple("HardwareSession", ["rp", "pyrpl", "read_time", "write_time"])
+
+
+def _test_target_overrides():
+    """Return environment-selected hardware target as explicit constructor options.
+
+    RedPitaya deliberately gives persisted configuration values priority over
+    environment variables.  The pytest source configuration contains a fake
+    hostname, however, so tests must forward their target selection as explicit
+    constructor arguments (the highest-priority configuration source).
+    """
+    environment_options = {
+        "hostname": "REDPITAYA_HOSTNAME",
+        "fpga_profile": "REDPITAYA_FPGA_PROFILE",
+    }
+    return {
+        option: os.environ[variable]
+        for option, variable in environment_options.items()
+        if variable in os.environ
+    }
+
+
+def _reset_test_source_config(source_name):
+    """Restore a user-side test source from its packaged template."""
+    packaged_source = os.path.join(default_config_dir, source_name)
+    user_source = os.path.join(user_config_dir, source_name)
+    copyfile(packaged_source, user_source)
+    return packaged_source
 
 
 def pytest_collection_modifyitems(session, config, items):
@@ -124,6 +152,8 @@ def hardware_session():
     rp_obj = None
     tmp_file = "nosetests_config.yml"
     tmp_conf = os.path.join(user_config_dir, tmp_file)
+    target_overrides = _test_target_overrides()
+    source_template = _reset_test_source_config(_source_config_file)
 
     # Cleanup start
     if os.path.isfile(tmp_conf):
@@ -133,14 +163,22 @@ def hardware_session():
     if _require_full_pyrpl:
         # --- HEAVY PATH ---
         logger.info(f"Initializing Full Pyrpl with source: {_source_config_file}")
-        pyrpl_obj = Pyrpl(config=tmp_file, source=_source_config_file, reloadfpga=True)
+        pyrpl_obj = Pyrpl(
+            config=tmp_file,
+            source=source_template,
+            reloadfpga=True,
+            **target_overrides,
+        )
         rp_obj = pyrpl_obj.rp
     else:
         # --- LIGHT PATH ---
         logger.info("Initializing Light RedPitaya (No Pyrpl App config)")
-        # This uses environment variables or defaults defined in RedPitaya class
-        # Assuming 'hostname' is handled by RedPitaya's internal logic checking env vars
-        rp_obj = RedPitaya(config=None, autostart=True, reloadfpga=True)
+        rp_obj = RedPitaya(
+            config=None,
+            autostart=True,
+            reloadfpga=True,
+            **target_overrides,
+        )
 
     os.environ.setdefault("PYRPL_BITSTREAM_LABEL", rp_obj.fpga_profile.id)
 
@@ -179,6 +217,8 @@ def hardware_session():
     if os.path.isfile(tmp_conf):
         with contextlib.suppress(OSError):
             os.remove(tmp_conf)
+    with contextlib.suppress(OSError):
+        _reset_test_source_config(_source_config_file)
 
     # Wait for file to be fully deleted
     max_attempts = 10
