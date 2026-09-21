@@ -1,0 +1,78 @@
+{
+  "id": "cordic",
+  "description": "Three-IQ profile with a standalone two-input CORDIC and no PID input filters",
+  "abi_version": 1,
+  "capabilities": [
+    "cordic",
+    "iq",
+    "pid",
+    "three_pids",
+    "pwm"
+  ],
+  "hardware_modules": [
+    "HK",
+    "AMS",
+    "Scope",
+    "Sampler",
+    "Asg0",
+    "Asg1",
+    "Pwm",
+    "Pwm",
+    "Cordic",
+    "Iq",
+    "Iq",
+    "Iq",
+    "Pid",
+    "Pid",
+    "Pid",
+    "Trig"
+  ],
+  "software_managers": [
+    "Asgs",
+    "Iqs",
+    "Pids",
+    "Scopes",
+    "Trigs",
+    "Pwms",
+    "Hks"
+  ],
+  "timing": {
+    "cordic": {
+      "_delay": 10
+    },
+    "iq": {
+      "_delay": 7,
+      "_quadrature_delay": 4
+    }
+  },
+  "hardware": {
+    "dsp_inputs": [
+      "in1",
+      "in2",
+      "out1",
+      "out2",
+      "cordic",
+      "iq0",
+      "iq1",
+      "iq2",
+      "iq2_2",
+      "pid0",
+      "pid1",
+      "pid2",
+      "asg0",
+      "asg1",
+      "trig",
+      "off"
+    ],
+    "pid_input_filter_stages": 0,
+    "cordic_abi": 1129271809
+  },
+  "bitstream": {
+    "filename": "red_pitaya.bin",
+    "sha256": "0aa33561e4ed7456d20d9a7042f90bcbe0cdfe9afc5b252314adbf593347da4e"
+  },
+  "dtbo": {
+    "filename": "red_pitaya.dtbo",
+    "sha256": "9c19b99bef128d6069d44e8294ce6f118ee8513e523673ec02e1510d76877020"
+  }
+}

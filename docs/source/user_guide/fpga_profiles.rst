@@ -4,8 +4,10 @@ FPGA profiles and hardware tests
 An FPGA profile binds a bitstream to its Python hardware contract: available
 modules, capabilities, register-map constants, and timing metadata. The
 ``default`` profile remains the normal production profile. Specialized images
-such as ``legacy``, ``no_iir``, ``iir32``, and the experimental
-``pid_derivative`` profile must be selected explicitly.
+such as ``legacy``, ``no_iir``, ``iir32``, ``cordic``, and the experimental
+``pid_derivative`` profile must be selected explicitly. The ``cordic`` profile
+replaces the IIR with a standalone two-input phase detector and disables the
+PID input prefilters.
 
 Selecting a profile
 ===================
@@ -63,7 +65,7 @@ Because the connection and FPGA profile are session-scoped, testing several
 profiles requires separate pytest invocations. PowerShell can run them in
 sequence::
 
-    foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative")) {
+    foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative", "cordic")) {
         $env:REDPITAYA_FPGA_PROFILE = $profile
         pytest pyrpl/test/test_hardware_modules
     }
@@ -78,6 +80,11 @@ its binary before testing::
     cd pyrpl/fpga
     make_bin.bat pid_derivative
     python publish_fpga_profile.py pid_derivative
+
+For the CORDIC profile, use ``make_bin.bat cordic`` and then
+``python publish_fpga_profile.py cordic``. Once loaded, ``rp.cordic.input``
+selects I and ``rp.cordic.input_q`` independently selects Q. The routed output
+is ``atan2(Q, I)`` expressed in turns.
 
 Publishing makes the build selectable and records checksums. The staged
 bitstream should still pass timing and hardware tests before its generated

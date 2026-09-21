@@ -49,6 +49,7 @@ make_bin.bat legacy
 make_bin.bat no_iir
 make_bin.bat iir32
 make_bin.bat pid_derivative
+make_bin.bat cordic
 ```
 
 Calling `make_bin.bat` without an argument builds `default`. Results are kept
@@ -64,6 +65,7 @@ compatibility-only `legacy` profile skips that expensive step.
 |---------------|-----|-------------|-------------|
 | `default` | 24-bit, 8-stage | none | 3 PID, 3 IQ |
 | `pid_derivative` | none | 4 input stages plus band-limited D | 3 PID, 3 IQ |
+| `cordic` | none | none | 3 PID, 3 IQ, standalone two-input CORDIC |
 | `legacy` | original 32-bit, 14-stage | 4 input stages | 3 PID, 3 IQ |
 | `no_iir` | none | 4 input stages | 3 PID, 3 IQ |
 | `iir32` | pipelined 32-bit, 14-stage | none | 2 PID, 3 IQ |
@@ -85,8 +87,31 @@ the cache is nevertheless bounded in practice by those 24 shift values. This
 is only a Python performance optimization and does not cache FPGA state.
 
 The specialized profiles retain the established FPGA address map. `no_iir`
-and `pid_derivative` leave address slot 4 inactive, while `iir32` leaves PID
-slot 2 inactive. IQ2 is retained because it is used by the network analyzer.
+and `pid_derivative` leave address slot 4 inactive, `cordic` uses slot 4 for
+its standalone phase output, and `iir32` leaves PID slot 2 inactive. IQ2 is
+retained because it is used by the network analyzer. In the `cordic` profile,
+`cordic.input` selects I and `cordic.input_q` independently selects Q. Its
+output is `atan2(Q, I)` in turns, with 12 fractional phase bits, a two-bit
+turn counter, and ten cycles of latency. Exact zero input magnitude holds the
+last valid phase. Convert a sampled output with
+`cordic.to_radians(value)` or `cordic.to_degrees(value)`.
+
+The CORDIC exposes the read-only ABI signature `0x434F5201`: the upper three
+bytes spell `COR` and the low byte is register-map revision 1. PyRPL checks
+this value after loading the profile so incompatible CORDIC logic is detected
+before its registers are used.
+
+Run the standalone RTL testbench on Windows with:
+
+```bat
+cd pyrpl\fpga
+run_cordic_tb.bat
+```
+
+The script compiles the CORDIC and its SystemVerilog testbench with Vivado
+2024.2, elaborates `red_pitaya_cordic_block_tb`, and runs it in batch mode.
+Generated simulator files remain under `build\cordic_sim`; success is reported
+as `CORDIC_TEST_PASS` followed by `CORDIC RTL simulation passed.`
 
 To load an unpublished build for hardware testing while retaining the correct
 Python contract, select its profile and override only the binary path:
@@ -108,6 +133,7 @@ vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs lega
 vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs no_iir build/no_iir
 vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs iir32 build/iir32
 vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs pid_derivative build/pid_derivative
+vivado -nolog -nojournal -mode batch -source red_pitaya_vivado.tcl -tclargs cordic build/cordic
 ```
 
 After building a new profile, stage it for runtime hardware tests. This copies
@@ -154,7 +180,7 @@ The pre-built .bin file and device tree are used if these files are not specifie
 ## FPGA profiles
 
 The `fpga_profile` setting selects a published, tested bitstream together with
-its Python hardware contract. The source tree contains five build profiles,
+its Python hardware contract. The source tree contains six build profiles,
 but `available_fpga_profiles()` only lists profiles that have been staged under
 `bitstreams`.
 
@@ -226,6 +252,7 @@ building it, stage it before hardware testing:
 ```text
 cd pyrpl/fpga
 python publish_fpga_profile.py pid_derivative
+python publish_fpga_profile.py cordic
 ```
 
 Publishing copies `build/pid_derivative/red_pitaya.bin` into the corresponding
@@ -237,7 +264,7 @@ Run several profiles as separate pytest sessions so each image is loaded and
 validated independently:
 
 ```powershell
-foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative")) {
+foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative", "cordic")) {
     $env:REDPITAYA_FPGA_PROFILE = $profile
     pytest pyrpl/test/test_hardware_modules
 }

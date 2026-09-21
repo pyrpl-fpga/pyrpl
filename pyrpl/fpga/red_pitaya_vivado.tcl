@@ -137,6 +137,7 @@ read_verilog                      $path_rtl/red_pitaya_top.v
 read_verilog                      $path_rtl/red_pitaya_adv_trigger.v
 read_verilog                      $path_rtl/red_pitaya_saturate.v
 read_verilog                      $path_rtl/red_pitaya_product_sat.v
+read_verilog                      $path_rtl/red_pitaya_cordic_block.v
 read_verilog                      [rtl_source $path_rtl $rtl_overrides red_pitaya_iir_block.v]
 read_verilog                      [rtl_source $path_rtl $rtl_overrides red_pitaya_iq_modulator_block.v]
 read_verilog                      $path_rtl/red_pitaya_lpf_block.v
