@@ -24,6 +24,7 @@ from .lockbox import (
 from .loop import Loop, PlotLoop, PlotWindow
 from .module_managers import (
     Asgs,
+    Cordics,
     Hks,
     Iirs,
     Iqs,
@@ -59,6 +60,7 @@ def get_module(name):
 __all__ = [
     "Module",
     "Asgs",
+    "Cordics",
     "Iqs",
     "Pids",
     "Scopes",

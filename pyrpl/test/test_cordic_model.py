@@ -5,6 +5,7 @@ import pytest
 
 from pyrpl.hardware_modules.cordic import Cordic, turns_to_degrees, turns_to_radians
 from pyrpl.hardware_modules.dsp import DSP_INPUTS
+from pyrpl.widgets.module_widgets import CordicWidget
 
 
 def test_cordic_uses_the_iir_address_slot_and_independent_q_register():
@@ -12,6 +13,11 @@ def test_cordic_uses_the_iir_address_slot_and_independent_q_register():
     assert Cordic.input.address == 0x0
     assert Cordic.input_q.address == 0x14
     assert Cordic.abi_version.address == 0x18
+
+
+def test_cordic_uses_compact_widget_with_routing_controls():
+    assert Cordic._widget_class is CordicWidget
+    assert Cordic._gui_attributes == ["input", "input_q", "output_direct"]
 
 
 @pytest.mark.parametrize(
@@ -48,6 +54,7 @@ def test_cordic_profile_contract_has_no_pid_prefilters():
     assert manifest["hardware"]["pid_input_filter_stages"] == 0
     assert manifest["hardware"]["cordic_abi"] == 0x434F5201
     assert manifest["hardware_modules"].count("Cordic") == 1
+    assert "Cordics" in manifest["software_managers"]
     assert manifest["hardware_modules"].count("Iq") == 3
     assert manifest["hardware_modules"].count("Pid") == 3
     assert "IIR" not in manifest["hardware_modules"]

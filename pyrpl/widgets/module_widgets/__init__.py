@@ -8,6 +8,7 @@ be used for the particular ModuleClass.
 
 from .asg_widget import AsgWidget
 from .base_module_widget import ModuleWidget, ReducedModuleWidget
+from .cordic_widget import CordicWidget
 from .curve_viewer_widget import CurveViewerWidget
 from .iir_widget import IirWidget
 from .iq_widget import IqWidget
@@ -22,6 +23,7 @@ from .lockbox_widget import (
 )
 from .module_manager_widget import (
     AsgManagerWidget,
+    CordicManagerWidget,
     IirManagerWidget,
     IqManagerWidget,
     ModuleManagerWidget,

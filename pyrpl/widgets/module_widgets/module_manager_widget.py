@@ -52,6 +52,8 @@ class PidManagerWidget(ModuleManagerWidget):
 class AsgManagerWidget(ModuleManagerWidget):
     pass
 
+class CordicManagerWidget(ModuleManagerWidget):
+    pass
 
 class ScopeManagerWidget(ModuleManagerWidget):
     add_stretch = False  # Scope should expand maximally

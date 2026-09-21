@@ -3,6 +3,7 @@
 from math import tau
 
 from ..attributes import FloatRegister, IntRegister
+from ..widgets.module_widgets import CordicWidget
 from .dsp import DspModule, InputSelectRegister, all_inputs
 
 
@@ -24,6 +25,7 @@ class Cordic(DspModule):
     saturating two-bit turn counter around a 12-bit fractional phase.
     """
 
+    _widget_class = CordicWidget
     _setup_attributes = ["input", "input_q", "output_direct"]
     _gui_attributes = _setup_attributes
     _delay = 10

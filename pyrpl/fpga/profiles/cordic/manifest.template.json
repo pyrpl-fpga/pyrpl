@@ -7,7 +7,7 @@
     "HK", "AMS", "Scope", "Sampler", "Asg0", "Asg1",
     "Pwm", "Pwm", "Cordic", "Iq", "Iq", "Iq", "Pid", "Pid", "Pid", "Trig"
   ],
-  "software_managers": ["Asgs", "Iqs", "Pids", "Scopes", "Trigs", "Pwms", "Hks"],
+  "software_managers": ["Asgs", "Cordics", "Iqs", "Pids", "Scopes", "Trigs", "Pwms", "Hks"],
   "timing": {
     "cordic": {"_delay": 10},
     "iq": {"_delay": 7, "_quadrature_delay": 4}
