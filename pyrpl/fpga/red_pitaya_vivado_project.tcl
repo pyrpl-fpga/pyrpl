@@ -70,6 +70,7 @@ add_files                      $path_rtl/red_pitaya_iq_demodulator_block.v
 add_files                      $path_rtl/red_pitaya_pfd_block.v
 #add_files                     $path_rtl/red_pitaya_iq_hpf_block.v
 add_files                      $path_rtl/red_pitaya_iq_fgen_block.v
+add_files                      $path_rtl/red_pitaya_iq_trigger.v
 add_files                      $path_rtl/red_pitaya_iq_block.v
 add_files                      $path_rtl/red_pitaya_trigger_block.v
 add_files                      $path_rtl/red_pitaya_prng.v

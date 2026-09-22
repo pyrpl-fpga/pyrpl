@@ -147,6 +147,7 @@ read_verilog                      $path_rtl/red_pitaya_iq_demodulator_block.v
 read_verilog                      $path_rtl/red_pitaya_pfd_block.v
 #read_verilog                     $path_rtl/red_pitaya_iq_hpf_block.v
 read_verilog                      $path_rtl/red_pitaya_iq_fgen_block.v
+read_verilog                      $path_rtl/red_pitaya_iq_trigger.v
 read_verilog                      $path_rtl/red_pitaya_iq_block.v
 read_verilog                      $path_rtl/red_pitaya_trigger_block.v
 read_verilog                      $path_rtl/red_pitaya_prng.v

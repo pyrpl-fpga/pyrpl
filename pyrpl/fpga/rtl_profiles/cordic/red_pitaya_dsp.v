@@ -71,6 +71,7 @@ module red_pitaya_dsp #(
    input      [ 14-1: 0] asg1_i,
    input      [ 14-1: 0] asg2_i,
    input      [ 14-1: 0] asg1phase_i,
+   input      [ 16-1: 0] iq_trigger_i,
 
    // pwm outputs
    output     [ 14-1: 0] pwm0,
@@ -426,6 +427,7 @@ generate for (j = 5; j < 7; j = j+1) begin
 	     .clk_i        (  clk_i          ),  // clock
 	     .rstn_i       (  rstn_i         ),  // reset - active low
          .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
+         .external_trigger_i ( iq_trigger_i ),
 	     .dat_i        (  input_signal [j] ),  // input data
 	     .dat_o        (  output_direct[j]),  // output data
 		 .signal_o     (  output_signal[j]),  // output signal
@@ -453,6 +455,7 @@ generate for (j = 7; j < 8; j = j+1) begin
          .clk_i        (  clk_i          ),  // clock
          .rstn_i       (  rstn_i         ),  // reset - active low
          .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
+         .external_trigger_i ( iq_trigger_i ),
          .dat_i        (  input_signal [j] ),  // input data
          .dat_o        (  output_direct[j]),  // output data
          .signal_o     (  output_signal[j]),  // output signal
@@ -469,5 +472,3 @@ generate for (j = 7; j < 8; j = j+1) begin
 end endgenerate
 
 endmodule
-
-

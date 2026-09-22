@@ -235,9 +235,7 @@ class DerivativeGainRegister(GainRegister):
         if not np.isfinite(value):
             raise ValueError("PID derivative frequency must be finite")
         if value != 0 and not self._capability_available(obj):
-            raise ValueError(
-                "PID derivative gain requires the 'pid_derivative' FPGA profile"
-            )
+            raise ValueError("PID derivative gain requires the 'pid_derivative' FPGA profile")
         return self.to_python(obj, self.from_python(obj, value))
 
     def set_value(self, obj, value):
@@ -377,7 +375,7 @@ class Pid(FilterModule):
     )
 
     @classmethod
-    @lru_cache(maxsize=None) # caches the result of the cutoff calculation.
+    @lru_cache(maxsize=None)  # caches the result of the cutoff calculation.
     def _derivative_filter_normalized_cutoff(cls, shift):
         """Return the exact -3 dB angular cutoff in radians/sample."""
         alpha = 2.0 ** (-int(shift))
@@ -619,20 +617,14 @@ class Pid(FilterModule):
         sample_period = 8e-9 / frequency_correction
         zinv = np.exp(-1j * sample_period * frequencies * 2 * np.pi)
         # integrator with one cycle of extra delay
-        tf = (
-            i
-            / (frequencies * 1j)
-            * zinv
-        )
+        tf = i / (frequencies * 1j) * zinv
         # proportional (delay in self._delay included)
         tf += p
         if d != 0:
             alpha = 2.0 ** (-int(derivative_filter_shift))
             # The registered filter correction produces the exact transfer
             # alpha*z^-2 / (1 - z^-1 + alpha*z^-2).
-            derivative_filter = alpha * zinv**2 / (
-                1.0 - zinv + alpha * zinv**2
-            )
+            derivative_filter = alpha * zinv**2 / (1.0 - zinv + alpha * zinv**2)
             tf += (1.0 - zinv) / (2.0 * np.pi * sample_period * d) * derivative_filter
         # add delay
         delay = 0  # module_delay * 8e-9 / self._frequency_correction

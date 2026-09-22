@@ -195,12 +195,14 @@ class Iirs(ModuleManager):
 
     _widget_class = IirManagerWidget
 
+
 class Cordics(ModuleManager):
     """
     Only one cordic, but it should be protected by the slave/owner mechanism.
     """
 
     _widget_class = CordicManagerWidget
+
 
 class Trigs(ModuleManager):
     """

@@ -35,15 +35,16 @@ def publish(profile_id, force=False):
     with template_path.open(encoding="utf-8") as stream:
         manifest = json.load(stream)
     if manifest["id"] != profile_id:
-        raise ValueError(
-            f"Template id {manifest['id']!r} does not match profile {profile_id!r}"
-        )
+        raise ValueError(f"Template id {manifest['id']!r} does not match profile {profile_id!r}")
 
     destination.mkdir(parents=True, exist_ok=True)
     bitstream = destination / manifest["bitstream"]["filename"]
     dtbo = destination / manifest["dtbo"]["filename"]
     shutil.copy2(source_bitstream, bitstream)
-    shutil.copy2(source_dtbo, dtbo)
+    # The default profile is also the canonical source of the device-tree
+    # overlay, so publishing default would otherwise copy the DTBO onto itself.
+    if source_dtbo.resolve() != dtbo.resolve():
+        shutil.copy2(source_dtbo, dtbo)
     manifest["bitstream"]["sha256"] = _sha256(bitstream)
     manifest["dtbo"]["sha256"] = _sha256(dtbo)
     with (destination / "manifest.json").open("w", encoding="utf-8") as stream:
@@ -55,9 +56,7 @@ def publish(profile_id, force=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("profile", help="build profile to stage")
-    parser.add_argument(
-        "--force", action="store_true", help="replace an already staged profile"
-    )
+    parser.add_argument("--force", action="store_true", help="replace an already staged profile")
     args = parser.parse_args()
     destination = publish(args.profile, force=args.force)
     print(f"Staged runtime profile in {destination}")

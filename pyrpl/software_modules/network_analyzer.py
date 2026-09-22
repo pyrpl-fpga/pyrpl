@@ -451,6 +451,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
 
         self.iq.setup(
             frequency=self.frequencies[0],
+            trigger_source="immediately",
             bandwidth=[self._current_bandwidth, self._current_bandwidth],
             gain=0,
             phase=0,

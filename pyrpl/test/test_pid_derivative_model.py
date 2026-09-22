@@ -72,11 +72,7 @@ def test_exact_registered_derivative_transfer_function():
     zinv = np.exp(-1j * 2 * np.pi * frequencies * sample_period)
     alpha = 2.0**-shift
     registered_filter = alpha * zinv**2 / (1 - zinv + alpha * zinv**2)
-    expected = (
-        (1 - zinv)
-        / (2 * np.pi * sample_period * derivative_frequency)
-        * registered_filter
-    )
+    expected = (1 - zinv) / (2 * np.pi * sample_period * derivative_frequency) * registered_filter
 
     response = Pid._pid_transfer_function(
         frequencies,
@@ -104,12 +100,9 @@ def test_combined_pid_response_is_sum_of_discrete_branches():
     combined = Pid._pid_transfer_function(
         frequencies, p=0.4, i=2e3, d=150e3, derivative_filter_shift=5
     )
-    separate = (
-        Pid._pid_transfer_function(frequencies, p=0.4, i=2e3, d=0)
-        + Pid._pid_transfer_function(
-            frequencies, p=0, i=0, d=150e3, derivative_filter_shift=5
-        )
-    )
+    separate = Pid._pid_transfer_function(
+        frequencies, p=0.4, i=2e3, d=0
+    ) + Pid._pid_transfer_function(frequencies, p=0, i=0, d=150e3, derivative_filter_shift=5)
 
     assert combined == pytest.approx(separate)
 

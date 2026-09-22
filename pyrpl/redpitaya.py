@@ -254,9 +254,7 @@ class RedPitaya:
             if value in (None, ""):
                 return True
             normalized = str(value).replace("\\", "/")
-            return normalized == f"fpga/{basename}" or normalized.startswith(
-                "fpga/bitstreams/"
-            )
+            return normalized == f"fpga/{basename}" or normalized.startswith("fpga/bitstreams/")
 
         if not filename_explicit and is_managed_path(
             self.parameters.get("filename"), "red_pitaya.bin"

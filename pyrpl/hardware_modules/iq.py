@@ -153,6 +153,25 @@ with the network analyzer:
    the module to be measured to the network analyzer's iq.
 
 
+External oscillator synchronization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The IQ local oscillator normally starts immediately and remains compatible
+with :meth:`synchronize_iqs`. To start IQ oscillators on several boards from
+the same signal, select ``trigger_source='external'`` and an expansion pin
+from ``P0`` through ``P7`` or ``N0`` through ``N7``. The oscillator waits at
+its configured start phase until the selected input has a rising edge, then
+runs continuously. Calling :meth:`arm_trigger` makes it wait for another
+rising edge. The selected Housekeeping expansion pin must be configured as an
+input (its reset default).
+
+The expansion signal is passed through a two-register synchronizer. This
+protects the IQ logic from metastability, although capture of a truly
+asynchronous edge can differ by one clock cycle. For deterministic
+synchronization between boards, distribute the same clock and ensure the
+trigger edge has adequate setup and hold margin on every board.
+
+
 Frequency comparator module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -257,6 +276,8 @@ class Iq(FilterModule):
         "input",
         "acbandwidth",
         "frequency",
+        "trigger_source",
+        "trigger_pin",
         "bandwidth",
         "quadrature_factor",
         "output_signal",
@@ -390,6 +411,36 @@ class Iq(FilterModule):
     )
 
     frequency = FrequencyRegister(0x108, bits=_PHASEBITS, doc="frequency of iq demodulation [Hz]")
+
+    _trigger_sources = sorted_dict(immediately=0, external=1)
+    trigger_sources = _trigger_sources.keys()
+    trigger_source = SelectRegister(
+        0x154,
+        options=_trigger_sources,
+        default="immediately",
+        doc=("Start the local oscillator immediately, or arm it for a rising edge on trigger_pin."),
+    )
+
+    _trigger_pins = sorted_dict(
+        **{
+            **{f"P{index}": index for index in range(8)},
+            **{f"N{index}": index + 8 for index in range(8)},
+        }
+    )
+    trigger_pins = _trigger_pins.keys()
+    trigger_pin = SelectRegister(
+        0x158,
+        options=_trigger_pins,
+        default="P0",
+        doc=(
+            "Expansion connector input used by the external IQ trigger. "
+            "Configure the corresponding HK expansion pin as an input."
+        ),
+    )
+
+    def arm_trigger(self):
+        """Rearm this IQ when it uses an external trigger source."""
+        self.trigger_source = self.trigger_source
 
     _g1 = GainRegister(0x110, bits=_GAINBITS, norm=2**_SHIFTBITS, doc="gain1 of iq module [volts]")
 

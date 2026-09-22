@@ -85,9 +85,7 @@ def test_cordic_dynamic_latency(hardware_session):
         # A true element at index n describes the transition between samples
         # n and n + 1.  Report n + 1, the first sample on the new/high side of
         # the edge, for both traces so their index difference is the latency.
-        return np.flatnonzero(
-            (values[:-1] < threshold) & (values[1:] >= threshold)
-        ) + 1
+        return np.flatnonzero((values[:-1] < threshold) & (values[1:] >= threshold)) + 1
 
     try:
         asg_i.setup(
@@ -141,15 +139,11 @@ def test_cordic_dynamic_latency(hardware_session):
         )
         assert np.median(measured_lags) == pytest.approx(
             cordic._delay, abs=allowed_latency_error_cycles
-        ), (
-            f"CORDIC edge lags were {measured_lags}; expected {cordic._delay} cycles"
-        )
+        ), f"CORDIC edge lags were {measured_lags}; expected {cordic._delay} cycles"
         assert (
             np.max(np.abs(np.asarray(measured_lags) - cordic._delay))
             <= allowed_latency_error_cycles
-        ), (
-            f"CORDIC edge lags were {measured_lags}; expected {cordic._delay} cycles"
-        )
+        ), f"CORDIC edge lags were {measured_lags}; expected {cordic._delay} cycles"
     finally:
         scope.stop()
         scope.setup_attributes = original_scope

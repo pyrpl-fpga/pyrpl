@@ -710,6 +710,7 @@ class SpectrumAnalyzer(AcquisitionModule):
             #                          "current release of Pyrpl.")
             self.iq.setup(
                 input=self.input,
+                trigger_source="immediately",
                 bandwidth=self._iq_bandwidth(),
                 gain=0,
                 phase=0,

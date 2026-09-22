@@ -96,6 +96,15 @@ turn counter, and ten cycles of latency. Exact zero input magnitude holds the
 last valid phase. Convert a sampled output with
 `cordic.to_radians(value)` or `cordic.to_degrees(value)`.
 
+All profiles expose the same IQ oscillator trigger controls. The default
+`trigger_source="immediately"` retains software synchronization. With
+`trigger_source="external"`, `trigger_pin` selects `P0` through `P7` or `N0`
+through `N7`; a rising edge starts the oscillator, which then runs until it is
+rearmed. Re-select either trigger setting or call `iq.arm_trigger()` to rearm
+one IQ. The selected expansion pin must be configured as an input through the
+Housekeeping module (the FPGA reset default). Expansion inputs pass through a
+shared two-flop synchronizer before reaching the three IQ modules.
+
 The CORDIC exposes the read-only ABI signature `0x434F5201`: the upper three
 bytes spell `COR` and the low byte is register-map revision 1. PyRPL checks
 this value after loading the profile so incompatible CORDIC logic is detected
@@ -112,6 +121,16 @@ The script compiles the CORDIC and its SystemVerilog testbench with Vivado
 2024.2, elaborates `red_pitaya_cordic_block_tb`, and runs it in batch mode.
 Generated simulator files remain under `build\cordic_sim`; success is reported
 as `CORDIC_TEST_PASS` followed by `CORDIC RTL simulation passed.`
+
+The IQ trigger state machine has its own standalone RTL test:
+
+```bat
+cd pyrpl\fpga
+run_iq_trigger_tb.bat
+```
+
+It checks immediate mode, first and repeated rising-edge starts, per-IQ
+rearming, falling-edge behavior, and global IQ synchronization rearming.
 
 To load an unpublished build for hardware testing while retaining the correct
 Python contract, select its profile and override only the binary path:

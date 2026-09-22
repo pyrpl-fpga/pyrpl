@@ -425,6 +425,20 @@ red_pitaya_hk i_hk (
 IOBUF i_iobufp [8-1:0] (.O(exp_p_in), .IO(exp_p_io), .I(exp_p_out), .T(~exp_p_dir) );
 IOBUF i_iobufn [8-1:0] (.O(exp_n_in), .IO(exp_n_io), .I(exp_n_out), .T(~exp_n_dir) );
 
+// The expansion pins are asynchronous to the ADC/DSP clock. Synchronize them
+// once here so every IQ module and every FPGA profile sees the same trigger bus.
+(* ASYNC_REG = "TRUE" *) reg [16-1:0] iq_trigger_meta;
+(* ASYNC_REG = "TRUE" *) reg [16-1:0] iq_trigger_sync;
+always @(posedge adc_clk) begin
+  if (!adc_rstn) begin
+    iq_trigger_meta <= 16'd0;
+    iq_trigger_sync <= 16'd0;
+  end else begin
+    iq_trigger_meta <= {exp_n_in, exp_p_in};
+    iq_trigger_sync <= iq_trigger_meta;
+  end
+end
+
 //---------------------------------------------------------------------------------
 //  Oscilloscope application
 
@@ -519,6 +533,7 @@ red_pitaya_dsp #(
   .scope1_o        (  to_scope_a             ),
   .scope2_o        (  to_scope_b             ),
   .asg1phase_i     (  asg1phase_o            ),
+  .iq_trigger_i    (  iq_trigger_sync         ),
 
   .pwm0            (  pwm_signals[0]         ),
   .pwm1            (  pwm_signals[1]         ),

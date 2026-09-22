@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from pyrpl import CurveDB
-from pyrpl.async_utils import sleep
+from pyrpl.async_utils import sleep, wait
 from pyrpl.test.frequency_response_artifacts import save_frequency_response
 from pyrpl.test.test_base import TestPyrpl
 
@@ -29,6 +29,10 @@ def setup_na(hardware_session):
             iq._delay = iq_delay
     na.auto_bandwidth = False
     na.auto_amplitude = False
+    # Hardware tests must not inherit an externally armed IQ oscillator from
+    # a saved GUI configuration.
+    for iq in iqs:
+        iq.trigger_source = "immediately"
     # set na loglevel to DEBUG
     loglevel = na._logger.getEffectiveLevel()
     na._logger.setLevel(10)
@@ -39,6 +43,7 @@ def setup_na(hardware_session):
     na._delay = original_na_delay
     for iq, delay in zip(iqs, original_iq_delays):
         iq._delay = delay
+        iq.trigger_source = "immediately"
     # set na loglevel to previous one
     na._logger.setLevel(loglevel)
     for pid in pyrpl.pids.all_modules:
@@ -136,7 +141,7 @@ class TestPidNaIq(TestPyrpl):
             input=pid,
             output_direct="off",
             acbandwidth=0,
-            logscale=True
+            logscale=True,
         )
 
         # setup pid: input is the network analyzer output.
@@ -749,3 +754,93 @@ class TestPidNaIq(TestPyrpl):
             f"syncdiff = {syncdiff:f} > {sync_tolerance_degrees:f}! "
             f"Angles: {angles}"
         )
+
+    def test_iq_external_trigger(self):
+        """Start an IQ and the scope from the same P0 expansion-pin edge."""
+        rp = self.pyrpl.rp
+        iq = rp.iq0
+        scope = rp.scope
+        hk = rp.hk
+        original_pin_direction = hk.expansion_P0_output
+        original_pin_output = bool(hk._read(0x18) & 1)
+
+        frequency = 1e6
+        amplitude = 0.5
+        duration = scope.data_length / 125e6
+
+        try:
+            # Drive the expansion pin low before arming. The IOBUF input path
+            # reads back the level driven on P0, providing an automatic test
+            # without an external pulse generator or a physical jumper.
+            hk.expansion_P0_output = True
+            hk.expansion_P0 = False
+
+            iq.setup(
+                input="off",
+                frequency=frequency,
+                trigger_source="external",
+                trigger_pin="P0",
+                bandwidth=0,
+                gain=0,
+                amplitude=amplitude,
+                phase=0,
+                output_direct="off",
+                output_signal="output_direct",
+            )
+            scope.setup(
+                input1="iq0",
+                input2="off",
+                duration=duration,
+                trigger_source="ext_positive_edge",
+                trigger_delay=0,
+                trace_average=1,
+                ch1_active=True,
+                ch2_active=False,
+                rolling_mode=False,
+            )
+
+            acquisition = scope.single_async()
+            scope.wait_for_pretrigger()
+
+            breakpoint()
+
+            hk.expansion_P0 = True
+            trace = wait(acquisition, timeout=5)[0]
+            times = scope.times
+
+            # Well before the shared trigger, the externally armed IQ must be
+            # held at zero. Ignore a short interval at the oldest edge of the
+            # circular scope buffer, where a few samples from acquisition
+            # startup can remain, as well as the different trigger/datapath
+            # latencies around t=0.
+            pretrigger = trace[(times > times[0] + 1e-6) & (times < -1e-6)]
+            assert pretrigger.size > 0
+            assert np.max(np.abs(pretrigger)) < 0.01
+
+            active_indices = np.flatnonzero(np.abs(trace) > 0.05)
+            assert active_indices.size > 0
+            first_active_time = times[active_indices[0]]
+            assert abs(first_active_time) < 0.5e-6
+
+            # After startup, fit an arbitrary-phase sinusoid at the requested
+            # IQ frequency. This checks waveform, frequency and amplitude
+            # without depending on the exact trigger-to-modulator latency.
+            active = times > 2e-6
+            omega_t = 2 * np.pi * iq.frequency * times[active]
+            basis = np.column_stack(
+                (np.sin(omega_t), np.cos(omega_t), np.ones(np.count_nonzero(active)))
+            )
+            coefficients, *_ = np.linalg.lstsq(basis, trace[active], rcond=None)
+            fitted = basis @ coefficients
+            measured_amplitude = np.hypot(coefficients[0], coefficients[1])
+            residual_rms = np.sqrt(np.mean((trace[active] - fitted) ** 2))
+            assert measured_amplitude == pytest.approx(iq.amplitude, rel=0.05, abs=0.01)
+            assert residual_rms < 0.02
+        finally:
+            scope.stop()
+            scope.trigger_source = "immediately"
+            iq.amplitude = 0
+            iq.trigger_source = "immediately"
+            iq.trigger_pin = "P0"
+            hk.expansion_P0 = original_pin_output
+            hk.expansion_P0_output = original_pin_direction

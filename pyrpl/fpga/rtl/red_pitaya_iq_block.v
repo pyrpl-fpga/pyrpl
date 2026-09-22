@@ -57,6 +57,7 @@ module red_pitaya_iq_block #(
    input                 clk_i           ,  // clock
    input                 rstn_i          ,  // reset - active low
    input                 sync_i          ,  // synchronization input, active high
+   input      [ 16-1: 0] external_trigger_i, // synchronized expansion connector inputs
    input      [ 14-1: 0] dat_i           ,  // input data
    output     [ 14-1: 0] dat_o           ,  // output data
    output     [ 14-1: 0] signal_o        ,  // output data
@@ -81,7 +82,24 @@ localparam QUADRATURE_HF = 4'd4;
 reg [4-1:0] output_select;
 //reg         on;  //fgen is on; allows to re-synchronize the outputs
 wire on;
-assign on = sync_i;
+reg trigger_external;
+reg [4-1:0] trigger_pin;
+wire trigger_input = external_trigger_i[trigger_pin];
+wire trigger_config_write = wen && ((addr == 16'h154) || (addr == 16'h158));
+
+// In immediate mode, retain the original global software synchronization.
+// In external mode, hold the oscillator at its start phase until the selected
+// expansion input has a rising edge.  Writing either trigger register rearms
+// this IQ without disturbing the other IQ modules.
+red_pitaya_iq_trigger iq_trigger (
+   .clk_i           (clk_i),
+   .rstn_i          (rstn_i),
+   .sync_i          (sync_i),
+   .external_i      (trigger_input),
+   .external_mode_i (trigger_external),
+   .rearm_i         (trigger_config_write),
+   .on_o            (on)
+);
 reg sin_at_2f; //flag to enable signals at twice the fundamental frequency
 reg cos_at_2f; //flag to enable signals at twice the fundamental frequency
 reg sin_shifted_at_2f; //flag to enable signals at twice the fundamental frequency
@@ -119,7 +137,9 @@ always @(posedge clk_i) begin
       na_averages = 32'd0;
       na_sleepcycles = 32'd0;
       pfd_on <= 1'b1;
-  	  output_select <= QUADRATURE;
+      output_select <= QUADRATURE;
+      trigger_external <= 1'b0;
+      trigger_pin <= 4'd0;
    end
    else begin
       if (wen) begin
@@ -137,7 +157,8 @@ always @(posedge clk_i) begin
          if (addr==16'h124)   quadrature_filter  <= wdata;
          if (addr==16'h130)   na_averages <= wdata;
          if (addr==16'h134)   na_sleepcycles <= wdata;
-         if (addr==16'h134)   na_sleepcycles <= wdata;
+         if (addr==16'h154)   trigger_external <= wdata[0];
+         if (addr==16'h158)   trigger_pin <= wdata[3:0];
       end
 
 	  casez (addr)
@@ -158,6 +179,8 @@ always @(posedge clk_i) begin
          16'h148 : begin ack <= wen|ren; rdata <= {do_averaging,iq_q_sum[31-1:0]};end
          16'h14C : begin ack <= wen|ren; rdata <= {do_averaging,iq_q_sum[62-1:31]};end
 	     16'h150 : begin ack <= wen|ren; rdata <= {{32-SIGNALBITS{1'b0}},pfd_integral};end
+	     16'h154 : begin ack <= wen|ren; rdata <= {31'd0,trigger_external};end
+	     16'h158 : begin ack <= wen|ren; rdata <= {28'd0,trigger_pin};end
 
 	     16'h200 : begin ack <= wen|ren; rdata <= LUTSZ; end
 	     16'h204 : begin ack <= wen|ren; rdata <= LUTBITS; end

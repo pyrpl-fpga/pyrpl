@@ -104,6 +104,13 @@ class IqWidget(ModuleWidget):
         self.attribute_widgets["frequency"].layout_v.insertWidget(
             3, self.attribute_widgets["phase"]
         )
+        self.attribute_layout.addWidget(self.attribute_widgets["trigger_source"])
+        self.attribute_widgets["trigger_source"].layout_v.insertWidget(
+            3, self.attribute_widgets["trigger_pin"]
+        )
+        self.button_arm_trigger = QtWidgets.QPushButton("Arm external trigger")
+        self.attribute_widgets["trigger_source"].layout_v.insertWidget(4, self.button_arm_trigger)
+        self.button_arm_trigger.clicked.connect(self.module.arm_trigger)
         self.attribute_layout.addWidget(self.attribute_widgets["bandwidth"])
         self.attribute_widgets["bandwidth"].layout_v.insertWidget(
             3, self.attribute_widgets["demodulation_at_2f"]

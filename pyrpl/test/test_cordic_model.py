@@ -41,11 +41,7 @@ def test_cordic_phase_unit_conversions(turns, radians, degrees):
 
 def test_cordic_profile_contract_has_no_pid_prefilters():
     manifest_path = (
-        Path(__file__).parents[1]
-        / "fpga"
-        / "profiles"
-        / "cordic"
-        / "manifest.template.json"
+        Path(__file__).parents[1] / "fpga" / "profiles" / "cordic" / "manifest.template.json"
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
 

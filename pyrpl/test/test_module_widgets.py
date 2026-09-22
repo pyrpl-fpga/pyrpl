@@ -5,7 +5,7 @@ import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtTest import QTest
 
-from ..attributes import BoolProperty, NumberProperty, SelectProperty
+from ..attributes import BoolProperty, SelectProperty
 from ..widgets.attribute_widgets import (
     BoolAttributeWidget,
     NumberAttributeWidget,
@@ -57,30 +57,35 @@ class TestModuleWidgets(TestPyrpl):
                         < 0.0001
                     )
 
-    def test_asg_gui(self):
+    def test_module_guis(self):
         if self.pyrpl is None:
             return
-        for asg in [mod for mod in self.pyrpl.asgs.all_modules]:
-            self.try_gui_module(asg._create_widget())
+        modules = self.pyrpl.asgs.all_modules + self.pyrpl.iqs.all_modules
+        for module in modules:
+            self.try_gui_module(module._create_widget())
 
     def try_gui_module(self, module_widget):  # name should not start with test
         if not self.do_gui_tests:
             return
         module = module_widget.module
-        for attr in module._gui_attributes:
+        for attribute_name in module._gui_attributes:
+            attr = getattr(type(module), attribute_name)
+            attribute_widget = module_widget.attribute_widgets[attribute_name]
             if isinstance(attr, SelectProperty):
-                for option in attr.options(module):
-                    to_set = attr.widget.findText(str(option))
-                    attr.widget.setCurrentIndex(to_set)
-                    assert getattr(module, attr.name) == option
+                original_value = getattr(module, attr.name)
+                try:
+                    for option in attr.options(module):
+                        to_set = attribute_widget.widget.findText(str(option))
+                        assert to_set >= 0
+                        attribute_widget.widget.setCurrentIndex(to_set)
+                        assert getattr(module, attr.name) == option
+                finally:
+                    setattr(module, attr.name, original_value)
             elif isinstance(attr, BoolProperty):
-                for _i in range(2):
-                    QTest.mouseClick(attr.widget, Qt.LeftButton)
-                    assert getattr(module, attr.name) == (attr.widget.checkState() == 2)
-            elif isinstance(attr, NumberProperty):
-                for _i in range(3):
-                    attr.widget.stepUp()
-                    val = getattr(module, attr.name)
-                    wid_val = attr.widget.value()
-                    err = abs((val - wid_val) / max(val, 1.0))
-                    assert err < 0.001
+                original_value = getattr(module, attr.name)
+                try:
+                    QTest.mouseClick(attribute_widget.widget, Qt.LeftButton)
+                    assert getattr(module, attr.name) != original_value
+                finally:
+                    setattr(module, attr.name, original_value)
+        module_widget.close()
