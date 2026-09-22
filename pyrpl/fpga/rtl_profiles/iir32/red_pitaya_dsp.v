@@ -72,6 +72,7 @@ module red_pitaya_dsp #(
    input      [ 14-1: 0] asg2_i,
    input      [ 14-1: 0] asg1phase_i,
    input      [ 16-1: 0] iq_trigger_i,
+   input      [ 16-1: 0] pid_enable_i,
 
    // pwm outputs
    output     [ 14-1: 0] pwm0,
@@ -331,6 +332,7 @@ generate for (j = 0; j < 2; j = j+1) begin
      .clk_i        (  clk_i          ),  // clock
      .rstn_i       (  rstn_i         ),  // reset - active low
      .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
+     .external_enable_i ( pid_enable_i ), // active-high external PID enable inputs
      .dat_i        (  input_signal [j] ),  // input data
      .dat_o        (  output_direct[j]),  // output data
 	 .diff_dat_i   (  diff_input_signal[j] ),  // input data for differential mode

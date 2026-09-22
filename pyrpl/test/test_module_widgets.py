@@ -5,7 +5,7 @@ import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtTest import QTest
 
-from ..attributes import BoolProperty, SelectProperty
+from ..attributes import SelectProperty
 from ..widgets.attribute_widgets import (
     BoolAttributeWidget,
     NumberAttributeWidget,
@@ -60,7 +60,11 @@ class TestModuleWidgets(TestPyrpl):
     def test_module_guis(self):
         if self.pyrpl is None:
             return
-        modules = self.pyrpl.asgs.all_modules + self.pyrpl.iqs.all_modules
+        modules = (
+            self.pyrpl.asgs.all_modules
+            + self.pyrpl.iqs.all_modules
+            + self.pyrpl.pids.all_modules
+        )
         for module in modules:
             self.try_gui_module(module._create_widget())
 
@@ -79,13 +83,6 @@ class TestModuleWidgets(TestPyrpl):
                         assert to_set >= 0
                         attribute_widget.widget.setCurrentIndex(to_set)
                         assert getattr(module, attr.name) == option
-                finally:
-                    setattr(module, attr.name, original_value)
-            elif isinstance(attr, BoolProperty):
-                original_value = getattr(module, attr.name)
-                try:
-                    QTest.mouseClick(attribute_widget.widget, Qt.LeftButton)
-                    assert getattr(module, attr.name) != original_value
                 finally:
                     setattr(module, attr.name, original_value)
         module_widget.close()

@@ -865,6 +865,13 @@ class RedPitaya:
                 insertion_index = attributes.index("i") + 1
                 attributes[insertion_index:insertion_index] = derivative_attributes
                 setattr(module, attribute_list_name, attributes)
+        if cls.__name__ == "Pid" and "pid_external_pause" in self.fpga_profile.capabilities:
+            pause_attributes = ["pause_source", "pause_pin"]
+            for attribute_list_name in ("_setup_attributes", "_gui_attributes"):
+                attributes = list(getattr(module, attribute_list_name))
+                insertion_index = attributes.index("paused") + 1
+                attributes[insertion_index:insertion_index] = pause_attributes
+                setattr(module, attribute_list_name, attributes)
         setattr(self, name, module)
         self.modules[name] = module
 

@@ -6,6 +6,7 @@
     "iir",
     "iq",
     "pid",
+    "pid_external_pause",
     "three_pids",
     "pwm"
   ],
@@ -73,7 +74,7 @@
   },
   "bitstream": {
     "filename": "red_pitaya.bin",
-    "sha256": "33a31dc25a991d6f03f259a29b934a904f8936af53c27f5d8c9497a098a460a8"
+    "sha256": "24f1a0f1a885220252704bcec3a4da3b8885804030ac545730c8e6b184589320"
   },
   "dtbo": {
     "filename": "red_pitaya.dtbo",

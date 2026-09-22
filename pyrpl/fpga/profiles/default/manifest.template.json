@@ -2,7 +2,7 @@
   "id": "default",
   "description": "Timing-optimized IIR profile",
   "abi_version": 1,
-  "capabilities": ["iir", "iq", "pid", "three_pids", "pwm"],
+  "capabilities": ["iir", "iq", "pid", "pid_external_pause", "three_pids", "pwm"],
   "hardware_modules": [
     "HK", "AMS", "Scope", "Sampler", "Asg0", "Asg1",
     "Pwm", "Pwm", "Iq", "Iq", "Iq", "Pid", "Pid", "Pid", "Trig", "IIR"

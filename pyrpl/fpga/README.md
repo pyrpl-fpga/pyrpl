@@ -105,6 +105,17 @@ one IQ. The selected expansion pin must be configured as an input through the
 Housekeeping module (the FPGA reset default). Expansion inputs pass through a
 shared two-flop synchronizer before reaching the three IQ modules.
 
+The `default` profile also exposes external sample-and-hold control for each PID.
+Set `pause_source="external"` and choose `pause_pin` from `P0` through `P7`
+or `N0` through `N7`. The PID runs while the synchronized pin is high. While
+it is low, the PID controller datapath, integrator, derivative state, and
+complete output are held without being reset; operation resumes from that
+state when the pin returns high. Profile-specific PID input prefilters keep
+tracking the input while the controller is held. `pause_source="off"`
+preserves the normal behavior, including
+the independent `paused` and `pause_gains` software controls. Configure the
+selected expansion pin as an HK input for normal external use.
+
 The CORDIC exposes the read-only ABI signature `0x434F5201`: the upper three
 bytes spell `COR` and the low byte is register-map revision 1. PyRPL checks
 this value after loading the profile so incompatible CORDIC logic is detected

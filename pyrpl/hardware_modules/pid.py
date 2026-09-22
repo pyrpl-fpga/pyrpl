@@ -464,6 +464,33 @@ class Pid(FilterModule):
         doc="While True, the gains selected with `pause` are temporarily set to zero ",
     )
 
+    _pause_sources = sorted_dict(off=0, external=1)
+    pause_sources = _pause_sources.keys()
+    pause_source = SelectRegister(
+        0x130,
+        options=_pause_sources,
+        default="off",
+        doc=(
+            "External sample-and-hold control. When external is selected, "
+            "the PID runs while pause_pin is high and holds its complete "
+            "state and output while the pin is low."
+        ),
+    )
+
+    _pause_pins = sorted_dict(
+        **{
+            **{f"P{index}": index for index in range(8)},
+            **{f"N{index}": index + 8 for index in range(8)},
+        }
+    )
+    pause_pins = _pause_pins.keys()
+    pause_pin = SelectRegister(
+        0x134,
+        options=_pause_pins,
+        default="P0",
+        doc="Expansion connector input used for external PID sample-and-hold.",
+    )
+
     @property
     def proportional(self):
         return self.p

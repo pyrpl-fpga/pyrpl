@@ -84,6 +84,7 @@ module red_pitaya_pid_block #(
    input                 clk_i           ,  // clock
    input                 rstn_i          ,  // reset - active low
    input                 sync_i          ,  // synchronization input, active high
+   input      [ 16-1: 0] external_enable_i, // synchronized expansion inputs
    input signed     [ 14-1: 0] dat_i           ,  // input data
    output signed    [ 14-1: 0] dat_o           ,  // output data
    input signed     [ 14-1: 0] diff_dat_i      ,  // input data for differential mode
@@ -103,6 +104,9 @@ reg signed [ 16-1: 0] set_ival;   // integral value to set
 reg            ival_write;
 reg [  3-1: 0] pause_pid_on_sync;  // register to specify which gains (P, I, and/or D) are paused during active sync signal
 reg enable_differential_mode;  // register to specify which gains (P, I, and/or D) are paused during active sync signal
+reg external_pause_enabled;
+reg [4-1:0] external_pause_pin;
+wire external_run = !external_pause_enabled || external_enable_i[external_pause_pin];
 wire pause_i_on_sync;
 assign pause_i = pause_pid_on_sync[0] & !sync_i;
 wire pause_p_on_sync;
@@ -125,6 +129,8 @@ always @(posedge clk_i) begin
       set_ival <= 14'd0;
       pause_pid_on_sync <= {3{1'b1}};  // by default, all gains are paused on sync signal
       enable_differential_mode <= 1'b0; // by default no differential mode
+      external_pause_enabled <= 1'b0;
+      external_pause_pin <= 4'd0;
       set_kp <= {GAINBITS{1'b0}};
       set_ki <= {GAINBITS{1'b0}};
       set_kd <= {GAINBITS{1'b0}};
@@ -144,6 +150,8 @@ always @(posedge clk_i) begin
          if (addr==16'h124)   out_min  <= wdata;
          if (addr==16'h128)   out_max  <= wdata;
          if (addr==16'h12C)   {enable_differential_mode,pause_pid_on_sync} <= wdata[4-1:0];
+         if (addr==16'h130)   external_pause_enabled <= wdata[0];
+         if (addr==16'h134)   external_pause_pin <= wdata[3:0];
       end
       if (addr==16'h100 && wen)
          ival_write <= 1'b1;
@@ -160,6 +168,8 @@ always @(posedge clk_i) begin
 	     16'h124 : begin ack <= wen|ren; rdata <= {{32-14{1'b0}},out_min}; end
 	     16'h128 : begin ack <= wen|ren; rdata <= {{32-14{1'b0}},out_max}; end
 	     16'h12C : begin ack <= wen|ren; rdata <= {{32-4{1'b0}},enable_differential_mode,pause_pid_on_sync}; end
+	     16'h130 : begin ack <= wen|ren; rdata <= {31'd0,external_pause_enabled}; end
+	     16'h134 : begin ack <= wen|ren; rdata <= {28'd0,external_pause_pin}; end
 	     16'h200 : begin ack <= wen|ren; rdata <= PSR; end
 	     16'h204 : begin ack <= wen|ren; rdata <= ISR; end
 	     16'h208 : begin ack <= wen|ren; rdata <= DSR; end
@@ -200,7 +210,7 @@ always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
       error <= 15'h0 ;
    end
-   else begin
+   else if (external_run) begin
       if (enable_differential_mode == 1'b1)
          error <= $signed(dat_i_filtered) - $signed(diff_dat_i) ;
       else
@@ -221,7 +231,7 @@ always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
       kp_reg  <= {15+GAINBITS-PSR{1'b0}};
    end
-   else begin
+   else if (external_run) begin
       kp_reg <= kp_mult[15+GAINBITS-1:PSR] ;
    end
 end
@@ -246,15 +256,17 @@ always @(posedge clk_i) begin
       int_reg  <= {IBW{1'b0}};
    end
    else begin
-      ki_mult <= $signed(error) * $signed(set_ki) ;
       if (ival_write)
          int_reg <= { {IBW-16-ISR{set_ival[16-1]}},set_ival[16-1:0],{ISR{1'b0}}};
-      else if (int_sum[IBW+1-1:IBW+1-2] == 2'b01) //normal positive saturation
-         int_reg <= {1'b0,{IBW-1{1'b1}}};
-      else if (int_sum[IBW+1-1:IBW+1-2] == 2'b10) // negative saturation
-         int_reg <= {1'b1,{IBW-1{1'b0}}};
-      else
-         int_reg <= int_sum[IBW-1:0]; // use sum as it is
+      else if (external_run) begin
+         ki_mult <= $signed(error) * $signed(set_ki) ;
+         if (int_sum[IBW+1-1:IBW+1-2] == 2'b01) //normal positive saturation
+            int_reg <= {1'b0,{IBW-1{1'b1}}};
+         else if (int_sum[IBW+1-1:IBW+1-2] == 2'b10) // negative saturation
+            int_reg <= {1'b1,{IBW-1{1'b0}}};
+         else
+            int_reg <= int_sum[IBW-1:0]; // use sum as it is
+      end
    end
 end
 
@@ -282,7 +294,7 @@ generate
 		      kd_reg_r <= {15+GAINBITS-DSR{1'b0}};
 		      kd_reg_s <= {15+GAINBITS-DSR+1{1'b0}};
 		   end
-		   else begin
+		   else if (external_run) begin
 		      kd_reg   <= kd_mult[15+GAINBITS-1:DSR] ;
 		      kd_reg_r <= kd_reg;
 		      kd_reg_s <= $signed(kd_reg) - $signed(kd_reg_r); //this is the end result
@@ -313,7 +325,7 @@ always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
       pid_out    <= 14'b0;
    end
-   else begin
+   else if (external_run) begin
       if ({pid_sum[MAXBW-1],|pid_sum[MAXBW-2:13]} == 2'b01) //positive overflow
          pid_out <= 14'h1FFF;
       else if ({pid_sum[MAXBW-1],&pid_sum[MAXBW-2:13]} == 2'b10) //negative overflow
@@ -332,11 +344,13 @@ generate
 	else begin
 		reg signed [ 14-1:0] out_buffer;
 		always @(posedge clk_i) begin
-			if (pid_out >= out_max)
+			if (rstn_i == 1'b0)
+				out_buffer <= 14'd0;
+			else if (external_run && pid_out >= out_max)
 				out_buffer <= out_max;
-			else if (pid_out <= out_min)
+			else if (external_run && pid_out <= out_min)
 				out_buffer <= out_min;
-			else
+			else if (external_run)
 				out_buffer <= pid_out;
 		end
 		assign dat_o = out_buffer; 

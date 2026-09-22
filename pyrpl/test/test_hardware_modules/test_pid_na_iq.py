@@ -19,6 +19,7 @@ def setup_na(hardware_session):
     # shortcuts
     na = pyrpl.networkanalyzer
     iqs = [pyrpl.rp.iq0, pyrpl.rp.iq1, pyrpl.rp.iq2]
+    pids = pyrpl.pids.all_modules
     original_na_delay = na._delay
     original_iq_delays = [iq._delay for iq in iqs]
     if "PYRPL_TEST_NA_DELAY_CYCLES" in os.environ:
@@ -33,6 +34,9 @@ def setup_na(hardware_session):
     # a saved GUI configuration.
     for iq in iqs:
         iq.trigger_source = "immediately"
+    if "pid_external_pause" in pyrpl.rp.fpga_profile.capabilities:
+        for pid in pids:
+            pid.pause_source = "off"
     # set na loglevel to DEBUG
     loglevel = na._logger.getEffectiveLevel()
     na._logger.setLevel(10)
@@ -46,7 +50,7 @@ def setup_na(hardware_session):
         iq.trigger_source = "immediately"
     # set na loglevel to previous one
     na._logger.setLevel(loglevel)
-    for pid in pyrpl.pids.all_modules:
+    for pid in pids:
         pid.input = "off"
         pid.p = 0
         pid.i = 0
@@ -57,6 +61,9 @@ def setup_na(hardware_session):
         pid.inputfilter = 0
         pid.pause_gains = "off"
         pid.paused = False
+        if "pid_external_pause" in pyrpl.rp.fpga_profile.capabilities:
+            pid.pause_source = "off"
+            pid.pause_pin = "P0"
         pid.differential_mode_enabled = False
 
 
@@ -569,6 +576,119 @@ class TestPidNaIq(TestPyrpl):
             assert pid.current_output_signal >= pid.max_voltage, pid.current_output_signal
             # un-pause for later
             pid.paused = False
+
+    @pytest.mark.requires_fpga("pid_external_pause")
+    def test_pid_external_pause(self):
+        """Hold the complete PID output low on P0 and resume it high."""
+        rp = self.pyrpl.rp
+        pid = rp.pid0
+        asg = rp.asg0
+        scope = rp.scope
+        hk = rp.hk
+        original_pin_direction = hk.expansion_P0_output
+        original_pin_output = bool(hk._read(0x18) & 1)
+
+        frequency = 1e6
+        amplitude = 0.4
+        duration = scope.data_length / 125e6
+
+        try:
+            # Start enabled with a nonzero DC output, then pause and replace
+            # the input with a sine. The held output must remain at the old
+            # DC value until the same P0 edge triggers the scope and PID.
+            hk.expansion_P0_output = True
+            hk.expansion_P0 = True
+            asg.setup(
+                waveform="dc",
+                amplitude=0,
+                offset=0.25,
+                trigger_source="immediately",
+                output_direct="off",
+            )
+            pid.setup(
+                input="asg0",
+                output_direct="off",
+                setpoint=0,
+                p=1,
+                i=0,
+                inputfilter=0,
+                min_voltage=-1,
+                max_voltage=1,
+                pause_gains="off",
+                paused=False,
+                pause_source="external",
+                pause_pin="P0",
+                differential_mode_enabled=False,
+            )
+            pid.ival = 0
+            sleep(0.01)
+
+            hk.expansion_P0 = False
+            sleep(0.001)
+            held_output = rp.sampler.pid0
+            assert abs(held_output) > 0.1
+
+            asg.setup(
+                waveform="sin",
+                frequency=frequency,
+                amplitude=amplitude,
+                offset=0,
+                trigger_source="immediately",
+                output_direct="off",
+            )
+            sleep(0.001)
+            held_mean, held_std, _, _ = rp.sampler.stats("pid0", t=0.005)
+            assert held_mean == pytest.approx(held_output, abs=0.002)
+            assert held_std < 0.002
+
+            scope.setup(
+                input1="pid0",
+                input2="off",
+                duration=duration,
+                trigger_source="ext_positive_edge",
+                trigger_delay=0,
+                trace_average=1,
+                ch1_active=True,
+                ch2_active=False,
+                rolling_mode=False,
+            )
+            acquisition = scope.single_async()
+            scope.wait_for_pretrigger()
+            hk.expansion_P0 = True
+            trace = wait(acquisition, timeout=5)[0]
+            times = scope.times
+
+            pretrigger = trace[
+                (times > times[0] + 1e-6) & (times < -1e-6)
+            ]
+            assert pretrigger.size > 0
+            assert np.mean(pretrigger) == pytest.approx(held_output, abs=0.01)
+            assert np.ptp(pretrigger) < 0.01
+
+            active = times > 2e-6
+            omega_t = 2 * np.pi * asg.frequency * times[active]
+            basis = np.column_stack(
+                (np.sin(omega_t), np.cos(omega_t), np.ones(np.count_nonzero(active)))
+            )
+            coefficients, *_ = np.linalg.lstsq(basis, trace[active], rcond=None)
+            fitted = basis @ coefficients
+            measured_amplitude = np.hypot(coefficients[0], coefficients[1])
+            residual_rms = np.sqrt(np.mean((trace[active] - fitted) ** 2))
+            assert measured_amplitude == pytest.approx(asg.amplitude, rel=0.05, abs=0.01)
+            assert residual_rms < 0.02
+        finally:
+            scope.stop()
+            scope.trigger_source = "immediately"
+            pid.pause_source = "off"
+            pid.pause_pin = "P0"
+            pid.p = 0
+            pid.i = 0
+            pid.d = 0
+            pid.ival = 0
+            asg.amplitude = 0
+            asg.offset = 0
+            hk.expansion_P0 = original_pin_output
+            hk.expansion_P0_output = original_pin_direction
 
     @pytest.mark.requires_fpga("pid_derivative")
     def test_pid_derivative_frequency_response(self):

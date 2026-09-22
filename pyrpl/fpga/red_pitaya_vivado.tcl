@@ -64,10 +64,16 @@ set part xc7z010clg400-1
 # Some non-interactive Windows launchers cannot create Vivado's per-user Tcl
 # store. Ensure the bundled simulator app needed by project initialization is
 # discoverable directly from the installation in that case.
-set bundled_xsim [file join $::env(XILINX_VIVADO) data XilinxTclStore tclapp xilinx xsim]
+set bundled_tcl_store [file join $::env(XILINX_VIVADO) data XilinxTclStore]
+set bundled_xsim [file join $bundled_tcl_store tclapp xilinx xsim]
 if {[file isdirectory $bundled_xsim]} {
+    source [file join $bundled_tcl_store support appinit appinit.tcl]
     lappend auto_path $bundled_xsim
-    package require ::tclapp::xilinx::xsim
+    # Vivado's package resolver still consults the unwritable per-user app
+    # store before auto_path. Source and register the bundled app directly.
+    source [file join $bundled_xsim xsim.tcl]
+    ::tclapp::support::appinit::load_app \
+        $bundled_tcl_store ::tclapp::xilinx::xsim
 }
 
 create_project -in_memory -part $part

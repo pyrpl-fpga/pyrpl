@@ -27,6 +27,22 @@ per-boot marker written after a successful load. It reloads the packaged image
 when the marker is absent or names another profile. Startup then validates
 hardware constants against the selected manifest.
 
+External PID sample-and-hold
+============================
+
+In the ``default`` profile, each PID can use a synchronized expansion pin as
+an active-high enable. For example::
+
+    rp.pid0.pause_source = "external"
+    rp.pid0.pause_pin = "P0"
+
+The PID runs while P0 is high. While P0 is low, its controller state and
+complete output are held rather than reset; they resume when P0 returns high.
+Profile-specific input prefilters continue tracking the input while held.
+Set ``pause_source="off"`` to disable this external control. The existing
+``paused`` and ``pause_gains`` properties remain available independently.
+The selected expansion pin should be configured as an input through ``rp.hk``.
+
 Pytest profile behavior
 =======================
 

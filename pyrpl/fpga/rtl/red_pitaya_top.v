@@ -426,7 +426,7 @@ IOBUF i_iobufp [8-1:0] (.O(exp_p_in), .IO(exp_p_io), .I(exp_p_out), .T(~exp_p_di
 IOBUF i_iobufn [8-1:0] (.O(exp_n_in), .IO(exp_n_io), .I(exp_n_out), .T(~exp_n_dir) );
 
 // The expansion pins are asynchronous to the ADC/DSP clock. Synchronize them
-// once here so every IQ module and every FPGA profile sees the same trigger bus.
+// once here so every IQ/PID module and every FPGA profile sees the same bus.
 (* ASYNC_REG = "TRUE" *) reg [16-1:0] iq_trigger_meta;
 (* ASYNC_REG = "TRUE" *) reg [16-1:0] iq_trigger_sync;
 always @(posedge adc_clk) begin
@@ -534,6 +534,7 @@ red_pitaya_dsp #(
   .scope2_o        (  to_scope_b             ),
   .asg1phase_i     (  asg1phase_o            ),
   .iq_trigger_i    (  iq_trigger_sync         ),
+  .pid_enable_i    (  iq_trigger_sync         ),
 
   .pwm0            (  pwm_signals[0]         ),
   .pwm1            (  pwm_signals[1]         ),
