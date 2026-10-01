@@ -4,10 +4,12 @@ FPGA profiles and hardware tests
 An FPGA profile binds a bitstream to its Python hardware contract: available
 modules, capabilities, register-map constants, and timing metadata. The
 ``default`` profile remains the normal production profile. Specialized images
-such as ``legacy``, ``no_iir``, ``iir32``, ``cordic``, and the experimental
+such as ``legacy``, ``no_iir``, ``iir32``, ``cordic``, ``cordic_vco``, and the experimental
 ``pid_derivative`` profile must be selected explicitly. The ``cordic`` profile
-replaces the IIR with a standalone two-input phase detector and disables the
-PID input prefilters.
+replaces the IIR with a standalone two-input phase detector, replaces the
+legacy PFDs in IQ0 and IQ1 with integrated CORDICs, and disables the PID input
+prefilters. IQ2 keeps its PFD and second quadrature output for the network and
+spectrum analyzers.
 
 Selecting a profile
 ===================
@@ -42,6 +44,22 @@ Profile-specific input prefilters continue tracking the input while held.
 Set ``pause_source="off"`` to disable this external control. The existing
 ``paused`` and ``pause_gains`` properties remain available independently.
 The selected expansion pin should be configured as an input through ``rp.hk``.
+
+CORDIC-controlled VCO
+=====================
+
+The ``cordic_vco`` profile extends ``cordic`` with an independently
+configurable VCO input on all three IQ oscillators::
+
+    rp.iq0.vco_input = "cordic"
+    rp.iq0.vco_range = 2e6
+    rp.iq0.vco_on = True
+
+``vco_range`` is the frequency deviation in hertz for a +1 V routed input;
+negative values reverse the tuning direction. The selected signal, product,
+and effective frequency word are registered, giving the VCO control path a
+three-cycle latency. Disable the loop with ``vco_on=False``. The ordinary
+``cordic`` profile is unchanged and does not expose these controls.
 
 Pytest profile behavior
 =======================
@@ -81,7 +99,7 @@ Because the connection and FPGA profile are session-scoped, testing several
 profiles requires separate pytest invocations. PowerShell can run them in
 sequence::
 
-    foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative", "cordic")) {
+    foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative", "cordic", "cordic_vco")) {
         $env:REDPITAYA_FPGA_PROFILE = $profile
         pytest pyrpl/test/test_hardware_modules
     }
@@ -101,6 +119,33 @@ For the CORDIC profile, use ``make_bin.bat cordic`` and then
 ``python publish_fpga_profile.py cordic``. Once loaded, ``rp.cordic.input``
 selects I and ``rp.cordic.input_q`` independently selects Q. The routed output
 is ``atan2(Q, I)`` expressed in turns.
+
+To process one IQ module directly, set ``rp.cordic.input_pair`` to ``"iq0"``,
+``"iq1"``, or ``"iq2"``. The CORDIC then receives both filtered quadratures
+through a local FPGA connection, independently of the IQ's ``output_signal``
+setting. Select ``"independent"`` (the default) to use ``input`` and
+``input_q`` instead.
+
+IQ0 and IQ1 can also calculate phase concurrently without sharing the
+standalone module::
+
+    rp.iq0.output_signal = "cordic"
+    phase_turns = rp.iq0.cordic_phase
+    phase_radians = rp.iq0.cordic_phase_radians
+    phase_degrees = rp.iq0.cordic_phase_degrees
+
+The standalone ``rp.cordic`` remains available for independently routed
+inputs such as ``in1`` and ``in2``.
+
+For timing closure, all three IQ modulators in ``cordic`` and ``cordic_vco``
+register their second multiplier products before adding them. This adds one
+8 ns cycle to the remodulated/direct IQ output. The profile metadata models
+the additional cycle; demodulated quadrature and integrated-CORDIC latency are
+unchanged.
+
+For the combined profile, replace ``cordic`` with ``cordic_vco`` in both
+commands. Its IQ modules additionally expose ``vco_input``, ``vco_range``,
+and ``vco_on``.
 
 Publishing makes the build selectable and records checksums. The staged
 bitstream should still pass timing and hardware tests before its generated

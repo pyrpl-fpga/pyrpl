@@ -55,7 +55,8 @@ module red_pitaya_dsp #(
 	parameter MODULES = 8,
 	parameter PID_DERIVATIVE = 0,
 	parameter PID_FILTERSTAGES = 0,
-	parameter PID_DERIVATIVE_FILTER_SHIFT = 4
+	parameter PID_DERIVATIVE_FILTER_SHIFT = 4,
+	parameter IQ_VCO = 0
 )
 (
    // signals
@@ -105,7 +106,7 @@ localparam PID1  = 'd1; //formerly PID12: input2->output1
 localparam PID2  = 'd2; //formerly PID21: input1->output2
 localparam PID3  = 'd3; //formerly PID22
 localparam TRIG  = 'd3; //formerly PID3
-localparam CORDIC = 'd4; //standalone two-input phase detector
+localparam CORDIC = 'd4; //standalone, independently routed two-input CORDIC
 localparam IQ0   = 'd5; //for PDH signal generation
 localparam IQ1   = 'd6; //for NA functionality
 localparam IQ2   = 'd7; //for PFD error signal
@@ -152,11 +153,34 @@ reg [2-1:0] output_select [MODULES+EXTRAMODULES-1:0];
 // syncronization register to trigger simultaneous action of different dsp modules
 reg [MODULES-1:0] sync;
 
-// The ordinary input_select[CORDIC] register selects I.  Q needs one
-// additional independent route without consuming another DSP module slot.
+// IQ quadratures remain available locally.  IQ0 and IQ1 feed their own
+// integrated CORDIC; IQ2 retains its second routed output for the spectrum
+// analyzer and network-analyzer workflows.
+wire signed [14-1:0] iq_quadrature_i [2:0];
+wire signed [14-1:0] iq_quadrature_q [2:0];
+
+// The standalone CORDIC uses the ordinary input_select register for I and a
+// second selector for Q.  It remains available alongside the IQ0/IQ1 CORDICs.
 reg [LOG_MODULES-1:0] cordic_input_q_select;
+reg [1:0] cordic_input_pair;
+wire signed [14-1:0] cordic_independent_q =
+   (cordic_input_q_select == NONE) ? 14'sd0 :
+   output_signal[cordic_input_q_select];
+wire signed [14-1:0] cordic_input_i =
+   (cordic_input_pair == 2'd1) ? iq_quadrature_i[0] :
+   (cordic_input_pair == 2'd2) ? iq_quadrature_i[1] :
+   (cordic_input_pair == 2'd3) ? iq_quadrature_i[2] :
+   input_signal[CORDIC];
 wire signed [14-1:0] cordic_input_q =
-   (cordic_input_q_select == NONE) ? 14'sd0 : output_signal[cordic_input_q_select];
+   (cordic_input_pair == 2'd1) ? iq_quadrature_q[0] :
+   (cordic_input_pair == 2'd2) ? iq_quadrature_q[1] :
+   (cordic_input_pair == 2'd3) ? iq_quadrature_q[2] :
+   cordic_independent_q;
+
+// Each IQ can independently use any DSP output as its VCO control signal.
+// IQ_VCO is compile-time false in the ordinary cordic profile, allowing
+// synthesis to remove this routing and all VCO arithmetic completely.
+reg [LOG_MODULES-1:0] vco_select [MODULES-1:0];
 
 // bus read data of individual modules (only needed for 'real' modules)
 wire [ 32-1: 0] module_rdata [MODULES-1:0];  
@@ -265,16 +289,20 @@ always @(posedge clk_i) begin
 
       input_select [CORDIC] <= ADC1;
       cordic_input_q_select <= ADC2;
+      cordic_input_pair <= 2'd0;
       output_select[CORDIC] <= OFF;
 
       input_select [IQ0] <= ADC1;
       output_select[IQ0] <= OFF;
+      vco_select[IQ0] <= NONE;
       
       input_select [IQ1] <= ADC1;
       output_select[IQ1] <= OFF;
+      vco_select[IQ1] <= NONE;
 
       input_select [IQ2] <= ADC1;
       output_select[IQ2] <= OFF;
+      vco_select[IQ2] <= NONE;
 
       input_select [SCOPE1] <= ADC1;
       input_select [SCOPE2] <= ADC2;
@@ -291,9 +319,18 @@ always @(posedge clk_i) begin
          if (sys_addr[16-1:0]==16'h00)     input_select[sys_addr[16+LOG_MODULES-1:16]] <= sys_wdata[ LOG_MODULES-1:0];
          if (sys_addr[16-1:0]==16'h04)    output_select[sys_addr[16+LOG_MODULES-1:16]] <= sys_wdata[ 2-1:0];
          if (sys_addr[16-1:0]==16'h0C)                                            sync <= sys_wdata[MODULES-1:0];
-         if ((sys_addr[16-1:0] == 16'h14) &&
+         if (sys_addr[16-1:0] == 16'h14) begin
+            if (sys_addr[16+LOG_MODULES-1:16] == CORDIC)
+               cordic_input_q_select <= sys_wdata[LOG_MODULES-1:0];
+            else if (IQ_VCO &&
+                     (sys_addr[16+LOG_MODULES-1:16] >= IQ0) &&
+                     (sys_addr[16+LOG_MODULES-1:16] <= IQ2))
+               vco_select[sys_addr[16+LOG_MODULES-1:16]] <=
+                  sys_wdata[LOG_MODULES-1:0];
+         end
+         if ((sys_addr[16-1:0] == 16'h1C) &&
              (sys_addr[16+LOG_MODULES-1:16] == CORDIC))
-            cordic_input_q_select <= sys_wdata[LOG_MODULES-1:0];
+            cordic_input_pair <= sys_wdata[1:0];
       end
    end
 end
@@ -316,6 +353,12 @@ end else begin
          if (sys_addr[16+LOG_MODULES-1:16] == CORDIC) begin
             sys_ack <= sys_en;
             sys_rdata <= {{32-LOG_MODULES{1'b0}}, cordic_input_q_select};
+         end else if (IQ_VCO &&
+                      (sys_addr[16+LOG_MODULES-1:16] >= IQ0) &&
+                      (sys_addr[16+LOG_MODULES-1:16] <= IQ2)) begin
+            sys_ack <= sys_en;
+            sys_rdata <= {{32-LOG_MODULES{1'b0}},
+                          vco_select[sys_addr[16+LOG_MODULES-1:16]]};
          end else begin
             sys_ack <= module_ack[sys_addr[16+LOG_MODULES-1:16]];
             sys_rdata <= module_rdata[sys_addr[16+LOG_MODULES-1:16]];
@@ -324,13 +367,21 @@ end else begin
       20'h18 : begin
          if (sys_addr[16+LOG_MODULES-1:16] == CORDIC) begin
             sys_ack <= sys_en;
-            sys_rdata <= 32'h434F5201; // "COR" and ABI version 1
+            sys_rdata <= 32'h434F5202;
          end else begin
             sys_ack <= module_ack[sys_addr[16+LOG_MODULES-1:16]];
             sys_rdata <= module_rdata[sys_addr[16+LOG_MODULES-1:16]];
          end
       end
-
+      20'h1C : begin
+         if (sys_addr[16+LOG_MODULES-1:16] == CORDIC) begin
+            sys_ack <= sys_en;
+            sys_rdata <= {30'd0, cordic_input_pair};
+         end else begin
+            sys_ack <= module_ack[sys_addr[16+LOG_MODULES-1:16]];
+            sys_rdata <= module_rdata[sys_addr[16+LOG_MODULES-1:16]];
+         end
+      end
      default : begin sys_ack <= module_ack[sys_addr[16+LOG_MODULES-1:16]];    sys_rdata <=  module_rdata[sys_addr[16+LOG_MODULES-1:16]]  ; end
    endcase
 end
@@ -404,13 +455,13 @@ end
 endgenerate
 assign trig_o = trig_signal;
 
-// Standalone vectoring CORDIC. Both inputs can be selected independently from
-// the complete DSP routing bus. Its output is an unwrapped phase in turns.
+// Standalone vectoring CORDIC.  This remains independently routable (normally
+// from in1/in2) in addition to the CORDICs integrated into IQ0 and IQ1.
 wire signed [14-1:0] cordic_phase;
 red_pitaya_cordic_block i_cordic (
    .clk_i   (clk_i),
    .rstn_i  (rstn_i),
-   .i_i     (input_signal[CORDIC]),
+   .i_i     (cordic_input_i),
    .q_i     (cordic_input_q),
    .phase_o (cordic_phase)
 );
@@ -422,7 +473,11 @@ assign module_rdata[CORDIC] = 32'd0;
 
 //IQ modules
 generate for (j = 5; j < 7; j = j+1) begin
-    red_pitaya_iq_block 
+    red_pitaya_iq_block #(
+      .VCO_ENABLED       ( IQ_VCO ),
+      .CORDIC_ENABLED    ( 1      ),
+      .MODULATOR_PIPELINE( 1      )
+    )
       iq
       (
 	     // data
@@ -430,13 +485,15 @@ generate for (j = 5; j < 7; j = j+1) begin
 	     .rstn_i       (  rstn_i         ),  // reset - active low
          .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
          .external_trigger_i ( iq_trigger_i ),
+	     .vco_i        ( (vco_select[j] == NONE) ? 14'sd0 :
+                         output_signal[vco_select[j]] ),
 	     .dat_i        (  input_signal [j] ),  // input data
 	     .dat_o        (  output_direct[j]),  // output data
 		 .signal_o     (  output_signal[j]),  // output signal
+		 .quadrature1_o(  iq_quadrature_i[j-IQ0]),
+		 .quadrature2_o(  iq_quadrature_q[j-IQ0]),
 
-         // not using 2nd quadrature for most iq's: multipliers will be
-         // synthesized away by Vivado
-         //.signal2_o  (  output_signal[j*2]),  // output signal
+         // Keep Q off the full DSP routing table; IQ0/IQ1 consume it locally.
 
 		 //communincation with PS
 		 .addr ( sys_addr[16-1:0] ),
@@ -450,7 +507,11 @@ end endgenerate
 
 // IQ with two outputs
 generate for (j = 7; j < 8; j = j+1) begin
-    red_pitaya_iq_block   #( .QUADRATUREFILTERSTAGES(4) )
+    red_pitaya_iq_block   #(
+      .QUADRATUREFILTERSTAGES ( 4      ),
+      .VCO_ENABLED             ( IQ_VCO ),
+      .MODULATOR_PIPELINE      ( 1      )
+    )
       iq_2_outputs
       (
          // data
@@ -458,10 +519,14 @@ generate for (j = 7; j < 8; j = j+1) begin
          .rstn_i       (  rstn_i         ),  // reset - active low
          .sync_i       (  sync[j]        ),  // syncronization of different dsp modules
          .external_trigger_i ( iq_trigger_i ),
+         .vco_i        ( (vco_select[j] == NONE) ? 14'sd0 :
+                           output_signal[vco_select[j]] ),
          .dat_i        (  input_signal [j] ),  // input data
          .dat_o        (  output_direct[j]),  // output data
          .signal_o     (  output_signal[j]),  // output signal
          .signal2_o    (  output_signal[j*2]),  // output signal 2
+         .quadrature1_o(  iq_quadrature_i[j-IQ0]),
+         .quadrature2_o(  iq_quadrature_q[j-IQ0]),
 
          //communincation with PS
          .addr ( sys_addr[16-1:0] ),

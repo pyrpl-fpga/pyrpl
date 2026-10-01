@@ -104,6 +104,14 @@ class IqWidget(ModuleWidget):
         self.attribute_widgets["frequency"].layout_v.insertWidget(
             3, self.attribute_widgets["phase"]
         )
+        if "vco_input" in self.attribute_widgets:
+            self.attribute_layout.addWidget(self.attribute_widgets["vco_input"])
+            self.attribute_widgets["vco_input"].layout_v.insertWidget(
+                3, self.attribute_widgets["vco_on"]
+            )
+            self.attribute_widgets["vco_input"].layout_v.insertWidget(
+                4, self.attribute_widgets["vco_range"]
+            )
         self.attribute_layout.addWidget(self.attribute_widgets["trigger_source"])
         self.attribute_widgets["trigger_source"].layout_v.insertWidget(
             3, self.attribute_widgets["trigger_pin"]

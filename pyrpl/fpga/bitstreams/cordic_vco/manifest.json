@@ -1,12 +1,15 @@
 {
-  "id": "no_iir",
-  "description": "Three-IQ profile without IIR and with four-stage PID input filters",
+  "id": "cordic_vco",
+  "description": "Three-IQ profile with standalone and IQ0/IQ1 CORDICs plus VCO control",
   "abi_version": 1,
   "capabilities": [
+    "cordic",
+    "cordic_iq_pair",
+    "iq_cordic",
     "iq",
+    "iq_vco",
     "pid",
     "three_pids",
-    "pid_input_filters",
     "pwm"
   ],
   "hardware_modules": [
@@ -18,6 +21,7 @@
     "Asg1",
     "Pwm",
     "Pwm",
+    "Cordic",
     "Iq",
     "Iq",
     "Iq",
@@ -28,6 +32,7 @@
   ],
   "software_managers": [
     "Asgs",
+    "Cordics",
     "Iqs",
     "Pids",
     "Scopes",
@@ -36,9 +41,14 @@
     "Hks"
   ],
   "timing": {
+    "cordic": {
+      "_delay": 10
+    },
     "iq": {
-      "_delay": 7,
-      "_quadrature_delay": 4
+      "_delay": 8,
+      "_quadrature_delay": 4,
+      "_cordic_delay": 14,
+      "_vco_delay": 3
     }
   },
   "hardware": {
@@ -47,6 +57,7 @@
       "in2",
       "out1",
       "out2",
+      "cordic",
       "iq0",
       "iq1",
       "iq2",
@@ -59,11 +70,18 @@
       "trig",
       "off"
     ],
-    "pid_input_filter_stages": 4
+    "pid_input_filter_stages": 0,
+    "cordic_abi": 1129271810,
+    "iq_cordic_modules": [
+      "iq0",
+      "iq1"
+    ],
+    "iq_cordic_abi": 1129271811,
+    "iq_vco_abi": 1447251713
   },
   "bitstream": {
     "filename": "red_pitaya.bin",
-    "sha256": "df8931aa054831ef0f706fcfadef5eb7f89f7f3897e8512341af9092a9d9f3ac"
+    "sha256": "aba7aa8cd47439e9b1509927493c7131c85ec4b7be551df7f5bf74fd8d0ff138"
   },
   "dtbo": {
     "filename": "red_pitaya.dtbo",

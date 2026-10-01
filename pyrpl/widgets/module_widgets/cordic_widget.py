@@ -13,7 +13,7 @@ class CordicWidget(ModuleWidget):
         # to right: in-phase input, quadrature input, then physical output.
         for widget in self.attribute_widgets.values():
             self.attribute_layout.removeWidget(widget)
-        for attribute_name in ("input", "input_q", "output_direct"):
+        for attribute_name in ("input_pair", "input", "input_q", "output_direct"):
             self.attribute_layout.addWidget(self.attribute_widgets[attribute_name])
         self.attribute_layout.setStretch(0, 0)
         self.attribute_layout.addStretch(1)

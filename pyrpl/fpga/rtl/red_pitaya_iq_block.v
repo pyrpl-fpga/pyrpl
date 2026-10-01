@@ -40,6 +40,10 @@ module red_pitaya_iq_block #(
 	  parameter LUTSZ     =  11,   //log2 of number of LUT entries
 	  parameter LUTBITS   =  17,   //LUT word size
 	  parameter PHASEBITS =  32,   //phase accumulator bits
+	  parameter VCO_ENABLED = 0,   //compile the externally controlled VCO path
+	  parameter VCO_BITS = 14,     //width of the routed VCO control signal
+	  parameter CORDIC_ENABLED = 0,//replace the legacy PFD output with CORDIC phase
+	  parameter MODULATOR_PIPELINE = 0,//register second products before summing
 
 	  //demodulation/modulation parameters
       parameter SIGNALBITS = 14, //input signal bitwidth
@@ -59,9 +63,12 @@ module red_pitaya_iq_block #(
    input                 sync_i          ,  // synchronization input, active high
    input      [ 16-1: 0] external_trigger_i, // synchronized expansion connector inputs
    input      [ 14-1: 0] dat_i           ,  // input data
+   input signed [VCO_BITS-1:0] vco_i     ,  // routed VCO control signal
    output     [ 14-1: 0] dat_o           ,  // output data
    output     [ 14-1: 0] signal_o        ,  // output data
    output     [ 14-1: 0] signal2_o       ,  // output data 2 (orthogonal quadrature)
+   output signed [14-1:0] quadrature1_o   ,  // filtered in-phase quadrature
+   output signed [14-1:0] quadrature2_o   ,  // filtered orthogonal quadrature
 
    // communication with PS
    input      [ 16-1: 0] addr,
@@ -117,6 +124,18 @@ reg signed [GAINBITS-1:0] g4;
 reg [32-1:0] input_filter;
 reg [32-1:0] quadrature_filter;
 
+// Optional VCO path.  The selected input and multiplier result are registered
+// separately so neither the DSP routing mux nor the multiplier is placed on
+// the oscillator accumulator's single-cycle timing path.  VCO_ENABLED is a
+// synthesis-time profile parameter; the complete path is removed when false.
+reg                          vco_on;
+reg signed [PHASEBITS-1:0]   vco_gain;
+reg signed [VCO_BITS-1:0]    vco_input_reg;
+reg signed [PHASEBITS+VCO_BITS-1:0] vco_product_reg;
+reg        [PHASEBITS-1:0]   shift_phase_effective;
+wire       [PHASEBITS-1:0]   fgen_shift_phase =
+   VCO_ENABLED ? shift_phase_effective : shift_phase;
+
 //  System bus connection
 always @(posedge clk_i) begin
    if (rstn_i == 1'b0) begin
@@ -140,8 +159,22 @@ always @(posedge clk_i) begin
       output_select <= QUADRATURE;
       trigger_external <= 1'b0;
       trigger_pin <= 4'd0;
+      vco_on <= 1'b0;
+      vco_gain <= {PHASEBITS{1'b0}};
+      vco_input_reg <= {VCO_BITS{1'b0}};
+      vco_product_reg <= {(PHASEBITS+VCO_BITS){1'b0}};
+      shift_phase_effective <= {PHASEBITS{1'b0}};
    end
    else begin
+      if (VCO_ENABLED) begin
+         vco_input_reg <= vco_i;
+         vco_product_reg <= $signed(vco_gain) * $signed(vco_input_reg);
+         if (vco_on)
+            shift_phase_effective <= shift_phase +
+               vco_product_reg[PHASEBITS+VCO_BITS-2:VCO_BITS-1];
+         else
+            shift_phase_effective <= shift_phase;
+      end
       if (wen) begin
 		 // on was replaced by sync_i
 		 // if (addr==16'h100)   {cos_shifted_at_2f,sin_shifted_at_2f,cos_at_2f,sin_at_2f,pfd_on, on}   <= wdata[6-1:0];
@@ -155,6 +188,8 @@ always @(posedge clk_i) begin
          if (addr==16'h11C)   g4 <= wdata[GAINBITS-1:0];
          if (addr==16'h120)   input_filter  <= wdata;
          if (addr==16'h124)   quadrature_filter  <= wdata;
+         if ((addr==16'h128) && VCO_ENABLED) vco_gain <= wdata[PHASEBITS-1:0];
+         if ((addr==16'h12C) && VCO_ENABLED) vco_on <= wdata[0];
          if (addr==16'h130)   na_averages <= wdata;
          if (addr==16'h134)   na_sleepcycles <= wdata;
          if (addr==16'h154)   trigger_external <= wdata[0];
@@ -172,13 +207,20 @@ always @(posedge clk_i) begin
 	     16'h11C : begin ack <= wen|ren; rdata <= {{32-GAINBITS{1'b0}},g4}; end
 	     16'h120 : begin ack <= wen|ren; rdata <= input_filter; end
 	     16'h124 : begin ack <= wen|ren; rdata <= quadrature_filter; end
+	     16'h128 : begin ack <= wen|ren; rdata <= VCO_ENABLED ? vco_gain : 32'd0; end
+	     16'h12C : begin ack <= wen|ren; rdata <= VCO_ENABLED ? {31'd0,vco_on} : 32'd0; end
 	     16'h130 : begin ack <= wen|ren; rdata <= na_averages; end
 	     16'h134 : begin ack <= wen|ren; rdata <= na_sleepcycles; end
          16'h140 : begin ack <= wen|ren; rdata <= {do_averaging,iq_i_sum[31-1:0]};end
          16'h144 : begin ack <= wen|ren; rdata <= {do_averaging,iq_i_sum[62-1:31]};end
          16'h148 : begin ack <= wen|ren; rdata <= {do_averaging,iq_q_sum[31-1:0]};end
          16'h14C : begin ack <= wen|ren; rdata <= {do_averaging,iq_q_sum[62-1:31]};end
-	     16'h150 : begin ack <= wen|ren; rdata <= {{32-SIGNALBITS{1'b0}},pfd_integral};end
+         16'h150 : begin
+            ack <= wen|ren;
+            rdata <= CORDIC_ENABLED
+               ? {{32-SIGNALBITS{phase_detector_output[SIGNALBITS-1]}}, phase_detector_output}
+               : {{32-SIGNALBITS{1'b0}}, phase_detector_output};
+         end
 	     16'h154 : begin ack <= wen|ren; rdata <= {31'd0,trigger_external};end
 	     16'h158 : begin ack <= wen|ren; rdata <= {28'd0,trigger_pin};end
 
@@ -195,6 +237,9 @@ always @(posedge clk_i) begin
 	     16'h230 : begin ack <= wen|ren; rdata <= QUADRATUREFILTERSTAGES; end
 	     16'h234 : begin ack <= wen|ren; rdata <= QUADRATUREFILTERSHIFTBITS; end
 	     16'h238 : begin ack <= wen|ren; rdata <= QUADRATUREFILTERMINBW; end
+	     16'h23C : begin ack <= wen|ren; rdata <= VCO_ENABLED ? VCO_BITS : 32'd0; end
+	     16'h240 : begin ack <= wen|ren; rdata <= VCO_ENABLED ? 32'h56434F01 : 32'd0; end
+	     16'h244 : begin ack <= wen|ren; rdata <= CORDIC_ENABLED ? 32'h434F5203 : 32'd0; end
 
 	     default: begin ack <= wen|ren;  rdata <=  32'h0; end
 	  endcase
@@ -242,7 +287,7 @@ iq_fgen
   .sin_shifted_at_2f   (  sin_shifted_at_2f ),
   .cos_shifted_at_2f   (  cos_shifted_at_2f ),
   .start_phase         (  start_phase    ),
-  .shift_phase         (  shift_phase    ),
+  .shift_phase         (  fgen_shift_phase ),
   .sin_o               (  sin            ),
   .cos_o               (  cos            ),
   .sin_shifted_o       (  sin_shifted    ),
@@ -273,9 +318,6 @@ red_pitaya_iq_demodulator_block #(
 //low-passing
 wire signed [LPFBITS-1:0] quadrature1;
 wire signed [LPFBITS-1:0] quadrature2;
-wire signed [SIGNALBITS-1:0] quadrature1_o;
-wire signed [SIGNALBITS-1:0] quadrature2_o;
-
 //option 1: Several low-pass filters without multipliers (bw is power of 2)
 red_pitaya_filter_block #(
      .STAGES(QUADRATUREFILTERSTAGES),
@@ -298,7 +340,8 @@ red_pitaya_iq_modulator_block #(
         .OUTBITS  (SIGNALBITS),
         .SINBITS  (LUTBITS),
         .GAINBITS (GAINBITS),
-        .SHIFTBITS (SHIFTBITS)
+        .SHIFTBITS (SHIFTBITS),
+        .SECONDPRODUCT_PIPELINE (MODULATOR_PIPELINE)
     )
     modulator
     (
@@ -356,22 +399,36 @@ always @(posedge clk_i) begin
     end
 end
 
-// pfd functionality (optional)
-wire [SIGNALBITS-1:0] pfd_integral;
+// Phase-detector functionality.  The CORDIC profiles replace the legacy PFD
+// in IQ0 and IQ1 with a pipelined atan2(Q, I).  Other profiles, and IQ2 in
+// the CORDIC profiles, retain the original PFD implementation.
+wire signed [SIGNALBITS-1:0] phase_detector_output;
 reg pfd_on;
-red_pitaya_pfd_block pfd_block (
-	.rstn_i(pfd_on),
-	.clk_i (clk_i),
-	.s1 (dat_i_filtered[SIGNALBITS-1]), //sign bit of input signal as clock source
-	.s2 (sin[LUTBITS-1]), //sign bit of sine reference signal as clock source
-	.integral_o(pfd_integral)
-);
+generate if (CORDIC_ENABLED) begin : integrated_cordic
+   red_pitaya_cordic_block cordic_block (
+      .clk_i   (clk_i),
+      .rstn_i  (rstn_i),
+      .i_i     (quadrature1_o),
+      .q_i     (quadrature2_o),
+      .phase_o (phase_detector_output)
+   );
+end else begin : legacy_pfd
+   wire [SIGNALBITS-1:0] pfd_integral;
+   red_pitaya_pfd_block pfd_block (
+      .rstn_i     (pfd_on),
+      .clk_i      (clk_i),
+      .s1         (dat_i_filtered[SIGNALBITS-1]),
+      .s2         (sin[LUTBITS-1]),
+      .integral_o (pfd_integral)
+   );
+   assign phase_detector_output = pfd_integral;
+end endgenerate
 
 // output_signal multiplexer
 assign signal_o = (output_select==QUADRATURE) ? quadrature1_o
 				//: (output_select==QUADRATURE_HF) ? quadrature1_hf[LPFBITS-1:LPFBITS-SIGNALBITS] // maybe for the future
 				: (output_select==OUTPUT_DIRECT) ? dat_o
-				: (output_select==PFD) ? pfd_integral
+                : (output_select==PFD) ? phase_detector_output
 				: {SIGNALBITS{1'b0}};
 
 assign signal2_o = quadrature2_o;

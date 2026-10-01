@@ -1,9 +1,11 @@
 {
   "id": "cordic",
-  "description": "Three-IQ profile with a standalone two-input CORDIC and no PID input filters",
+  "description": "Three-IQ profile with standalone CORDIC plus integrated CORDIC phase detectors in IQ0/IQ1",
   "abi_version": 1,
   "capabilities": [
     "cordic",
+    "cordic_iq_pair",
+    "iq_cordic",
     "iq",
     "pid",
     "three_pids",
@@ -42,8 +44,9 @@
       "_delay": 10
     },
     "iq": {
-      "_delay": 7,
-      "_quadrature_delay": 4
+      "_delay": 8,
+      "_quadrature_delay": 4,
+      "_cordic_delay": 14
     }
   },
   "hardware": {
@@ -66,11 +69,16 @@
       "off"
     ],
     "pid_input_filter_stages": 0,
-    "cordic_abi": 1129271809
+    "cordic_abi": 1129271810,
+    "iq_cordic_modules": [
+      "iq0",
+      "iq1"
+    ],
+    "iq_cordic_abi": 1129271811
   },
   "bitstream": {
     "filename": "red_pitaya.bin",
-    "sha256": "0aa33561e4ed7456d20d9a7042f90bcbe0cdfe9afc5b252314adbf593347da4e"
+    "sha256": "7dd4376ce8e6f57f67a09f8e867aef00a68acada3181d53cdd8ce810196e02f2"
   },
   "dtbo": {
     "filename": "red_pitaya.dtbo",

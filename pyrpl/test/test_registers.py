@@ -115,6 +115,8 @@ class TestRegisters(TestRedpitaya):
                 regkey
                 in [
                     "pfd_integral",
+                    "cordic_phase",
+                    "cordic_abi_version",
                     "ch1_firstpoint",
                     "ch2_firstpoint",
                     "voltage_out1",

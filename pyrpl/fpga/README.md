@@ -50,11 +50,22 @@ make_bin.bat no_iir
 make_bin.bat iir32
 make_bin.bat pid_derivative
 make_bin.bat cordic
+make_bin.bat cordic_vco
 ```
 
 Calling `make_bin.bat` without an argument builds `default`. Results are kept
 in `build\<profile>`. A build never overwrites the tested files under
 `bitstreams`.
+
+On Windows, `make_bin.bat` temporarily maps the repository root to an unused
+drive letter between `R:` and `Z:`, then builds from the short but non-root path
+`<drive>:\pyrpl\fpga`. This avoids Vivado 2024.2 path failures in both its
+installed `common.tcl` and generated `.Xil/realtime` files; Vivado cannot
+reliably create the latter directly at a substituted drive root. The drive is
+removed when the nested build exits. Synthesis also intentionally uses one
+thread because the parallel helper can lose access to its installed Tcl files.
+The original thread count is restored immediately after synthesis, so
+placement, physical optimization, and routing retain normal parallelism.
 
 Implementation directives are selected by each profile. The `no_iir` profile
 runs two post-route physical-optimization passes; `pid_derivative` also runs
@@ -65,7 +76,8 @@ compatibility-only `legacy` profile skips that expensive step.
 |---------------|-----|-------------|-------------|
 | `default` | 24-bit, 8-stage | none | 3 PID, 3 IQ |
 | `pid_derivative` | none | 4 input stages plus band-limited D | 3 PID, 3 IQ |
-| `cordic` | none | none | 3 PID, 3 IQ, standalone two-input CORDIC |
+| `cordic` | none | none | 3 PID, 3 IQ, standalone CORDIC plus CORDICs in IQ0/IQ1 |
+| `cordic_vco` | none | none | same three CORDICs, with VCO control on all IQs |
 | `legacy` | original 32-bit, 14-stage | 4 input stages | 3 PID, 3 IQ |
 | `no_iir` | none | 4 input stages | 3 PID, 3 IQ |
 | `iir32` | pipelined 32-bit, 14-stage | none | 2 PID, 3 IQ |
@@ -96,6 +108,35 @@ turn counter, and ten cycles of latency. Exact zero input magnitude holds the
 last valid phase. Convert a sampled output with
 `cordic.to_radians(value)` or `cordic.to_degrees(value)`.
 
+Set `cordic.input_pair` to `iq0`, `iq1`, or `iq2` to consume that IQ's
+filtered I and Q quadratures directly. This local connection does not consume
+additional entries in the global DSP routing table and does not depend on the
+IQ module's `output_signal` setting. The default value, `independent`, uses
+`cordic.input` and `cordic.input_q` as described above.
+
+IQ0 and IQ1 additionally contain their own CORDICs in place of their legacy
+PFD datapaths. Select `iq.output_signal = "cordic"` to route the phase through
+the DSP fabric, or read `iq.cordic_phase` directly. The value is in turns;
+`iq.cordic_phase_radians` and `iq.cordic_phase_degrees` provide converted
+readbacks. IQ2 retains the legacy PFD and its `iq2_2` quadrature output for the
+network and spectrum analyzers. The standalone CORDIC remains available for
+the requested independently routed `in1`/`in2` use case.
+
+All three IQ modulators in `cordic` and `cordic_vco` register their second
+multiplier products before the final addition. This adds one 8 ns cycle to the
+remodulated/direct IQ output; the profile timing metadata includes that cycle.
+The demodulated quadrature and integrated-CORDIC paths are unchanged.
+
+`cordic_vco` extends that topology with a VCO input on every IQ. Set
+`iq.vco_input` to any DSP signal, `iq.vco_range` to the frequency deviation
+in hertz produced by a +1 V input, and then enable `iq.vco_on`. Negative
+`vco_range` values invert the tuning direction. The routed input, multiplier,
+and effective phase increment are registered in three consecutive clock
+cycles to protect the 125 MHz timing path. The CORDIC output can be selected
+directly as the VCO input, making phase-feedback loops possible without CPU
+intervention. The VCO register-map signature is `0x56434F01` (`VCO`, revision
+1).
+
 All profiles expose the same IQ oscillator trigger controls. The default
 `trigger_source="immediately"` retains software synchronization. With
 `trigger_source="external"`, `trigger_pin` selects `P0` through `P7` or `N0`
@@ -116,8 +157,8 @@ preserves the normal behavior, including
 the independent `paused` and `pause_gains` software controls. Configure the
 selected expansion pin as an HK input for normal external use.
 
-The CORDIC exposes the read-only ABI signature `0x434F5201`: the upper three
-bytes spell `COR` and the low byte is register-map revision 1. PyRPL checks
+The CORDIC exposes the read-only ABI signature `0x434F5202`: the upper three
+bytes spell `COR` and the low byte is register-map revision 2. PyRPL checks
 this value after loading the profile so incompatible CORDIC logic is detected
 before its registers are used.
 
@@ -283,6 +324,7 @@ building it, stage it before hardware testing:
 cd pyrpl/fpga
 python publish_fpga_profile.py pid_derivative
 python publish_fpga_profile.py cordic
+python publish_fpga_profile.py cordic_vco
 ```
 
 Publishing copies `build/pid_derivative/red_pitaya.bin` into the corresponding
@@ -294,7 +336,7 @@ Run several profiles as separate pytest sessions so each image is loaded and
 validated independently:
 
 ```powershell
-foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative", "cordic")) {
+foreach ($profile in @("default", "legacy", "no_iir", "iir32", "pid_derivative", "cordic", "cordic_vco")) {
     $env:REDPITAYA_FPGA_PROFILE = $profile
     pytest pyrpl/test/test_hardware_modules
 }

@@ -172,7 +172,23 @@ set synth_args [list -top red_pitaya_top -flatten_hierarchy none -bufg 16 -keep_
 if {[info exists synth_generics] && [llength $synth_generics] > 0} {
     lappend synth_args -generic $synth_generics
 }
+
+# Vivado 2024.2 on Windows occasionally starts synthesis in a helper process
+# that cannot read files from its own installation (most visibly
+# scripts/rt/data/common.tcl). Keep synthesis in the parent process, then
+# restore the configured thread count before the longer implementation stages.
+# Linux builds retain Vivado's normal parallel synthesis.
+set synthesis_thread_count ""
+if {$tcl_platform(platform) eq "windows"} {
+    set synthesis_thread_count [get_param general.maxThreads]
+    puts "Using single-threaded Windows synthesis to avoid the Vivado helper-process file-access bug."
+    set_param general.maxThreads 1
+}
 synth_design {*}$synth_args
+if {$synthesis_thread_count ne ""} {
+    set_param general.maxThreads $synthesis_thread_count
+    puts "Restored Vivado thread count to $synthesis_thread_count for implementation."
+}
 
 write_checkpoint         -force   $path_out/post_synth
 report_timing_summary    -file    $path_out/post_synth_timing_summary.rpt

@@ -229,6 +229,7 @@ from ..attributes import (
 )
 from ..pyrpl_utils import sorted_dict
 from ..widgets.module_widgets import IqWidget
+from .dsp import InputSelectRegister
 from .filter import FilterModule
 
 
@@ -296,6 +297,8 @@ class Iq(FilterModule):
     # one at the modulator inputs and one at the full-width product outputs.
     _delay = 7  # bare delay of IQ module with no filters set (cycles)
     _quadrature_delay = 4
+    _vco_delay = 3
+    _cordic_delay = 14  # input -> filtered I/Q (4) -> CORDIC phase (10)
 
     _output_signals = sorted_dict(quadrature=0, output_direct=1, pfd=2, off=3, quadrature_hf=4)
 
@@ -400,6 +403,23 @@ class Iq(FilterModule):
         norm=_SIGNALBITS,
         doc="value of the pfd integral [volts]",
     )
+    cordic_phase = FloatRegister(
+        0x150,
+        bits=_SIGNALBITS,
+        norm=2**12,
+        doc="unwrapped CORDIC phase [turns] (IQ0/IQ1 in CORDIC profiles)",
+    )
+    cordic_abi_version = IntRegister(0x244)
+
+    @property
+    def cordic_phase_radians(self):
+        """Return the integrated CORDIC phase in radians."""
+        return self.cordic_phase * 2 * np.pi
+
+    @property
+    def cordic_phase_degrees(self):
+        """Return the integrated CORDIC phase in degrees."""
+        return self.cordic_phase * 360.0
 
     # for the phase to have the right sign, it must be inverted
     phase = PhaseRegister(
@@ -411,6 +431,28 @@ class Iq(FilterModule):
     )
 
     frequency = FrequencyRegister(0x108, bits=_PHASEBITS, doc="frequency of iq demodulation [Hz]")
+
+    vco_input = InputSelectRegister(
+        0x14,
+        doc="DSP signal controlling the IQ oscillator frequency in VCO mode",
+    )
+    vco_range = FloatRegister(
+        0x128,
+        bits=_PHASEBITS,
+        norm=2**_PHASEBITS / 125e6,
+        doc=(
+            "Frequency deviation in Hz produced by a +1 V VCO input. "
+            "Negative values invert the VCO tuning direction."
+        ),
+    )
+    vco_on = BoolRegister(
+        0x12C,
+        0,
+        default=False,
+        doc="Enable frequency control from vco_input",
+    )
+    _VCO_BITS = IntRegister(0x23C)
+    vco_abi_version = IntRegister(0x240)
 
     _trigger_sources = sorted_dict(immediately=0, external=1)
     trigger_sources = _trigger_sources.keys()

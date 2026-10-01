@@ -872,6 +872,36 @@ class RedPitaya:
                 insertion_index = attributes.index("paused") + 1
                 attributes[insertion_index:insertion_index] = pause_attributes
                 setattr(module, attribute_list_name, attributes)
+        if cls.__name__ == "Iq" and "iq_vco" in self.fpga_profile.capabilities:
+            # Configure routing and scale before enabling the feedback path.
+            vco_attributes = ["vco_input", "vco_range", "vco_on"]
+            for attribute_list_name in ("_setup_attributes", "_gui_attributes"):
+                attributes = list(getattr(module, attribute_list_name))
+                insertion_index = attributes.index("frequency") + 1
+                attributes[insertion_index:insertion_index] = vco_attributes
+                setattr(module, attribute_list_name, attributes)
+        if cls.__name__ == "Iq":
+            # Register value 2 is the integrated CORDIC phase only for the
+            # named IQs. Configure every instance explicitly because the
+            # SelectRegister also caches its most recently assigned defaults.
+            phase_detector_name = (
+                "cordic"
+                if name
+                in self.fpga_profile.hardware.get("iq_cordic_modules", [])
+                else "pfd"
+            )
+            cls.output_signal.change_options(
+                module,
+                OrderedDict(
+                    [
+                        ("quadrature", 0),
+                        ("output_direct", 1),
+                        (phase_detector_name, 2),
+                        ("off", 3),
+                        ("quadrature_hf", 4),
+                    ]
+                ),
+            )
         setattr(self, name, module)
         self.modules[name] = module
 
@@ -889,8 +919,21 @@ class RedPitaya:
             observed["pid_input_filter_stages"] = self.pid0._read(0x220)
             if "pid_derivative" in expected:
                 observed["pid_derivative"] = self.pid0._read(0x210)
+        if "iq_cordic_abi" in expected:
+            cordic_modules = expected.get("iq_cordic_modules", [])
+            cordic_abis = [
+                getattr(self, name).cordic_abi_version for name in cordic_modules
+            ]
+            observed["iq_cordic_abi"] = cordic_abis[0] if cordic_abis else 0
+            if any(abi != observed["iq_cordic_abi"] for abi in cordic_abis[1:]):
+                raise RuntimeError(
+                    "Loaded FPGA exposes inconsistent integrated CORDIC ABI signatures: "
+                    f"{cordic_abis}"
+                )
         if hasattr(self, "cordic") and "cordic_abi" in expected:
             observed["cordic_abi"] = self.cordic.abi_version
+        if hasattr(self, "iq0") and "iq_vco_abi" in expected:
+            observed["iq_vco_abi"] = self.iq0.vco_abi_version
         mismatches = {
             key: (expected[key], observed[key])
             for key in expected

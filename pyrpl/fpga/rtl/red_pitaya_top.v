@@ -83,7 +83,8 @@
 module red_pitaya_top #(
    parameter PID_DERIVATIVE = 0,
    parameter PID_FILTERSTAGES = 0,
-   parameter PID_DERIVATIVE_FILTER_SHIFT = 4
+   parameter PID_DERIVATIVE_FILTER_SHIFT = 4,
+   parameter IQ_VCO = 0
 ) (
    // PS connections
    inout  [54-1: 0] FIXED_IO_mio       ,
@@ -284,7 +285,7 @@ wire                  ser_clk ;
 
 // PWM clock and reset
 wire                  pwm_clk ;
-reg                   pwm_rstn;
+(* keep = "true" *) reg [4-1:0] pwm_rstn;
 
 // ADC signals
 wire                  adc_clk;
@@ -345,8 +346,7 @@ dac_rst  <= ~frstn[0] | ~pll_locked;
 
 // PWM reset (active low)
 always @(posedge pwm_clk)
-pwm_rstn <=  frstn[0] &  pll_locked;
-
+    pwm_rstn <= {4{frstn[0] & pll_locked}};
 ////////////////////////////////////////////////////////////////////////////////
 // ADC IO
 ////////////////////////////////////////////////////////////////////////////////
@@ -518,7 +518,8 @@ red_pitaya_asg i_asg (
 red_pitaya_dsp #(
   .PID_DERIVATIVE              ( PID_DERIVATIVE              ),
   .PID_FILTERSTAGES            ( PID_FILTERSTAGES            ),
-  .PID_DERIVATIVE_FILTER_SHIFT ( PID_DERIVATIVE_FILTER_SHIFT )
+  .PID_DERIVATIVE_FILTER_SHIFT ( PID_DERIVATIVE_FILTER_SHIFT ),
+  .IQ_VCO                      ( IQ_VCO                      )
 ) i_dsp (
    // signals
   .clk_i           (  adc_clk                    ),  // clock

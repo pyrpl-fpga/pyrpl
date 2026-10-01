@@ -1,8 +1,8 @@
 {
-  "id": "cordic",
-  "description": "Three-IQ profile with standalone CORDIC plus integrated CORDIC phase detectors in IQ0/IQ1",
+  "id": "cordic_vco",
+  "description": "Three-IQ profile with standalone and IQ0/IQ1 CORDICs plus VCO control",
   "abi_version": 1,
-  "capabilities": ["cordic", "cordic_iq_pair", "iq_cordic", "iq", "pid", "three_pids", "pwm"],
+  "capabilities": ["cordic", "cordic_iq_pair", "iq_cordic", "iq", "iq_vco", "pid", "three_pids", "pwm"],
   "hardware_modules": [
     "HK", "AMS", "Scope", "Sampler", "Asg0", "Asg1",
     "Pwm", "Pwm", "Cordic", "Iq", "Iq", "Iq", "Pid", "Pid", "Pid", "Trig"
@@ -10,7 +10,7 @@
   "software_managers": ["Asgs", "Cordics", "Iqs", "Pids", "Scopes", "Trigs", "Pwms", "Hks"],
   "timing": {
     "cordic": {"_delay": 10},
-    "iq": {"_delay": 8, "_quadrature_delay": 4, "_cordic_delay": 14}
+    "iq": {"_delay": 8, "_quadrature_delay": 4, "_cordic_delay": 14, "_vco_delay": 3}
   },
   "hardware": {
     "dsp_inputs": [
@@ -20,7 +20,8 @@
     "pid_input_filter_stages": 0,
     "cordic_abi": 1129271810,
     "iq_cordic_modules": ["iq0", "iq1"],
-    "iq_cordic_abi": 1129271811
+    "iq_cordic_abi": 1129271811,
+    "iq_vco_abi": 1447251713
   },
   "bitstream": {
     "filename": "red_pitaya.bin",

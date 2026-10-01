@@ -26,10 +26,15 @@ def test_cordic_quadrants_and_independent_inputs(hardware_session):
         return cordic.current_output_signal
 
     try:
-        assert cordic.abi_version == 0x434F5201
+        assert cordic.abi_version in (0x434F5201, 0x434F5202)
         asg_i.setup(amplitude=0, offset=0.25, waveform="dc", output_direct="off")
         asg_q.setup(amplitude=0, offset=0, waveform="dc", output_direct="off")
-        cordic.setup(input="asg0", input_q="asg1", output_direct="off")
+        cordic.setup(
+            input_pair="independent",
+            input="asg0",
+            input_q="asg1",
+            output_direct="off",
+        )
 
         # Compare wrapped phase because the hardware intentionally unwraps
         # successive samples with its two-bit turn counter.
@@ -49,6 +54,74 @@ def test_cordic_quadrants_and_independent_inputs(hardware_session):
         cordic.setup_attributes = original_cordic
         asg_i.setup_attributes = original_i
         asg_q.setup_attributes = original_q
+
+
+@pytest.mark.requires_fpga("iq_cordic")
+def test_cordic_direct_iq_pairs(hardware_session):
+    """Verify that IQ0 and IQ1 each feed their own integrated CORDIC.
+
+    Both IQ modules demodulate the same DC value with a static oscillator. For
+    each module, only that IQ receives a 90-degree phase step. A
+    quarter-turn response from its phase register, while the other stays
+    fixed, proves that the two CORDIC datapaths are independent.
+    """
+    rp = hardware_session.rp
+    if isinstance(rp.client, DummyClient):
+        pytest.skip("requires real FPGA signal processing")
+    source = rp.asg0
+    iqs = [rp.iq0, rp.iq1]
+    original_source = source.setup_attributes.copy()
+    original_iqs = [iq.setup_attributes.copy() for iq in iqs]
+
+    try:
+        assert all(iq.cordic_abi_version == 0x434F5203 for iq in iqs)
+        source.setup(
+            waveform="dc",
+            amplitude=0,
+            offset=0.4,
+            output_direct="off",
+            trigger_source="immediately",
+        )
+        for iq in iqs:
+            iq.setup(
+                input="asg0",
+                frequency=0,
+                trigger_source="immediately",
+                bandwidth=0,
+                quadrature_factor=10,
+                output_signal="cordic",
+                gain=0,
+                amplitude=0,
+                phase=0,
+                output_direct="off",
+            )
+        iqs[0].synchronize_iqs()
+        time.sleep(1e-3)
+
+        phase_steps = []
+        for index, iq in enumerate(iqs):
+            phase_0 = iq.cordic_phase
+            other_phase_0 = iqs[1 - index].cordic_phase
+            iq.phase = 90
+            time.sleep(1e-3)
+            phase_90 = iq.cordic_phase
+            other_phase_90 = iqs[1 - index].cordic_phase
+            phase_steps.append(
+                np.angle(np.exp(2j * np.pi * (phase_90 - phase_0))) / (2 * np.pi)
+            )
+            other_step = np.angle(
+                np.exp(2j * np.pi * (other_phase_90 - other_phase_0))
+            ) / (2 * np.pi)
+            assert abs(other_step) < 5e-3
+            iq.phase = 0
+            time.sleep(1e-3)
+
+        phase_steps = np.asarray(phase_steps)
+        assert np.all(np.abs(np.abs(phase_steps) - 0.25) < 5e-3), phase_steps
+    finally:
+        source.setup_attributes = original_source
+        for iq, setup in zip(iqs, original_iqs):
+            iq.setup_attributes = setup
 
 
 @pytest.mark.requires_fpga("cordic")
@@ -103,7 +176,12 @@ def test_cordic_dynamic_latency(hardware_session):
             output_direct="off",
             trigger_source="immediately",
         )
-        cordic.setup(input="asg0", input_q="asg1", output_direct="off")
+        cordic.setup(
+            input_pair="independent",
+            input="asg0",
+            input_q="asg1",
+            output_direct="off",
+        )
         scope.setup(
             input1="asg1",
             input2="cordic",

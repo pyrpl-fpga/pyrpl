@@ -43,7 +43,8 @@ module red_pitaya_iq_modulator_block #(
     parameter     OUTBITS   = 14,
     parameter     SINBITS   = 14,
     parameter     GAINBITS  = 16,
-    parameter     SHIFTBITS = 0)
+    parameter     SHIFTBITS = 0,
+    parameter     SECONDPRODUCT_PIPELINE = 0)
 (
     input clk_i,
     input signed [SINBITS-1:0] sin, 
@@ -109,6 +110,25 @@ wire signed [OUTBITS+1+SINBITS-1-1:0] secondproduct2;
 assign secondproduct1 = firstproduct1_reg * sin;
 assign secondproduct2 = firstproduct2_reg * cos;
 
+// Dense profiles can register the second multiplier outputs before their
+// wide addition.  The constant generate condition removes these registers
+// entirely in profiles that retain the lower-latency datapath.
+wire signed [OUTBITS+1+SINBITS-1-1:0] secondproduct1_for_sum;
+wire signed [OUTBITS+1+SINBITS-1-1:0] secondproduct2_for_sum;
+generate if (SECONDPRODUCT_PIPELINE) begin : secondproduct_pipeline
+    reg signed [OUTBITS+1+SINBITS-1-1:0] secondproduct1_reg;
+    reg signed [OUTBITS+1+SINBITS-1-1:0] secondproduct2_reg;
+    always @(posedge clk_i) begin
+        secondproduct1_reg <= secondproduct1;
+        secondproduct2_reg <= secondproduct2;
+    end
+    assign secondproduct1_for_sum = secondproduct1_reg;
+    assign secondproduct2_for_sum = secondproduct2_reg;
+end else begin : secondproduct_direct
+    assign secondproduct1_for_sum = secondproduct1;
+    assign secondproduct2_for_sum = secondproduct2;
+end endgenerate
+
 //sum of second product has an extra bit
 reg signed [OUTBITS+1+SINBITS-1:0] secondproduct_sum;
 reg signed [OUTBITS-1:0] secondproduct_out;
@@ -116,7 +136,7 @@ wire signed [OUTBITS-1:0] secondproduct_sat;
 
 //summation and saturation management, and buffering
 always @(posedge clk_i) begin
-    secondproduct_sum <= secondproduct1 + secondproduct2;
+    secondproduct_sum <= secondproduct1_for_sum + secondproduct2_for_sum;
     secondproduct_out <= secondproduct_sat;
 end
 

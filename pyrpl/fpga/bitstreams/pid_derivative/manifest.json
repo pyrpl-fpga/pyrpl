@@ -69,7 +69,7 @@
   },
   "bitstream": {
     "filename": "red_pitaya.bin",
-    "sha256": "b1bf7acf67106a31470d777078fcd045f30db4a24d3bd5af9a3a2f794f672adb"
+    "sha256": "f857d911f179fec8b66a57a45acb5724982befa45bd9b84ce464b6e825f78078"
   },
   "dtbo": {
     "filename": "red_pitaya.dtbo",

@@ -2,7 +2,7 @@
 
 from math import tau
 
-from ..attributes import FloatRegister, IntRegister
+from ..attributes import FloatRegister, IntRegister, SelectRegister
 from ..widgets.module_widgets import CordicWidget
 from .dsp import DspModule, InputSelectRegister, all_inputs
 
@@ -20,13 +20,15 @@ def turns_to_degrees(turns):
 class Cordic(DspModule):
     """Compute the continuous phase of two independently routed signals.
 
-    ``input`` is the in-phase component and ``input_q`` is the quadrature
-    component. The output represents ``atan2(Q, I)`` in turns and includes a
-    saturating two-bit turn counter around a 12-bit fractional phase.
+    With ``input_pair='independent'``, ``input`` is the in-phase component and
+    ``input_q`` is the quadrature component. Selecting ``iq0``, ``iq1`` or
+    ``iq2`` instead uses that module's filtered quadrature pair directly. The
+    output represents ``atan2(Q, I)`` in turns and includes a saturating
+    two-bit turn counter around a 12-bit fractional phase.
     """
 
     _widget_class = CordicWidget
-    _setup_attributes = ["input", "input_q", "output_direct"]
+    _setup_attributes = ["input_pair", "input", "input_q", "output_direct"]
     _gui_attributes = _setup_attributes
     _delay = 10
 
@@ -36,9 +38,18 @@ class Cordic(DspModule):
         default="in2",
         doc="selects the quadrature input signal of the CORDIC module",
     )
+    input_pair = SelectRegister(
+        0x1C,
+        options={"independent": 0, "iq0": 1, "iq1": 2, "iq2": 3},
+        default="independent",
+        doc=(
+            "selects independent DSP inputs or the directly connected, filtered "
+            "I/Q pair of one IQ module"
+        ),
+    )
     abi_version = IntRegister(
         0x18,
-        doc="CORDIC hardware ABI signature ('COR' followed by revision 1)",
+        doc="CORDIC hardware ABI signature ('COR' followed by its revision)",
     )
     current_output_signal = FloatRegister(
         0x10,

@@ -275,6 +275,18 @@ class DummyClient:  # pragma: no cover
                 if offset in iir_map:
                     return iir_map[offset]
             elif module.startswith("iq"):
+                if offset == 0x240:  # optional VCO ABI signature
+                    if self.fpga_profile is not None:
+                        return self.fpga_profile.hardware.get("iq_vco_abi", 0)
+                    return 0
+                if offset == 0x244:  # optional integrated CORDIC ABI signature
+                    if (
+                        self.fpga_profile is not None
+                        and module
+                        in self.fpga_profile.hardware.get("iq_cordic_modules", [])
+                    ):
+                        return self.fpga_profile.hardware.get("iq_cordic_abi", 0)
+                    return 0
                 if offset == 0x220:  # filterstages
                     return 1
                 # rbw filter register

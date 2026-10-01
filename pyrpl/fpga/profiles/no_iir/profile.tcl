@@ -9,3 +9,6 @@ set phys_opt_directive AggressiveExplore
 set route_directive AggressiveExplore
 # This profile closed a -0.012 ns setup violation only after a second pass.
 set post_route_phys_opt_passes 2
+# Vivado 2024.2 can terminate without an error while running parallel
+# post-route AggressiveExplore on this dense profile.
+set post_route_phys_opt_max_threads 1

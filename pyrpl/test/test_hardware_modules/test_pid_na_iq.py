@@ -34,6 +34,10 @@ def setup_na(hardware_session):
     # a saved GUI configuration.
     for iq in iqs:
         iq.trigger_source = "immediately"
+        if "iq_vco" in pyrpl.rp.fpga_profile.capabilities:
+            iq.vco_on = False
+            iq.vco_input = "off"
+            iq.vco_range = 0
     if "pid_external_pause" in pyrpl.rp.fpga_profile.capabilities:
         for pid in pids:
             pid.pause_source = "off"
@@ -48,6 +52,10 @@ def setup_na(hardware_session):
     for iq, delay in zip(iqs, original_iq_delays):
         iq._delay = delay
         iq.trigger_source = "immediately"
+        if "iq_vco" in pyrpl.rp.fpga_profile.capabilities:
+            iq.vco_on = False
+            iq.vco_input = "off"
+            iq.vco_range = 0
     # set na loglevel to previous one
     na._logger.setLevel(loglevel)
     for pid in pids:
@@ -815,6 +823,74 @@ class TestPidNaIq(TestPyrpl):
             paused, _ = rp.scope.single(timeout=4)
             assert np.max(np.abs(paused)) < 5 * tolerance
             pid.paused = False
+
+    @pytest.mark.requires_fpga("iq_vco")
+    def test_iq_vco_frequency_sign_and_scaling(self):
+        """Check that positive and negative controls tune the IQ carrier."""
+        rp = self.pyrpl.rp
+        iq = rp.iq0
+        asg = rp.asg0
+        base_frequency = 1e6
+        vco_range = 400e3
+        controls = (-0.5, 0.0, 0.5)
+
+        def measured_frequency():
+            trace = rp.scope.single(timeout=4)[0]
+            times = rp.scope.times
+            # Average over all positive-going zero crossings. This is less
+            # sensitive to scope sample quantization than one measured period.
+            edges = np.flatnonzero((trace[:-1] <= 0) & (trace[1:] > 0))
+            assert len(edges) >= 20
+            return (len(edges) - 1) / (times[edges[-1]] - times[edges[0]])
+
+        try:
+            asg.setup(
+                waveform="dc",
+                amplitude=0,
+                offset=0,
+                frequency=1e3,
+                trigger_source="immediately",
+                output_direct="off",
+            )
+            iq.setup(
+                input="off",
+                frequency=base_frequency,
+                bandwidth=0,
+                gain=0,
+                amplitude=0.5,
+                phase=0,
+                output_direct="off",
+                output_signal="output_direct",
+                trigger_source="immediately",
+                vco_input="asg0",
+                vco_range=vco_range,
+                vco_on=True,
+            )
+            rp.scope.setup(
+                input1="iq0",
+                input2="off",
+                duration=100e-6,
+                trigger_source="immediately",
+                trace_average=1,
+                ch1_active=True,
+                ch2_active=False,
+                rolling_mode=False,
+            )
+
+            measured = []
+            for control in controls:
+                asg.offset = control
+                sleep(0.02)
+                measured.append(measured_frequency())
+
+            expected = [base_frequency + control * vco_range for control in controls]
+            assert measured == pytest.approx(expected, rel=0.01)
+            assert measured[0] < measured[1] < measured[2]
+        finally:
+            iq.vco_on = False
+            iq.vco_input = "off"
+            iq.vco_range = 0
+            asg.offset = 0
 
     def test_iq_sync(self):
         """
