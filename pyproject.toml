@@ -50,7 +50,7 @@ qt-pyside6 = ["PySide6"]
 dev = [
     "pytest", 
     "pytest-cov",
-    "pytest-notebook",
+    "pytest-notebook; python_version >= '3.10'",  # 0.8 for Python 3.9 needs pkg_resources
     "pytest-subtests",
     "matplotlib>=3.7",  # older releases have no wheels for Python >= 3.9
     "nbconvert",
@@ -71,7 +71,7 @@ docs = [
 test = [
     "pytest",
     "pytest-cov",
-    "pytest-notebook",
+    "pytest-notebook; python_version >= '3.10'",  # 0.8 for Python 3.9 needs pkg_resources
     "pytest-subtests",
     "matplotlib>=3.7",  # older releases have no wheels for Python >= 3.9
     "nbconvert",
