@@ -161,10 +161,13 @@ jobs:
         # The self-hosted runner retains uv's local cache between jobs.
         enable-cache: false
 
-    - name: Set up display
+    # Qt runs with QT_QPA_PLATFORM=offscreen: no X server is needed (the
+    # former Xvfb step was never used and left a root process behind).
+    - name: Stop processes left by an interrupted job
+      shell: bash
       run: |
-        export DISPLAY=:99
-        sudo Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+        sudo pkill -x Xvfb || true
+        pkill -f "python -m pytest pyrpl/test" || true
 
     - name: Install system dependencies
       run: |
@@ -219,6 +222,8 @@ jobs:
 
     - name: Run tests with retries
       shell: bash
+      # below the job timeout, so that the cleanup steps still run after a hang
+      timeout-minutes: 22
       run: |
         # use a custom global configfile adapted to the hardware for unit tests
         # Connection parameters come from the test job's REDPITAYA_* variables.
@@ -255,6 +260,11 @@ jobs:
         files: ./coverage.xml
         flags: hardware
         use_oidc: true
+
+    - name: Stop test processes
+      if: always()
+      shell: bash
+      run: pkill -f "python -m pytest pyrpl/test" || true
 
   # Notification job
   notify:
