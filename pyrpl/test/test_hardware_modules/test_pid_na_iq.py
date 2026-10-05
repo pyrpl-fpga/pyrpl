@@ -90,49 +90,53 @@ class TestPidNaIq(TestPyrpl):
             r = self.r
         # shortcuts and na configuration
         na = self.na
-        for iq in [r.iq0, r.iq1, r.iq2]:
-            na._iq = iq
-            na.setup(
-                start_freq=3000,
-                stop_freq=10e6,
-                points=101,
-                # I reduced points from 1001 to 101, is it normal that
-                # it was taking ages ? -> no, should not take more than 1
-                # second with rbw=1000
-                rbw=1000,
-                average_per_point=1,
-                trace_average=1,
-                amplitude=0.1,
-                input=na.iq,
-                output_direct="off",
-                acbandwidth=1000,
-                logscale=True,
-            )
-            data = na.single()
-            f = na.data_x
-            theory = np.array(f * 0 + 1.0, dtype=complex)
-            # obsolete since na data now comes autocorrected:
-            # theory = na.transfer_function(f, extradelay=extradelay)
-            relerror = np.abs((data - theory) / theory)
-            maxerror = np.max(relerror)
-            artifact = save_frequency_response(
-                f"network_analyzer_{iq.name}",
-                f,
-                data,
-                theory,
-                metadata={
-                    "error_threshold": error_threshold,
-                    "network_analyzer_delay_cycles": na._delay,
-                    "iq_delay_cycles": iq._delay,
-                },
-            )
-            logger.info("Saved Network Analyzer response artifacts to %s.*", artifact)
-            if maxerror > error_threshold:
-                print(maxerror)
-                c = CurveDB.create(f, data, name="test_na-failed-data")
-                c.add_child(CurveDB.create(f, theory, name="test_na-failed-theory"))
-                c.add_child(CurveDB.create(f, relerror, name="test_na-failed-relerror"))
-                raise AssertionError(maxerror)
+        original_iq = na.iq
+        try:
+            for iq in [r.iq0, r.iq1, r.iq2]:
+                na._iq = iq
+                na.setup(
+                    start_freq=3000,
+                    stop_freq=10e6,
+                    points=101,
+                    # I reduced points from 1001 to 101, is it normal that
+                    # it was taking ages ? -> no, should not take more than 1
+                    # second with rbw=1000
+                    rbw=1000,
+                    average_per_point=1,
+                    trace_average=1,
+                    amplitude=0.1,
+                    input=na.iq,
+                    output_direct="off",
+                    acbandwidth=1000,
+                    logscale=True,
+                )
+                data = na.single()
+                f = na.data_x
+                theory = np.array(f * 0 + 1.0, dtype=complex)
+                # obsolete since na data now comes autocorrected:
+                # theory = na.transfer_function(f, extradelay=extradelay)
+                relerror = np.abs((data - theory) / theory)
+                maxerror = np.max(relerror)
+                artifact = save_frequency_response(
+                    f"network_analyzer_{iq.name}",
+                    f,
+                    data,
+                    theory,
+                    metadata={
+                        "error_threshold": error_threshold,
+                        "network_analyzer_delay_cycles": na._delay,
+                        "iq_delay_cycles": iq._delay,
+                    },
+                )
+                logger.info("Saved Network Analyzer response artifacts to %s.*", artifact)
+                if maxerror > error_threshold:
+                    print(maxerror)
+                    c = CurveDB.create(f, data, name="test_na-failed-data")
+                    c.add_child(CurveDB.create(f, theory, name="test_na-failed-theory"))
+                    c.add_child(CurveDB.create(f, relerror, name="test_na-failed-relerror"))
+                    raise AssertionError(maxerror)
+        finally:
+            na._iq = original_iq
 
     @pytest.mark.requires_fpga("pid_input_filters")
     def test_inputfilter(self):
@@ -997,8 +1001,6 @@ class TestPidNaIq(TestPyrpl):
 
             acquisition = scope.single_async()
             scope.wait_for_pretrigger()
-
-            breakpoint()
 
             hk.expansion_P0 = True
             trace = wait(acquisition, timeout=5)[0]
