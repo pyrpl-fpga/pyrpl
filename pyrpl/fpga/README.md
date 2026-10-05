@@ -126,6 +126,8 @@ All three IQ modulators in `cordic` and `cordic_vco` register their second
 multiplier products before the final addition. This adds one 8 ns cycle to the
 remodulated/direct IQ output; the profile timing metadata includes that cycle.
 The demodulated quadrature and integrated-CORDIC paths are unchanged.
+The same profiles set the Network Analyzer correction delay to four cycles so
+its automatically corrected response includes this additional output cycle.
 
 `cordic_vco` extends that topology with a VCO input on every IQ. Set
 `iq.vco_input` to any DSP signal, `iq.vco_range` to the frequency deviation

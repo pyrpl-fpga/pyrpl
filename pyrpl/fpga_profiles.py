@@ -29,7 +29,7 @@ class FpgaProfile:
     dtbo: Path
 
     def module_attributes(self, class_name):
-        """Return per-instance Python attributes for a hardware class."""
+        """Return profile-specific attributes for a hardware or software module."""
         return self.timing.get(class_name.lower(), {})
 
 

@@ -392,6 +392,10 @@ class Pyrpl:
                     module = getattr(cls, "_make_" + cls.__name__)(self, name)
                 else:
                     module = cls(self, name)
+                for attribute, value in self.rp.fpga_profile.module_attributes(
+                    module.__class__.__name__
+                ).items():
+                    setattr(module, attribute, value)
             except Exception as e:
                 self.logger.error(
                     'Something went wrong when loading the software module "%s": %s',

@@ -141,7 +141,8 @@ For timing closure, all three IQ modulators in ``cordic`` and ``cordic_vco``
 register their second multiplier products before adding them. This adds one
 8 ns cycle to the remodulated/direct IQ output. The profile metadata models
 the additional cycle; demodulated quadrature and integrated-CORDIC latency are
-unchanged.
+unchanged. The Network Analyzer correction delay is correspondingly four
+cycles in these profiles.
 
 For the combined profile, replace ``cordic`` with ``cordic_vco`` in both
 commands. Its IQ modules additionally expose ``vco_input``, ``vco_range``,

@@ -47,6 +47,9 @@
       "_delay": 8,
       "_quadrature_delay": 4,
       "_cordic_delay": 14
+    },
+    "networkanalyzer": {
+      "_delay": 4.0
     }
   },
   "hardware": {

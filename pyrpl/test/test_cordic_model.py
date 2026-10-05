@@ -68,6 +68,7 @@ def test_cordic_profile_contract_has_no_pid_prefilters():
     assert manifest["hardware"]["iq_cordic_abi"] == 0x434F5203
     assert manifest["hardware"]["iq_cordic_modules"] == ["iq0", "iq1"]
     assert manifest["timing"]["iq"]["_delay"] == 8
+    assert manifest["timing"]["networkanalyzer"]["_delay"] == 4.0
     assert manifest["hardware_modules"].count("Cordic") == 1
     assert "Cordics" in manifest["software_managers"]
     assert manifest["hardware_modules"].count("Iq") == 3
@@ -96,6 +97,7 @@ def test_cordic_vco_profile_contract_and_register_map():
     assert manifest["hardware"]["iq_vco_abi"] == 0x56434F01
     assert manifest["timing"]["iq"]["_delay"] == 8
     assert manifest["timing"]["iq"]["_vco_delay"] == 3
+    assert manifest["timing"]["networkanalyzer"]["_delay"] == 4.0
     assert manifest["hardware_modules"].count("Iq") == 3
     assert manifest["hardware_modules"].count("Pid") == 3
     assert "IIR" not in manifest["hardware_modules"]
