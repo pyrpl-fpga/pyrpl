@@ -234,6 +234,11 @@ class ModuleDict(Module):
         # 'for submodule in modulecontainer: submodule.do_sth()'
         return iter(self.values())
 
+    def __contains__(self, key):
+        # without this, 'in' would fall back to __iter__ and compare against
+        # submodules instead of keys
+        return key in self.keys()
+
     @property
     def setup_attributes(self):
         return super().setup_attributes
