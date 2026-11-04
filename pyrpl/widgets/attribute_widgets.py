@@ -731,6 +731,11 @@ class DataWidget(pg.GraphicsLayoutWidget):
         if new_value is None:
             return
         x, y = new_value
+        if np.size(y) == 0:  # no curve to display, e.g. all deselected
+            for curve in self.curves:
+                curve.hide()
+            self._set_real(True)
+            return
         shape = np.shape(y)
         if len(shape) > 2:
             raise ValueError("Data cannot be larger than 2 dimensional")
