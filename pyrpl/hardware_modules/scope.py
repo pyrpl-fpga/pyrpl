@@ -134,16 +134,17 @@ from ..async_utils import sleep_async, wait
 from ..attributes import (
     BoolProperty,
     BoolRegister,
-    FloatProperty,
     FloatRegister,
     IntRegister,
     LongRegister,
     SelectProperty,
     SelectRegister,
     StringProperty,
+    TimeProperty,
 )
 from ..modules import HardwareModule
 from ..pyrpl_utils import sorted_dict, time
+from ..widgets.attribute_widgets import TimeSelectAttributeWidget
 from ..widgets.module_widgets import ScopeWidget
 from .dsp import InputSelectRegister, all_inputs, dsp_addr_base
 
@@ -172,6 +173,8 @@ class DecimationRegister(SelectRegister):
 
 
 class DurationProperty(SelectProperty):
+    _widget_class = TimeSelectAttributeWidget
+
     def get_value(self, obj):
         return obj.sampling_time * float(obj.data_length)
 
@@ -197,6 +200,8 @@ class DurationProperty(SelectProperty):
 
 
 class SamplingTimeProperty(SelectProperty):
+    _widget_class = TimeSelectAttributeWidget
+
     def get_value(self, obj):
         return 8e-9 * float(obj.decimation)
 
@@ -399,7 +404,7 @@ class Scope(HardwareModule, AcquisitionModule):
         0x10, doc="number of decimated data after trigger written into memory [samples]"
     )
 
-    trigger_delay = FloatProperty(
+    trigger_delay = TimeProperty(
         min=-10,  # TriggerDelayAttribute
         max=8e-9 * 2**30,
         doc="delay between trigger and "
