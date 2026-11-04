@@ -764,3 +764,11 @@ class Scope(HardwareModule, AcquisitionModule):
                 d.update({"ch": ch, "name": self.curve_name + " ch" + str(ch + 1)})
                 curves[ch] = self._save_curve(self.data_x, self.data_avg[ch], **d)
         return curves
+
+    def _export_columns(self):
+        names, columns = ["time (s)"], [self.data_x]
+        for ch, active in [(0, self.ch1_active), (1, self.ch2_active)]:
+            if active:
+                names.append(f"ch{ch + 1} (V)")
+                columns.append(self.data_avg[ch])
+        return names, columns

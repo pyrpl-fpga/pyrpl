@@ -29,6 +29,9 @@ The different buttons in the acquisition module control panel below the plot are
   :class:`pyrpl.curvedb.CurveDB` object under the name
   :attr:`~.AcquisitionModule.curve_name`. The number of the saved curve is
   briefly shown on the button and logged together with the file name.
+- :code:`Export...` asks for a file name and writes the current measurement
+  data, as displayed, to a comma-separated text file for use in other
+  programs (calls :meth:`.AcquisitionModule.export_curve`).
 """
 
 import asyncio
@@ -71,6 +74,9 @@ class AcquisitionModuleWidget(ModuleWidget):
         self.button_save = QtWidgets.QPushButton("Save curve")
         self.button_save.clicked.connect(self.save_curve_clicked)
 
+        self.button_export = QtWidgets.QPushButton("Export...")
+        self.button_export.clicked.connect(self.export_curve_clicked)
+
         self.current_avg_label = CurrentAvgLabel()
 
         aws = self.attribute_widgets
@@ -84,12 +90,14 @@ class AcquisitionModuleWidget(ModuleWidget):
         self.button_layout.addWidget(self.button_continuous)
         self.button_layout.addWidget(self.button_stop)
         self.button_layout.addWidget(self.button_save)
+        self.button_layout.addWidget(self.button_export)
         self.main_layout.addLayout(self.button_layout)
 
         self.button_layout.setStretchFactor(self.button_single, 1)
         self.button_layout.setStretchFactor(self.button_continuous, 1)
         self.button_layout.setStretchFactor(self.button_stop, 1)
         self.button_layout.setStretchFactor(self.button_save, 1)
+        self.button_layout.setStretchFactor(self.button_export, 1)
         self.button_layout.addStretch(1)
         self.attribute_layout.setStretch(0, 0)  # since widgets are all removed
         # and re-added, the stretch ends up on the left, so better cancel it
@@ -151,6 +159,31 @@ class AcquisitionModuleWidget(ModuleWidget):
             self._logger.warning("No curve saved: no channel is selected.")
             text = "Nothing saved"
         self._flash_button_text(self.button_save, text, "Save curve")
+
+    _export_dir = ""  # folder of the last export, shared by all acquisition widgets
+
+    def export_curve_clicked(self):
+        """
+        Asks for a file name and exports the current data there as a
+        comma-separated text file.
+        """
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Export curve",
+            os.path.join(AcquisitionModuleWidget._export_dir, self.module.curve_name + ".csv"),
+            "CSV files (*.csv);;All files (*)",
+        )
+        if not filename:  # cancelled
+            return
+        AcquisitionModuleWidget._export_dir = os.path.dirname(filename)
+        try:
+            self.module.export_curve(filename)
+        except Exception:
+            self._logger.exception("Could not export curve to %s", filename)
+            self._flash_button_text(self.button_export, "Export failed", "Export...")
+            return
+        self._logger.info("Exported curve '%s' to %s", self.module.curve_name, filename)
+        self._flash_button_text(self.button_export, "Exported", "Export...")
 
     def _flash_button_text(self, button, text, label, duration_ms=2000):
         """Shows text on button for duration_ms, then restores label."""

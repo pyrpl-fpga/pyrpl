@@ -1,6 +1,7 @@
 # timeit.default_timer() is THE precise timer to use (microsecond precise vs
 # milliseconds for time.time()). see
 # http://stackoverflow.com/questions/85451/python-time-clock-vs-time-time-accuracy
+import sys
 import timeit
 
 import numpy as np
@@ -630,6 +631,20 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
 
     def _free_up_resources(self):
         self.iq.amplitude = 0
+
+    def _export_columns(self):
+        """Exports the complex response and its magnitude and phase as plotted."""
+        data = self.data_avg
+        return (
+            ["frequency (Hz)", "real", "imag", "magnitude (dB)", "phase (deg)"],
+            [
+                self.data_x,
+                data.real,
+                data.imag,
+                20.0 * np.log10(np.abs(data) + sys.float_info.epsilon),
+                np.angle(data, deg=True),
+            ],
+        )
 
     @property
     def last_valid_point(self):
