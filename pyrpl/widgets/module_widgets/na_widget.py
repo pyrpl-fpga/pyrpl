@@ -38,7 +38,6 @@ output selected in :code:`output_direct`.
   (not implemented at the moment).
 """
 
-import sys
 from time import time
 
 import numpy as np
@@ -100,7 +99,7 @@ class NaWidget(AcquisitionModuleWidget):
         for label, wids in [
             ("Channels", ["input", "output_direct"]),
             ("Frequency", ["start_freq", "stop_freq", "points", "logscale"]),
-            ("Setup", ["amplitude", "acbandwidth"]),
+            ("Setup", ["amplitude", "acbandwidth", "display_unit"]),
             ("Averaging", ["average_per_point", "rbw"]),
             ("Auto-bandwidth", ["auto_bandwidth", "q_factor_min"]),
             (
@@ -145,6 +144,7 @@ class NaWidget(AcquisitionModuleWidget):
         # self.display_state(self.module.running_state)
         self.update_running_buttons()
         self.update_period = self.starting_update_rate  # also modified in clear_curve.
+        self.update_magnitude_title()
 
         # Not sure why the stretch factors in button_layout are not good by
         # default...
@@ -232,13 +232,27 @@ class NaWidget(AcquisitionModuleWidget):
             freq = self.module.data_x[cur]
             xpos = np.log10(freq) if logscale else freq
             if cur > 0:
-                self.arrow.setPos(xpos, self._magnitude(self.module.data_avg[cur]))
+                self.arrow.setPos(xpos, self._magnitude(self.module.data_avg[cur], cur))
                 self.arrow.setVisible(visible)
                 self.arrow_phase.setPos(xpos, self._phase(self.module.data_avg[cur]))
                 self.arrow_phase.setVisible(visible)
 
-    def _magnitude(self, data):
-        return 20.0 * np.log10(np.abs(data) + sys.float_info.epsilon)
+    def _magnitude(self, data, index=slice(None)):
+        """magnitude of data_avg[index] in the module's display_unit"""
+        return self.module.magnitude_in_display_unit(data, index)
+
+    def update_magnitude_title(self):
+        if self.module.display_unit == "Vpk":
+            self.plot_item.setTitle("Amplitude (Vpk)")
+        else:
+            self.plot_item.setTitle("Magnitude (dB)")
+
+    def display_unit_changed(self):
+        """redraws the magnitude in the new unit"""
+        self.update_magnitude_title()
+        for chunk_index in range(len(self.chunks)):
+            self.update_chunk(chunk_index)
+        self.plot_item.enableAutoRange(axis="y")
 
     def _phase(self, data):
         return np.angle(data, deg=True)
@@ -248,6 +262,8 @@ class NaWidget(AcquisitionModuleWidget):
         if name == "_running_state":
             # self.display_state(self.module.running_state)
             self.update_running_buttons()
+        if name == "display_unit":
+            self.display_unit_changed()
 
     def update_chunk(self, chunk_index):
         """
@@ -272,7 +288,7 @@ class NaWidget(AcquisitionModuleWidget):
         )  # make sure there is an overlap between slices
         data = self.module.data_avg[sl]
         x = np.real(self.module.data_x[sl])
-        self.chunks[chunk_index].setData(x, self._magnitude(data))
+        self.chunks[chunk_index].setData(x, self._magnitude(data, sl))
         self.chunks_phase[chunk_index].setData(x, self._phase(data))
 
     # def run_continuous_clicked(self):

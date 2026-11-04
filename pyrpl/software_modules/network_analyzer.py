@@ -1,6 +1,7 @@
 # timeit.default_timer() is THE precise timer to use (microsecond precise vs
 # milliseconds for time.time()). see
 # http://stackoverflow.com/questions/85451/python-time-clock-vs-time-time-accuracy
+import sys
 import timeit
 
 import numpy as np
@@ -134,6 +135,7 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         "target_dbv",
         "auto_amp_min",
         "auto_amp_max",
+        "display_unit",
     ]
     _setup_attributes = _gui_attributes
     trace_average = IntProperty(
@@ -175,6 +177,13 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
         default=50.0,
         doc="Bandwidth of the input high-pass filter of the na.",
         call_setup=True,
+    )
+    display_unit = SelectProperty(
+        options=["dB", "Vpk"],
+        default="dB",
+        doc="Unit of the plotted magnitude: 'dB' is 20*log10 of the "
+        "response relative to the output amplitude, 'Vpk' the peak "
+        "amplitude of the response at the input in volts.",
     )
 
     def __init__(self, parent, name=None):
@@ -630,6 +639,21 @@ class NetworkAnalyzer(AcquisitionModule, SignalModule):
 
     def _free_up_resources(self):
         self.iq.amplitude = 0
+
+    def magnitude_in_display_unit(self, data, index=slice(None)):
+        """
+        Returns the magnitude of data, the points data_avg[index], in
+        display_unit: for 'dB', 20*log10(abs(data)); for 'Vpk', abs(data)
+        times the output amplitude used for these points.
+        """
+        if self.display_unit == "Vpk":
+            amplitudes = self.amplitude_list
+            if amplitudes is None:  # no acquisition yet
+                amplitudes = self.amplitude
+            elif np.iterable(amplitudes):  # auto_amplitude: one per point
+                amplitudes = np.asarray(amplitudes)[index]
+            return np.abs(data) * amplitudes
+        return 20.0 * np.log10(np.abs(data) + sys.float_info.epsilon)
 
     @property
     def last_valid_point(self):
