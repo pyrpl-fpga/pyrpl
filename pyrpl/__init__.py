@@ -92,6 +92,16 @@ if INTERACTIVE and os.environ.get("PYRPL_AUTO_GUI_QT", "1") != "0":
 APP = QtWidgets.QApplication.instance()
 if APP is None:
     logger.debug('Creating new QApplication instance "pyrpl"')
+    # Qt 5 does not scale for high-DPI screens by default. Then, with screens
+    # of different scaling (e.g. 150% and 100%), a window moved between them is
+    # drawn wrongly (pyqtgraph axes shorter than the plot, mixed font sizes).
+    # Enable the scaling as pyqtgraph.mkQApp() does; Qt 6 always scales.
+    if QtCore.qVersion().startswith("5."):
+        os.environ.setdefault("QT_ENABLE_HIGHDPI_SCALING", "1")
+        if hasattr(QtWidgets.QApplication, "setHighDpiScaleFactorRoundingPolicy"):  # Qt >= 5.14
+            QtWidgets.QApplication.setHighDpiScaleFactorRoundingPolicy(
+                QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough
+            )
     APP = QtWidgets.QApplication(["pyrpl"])
 
 # get user directories
