@@ -27,13 +27,16 @@ The different buttons in the acquisition module control panel below the plot are
   measurement from scratch.
 - :code:`Save curve` saves the current measurement data to a new
   :class:`pyrpl.curvedb.CurveDB` object under the name
-  :attr:`~.AcquisitionModule.curve_name`.
+  :attr:`~.AcquisitionModule.curve_name`. The number of the saved curve is
+  briefly shown on the button and logged together with the file name.
 """
 
 import asyncio
+import os
 
 from qtpy import QtCore, QtWidgets
 
+from ...curvedb import CurveDB
 from . import ModuleWidget
 
 
@@ -66,7 +69,7 @@ class AcquisitionModuleWidget(ModuleWidget):
         self.button_stop.clicked.connect(self.stop_clicked)
 
         self.button_save = QtWidgets.QPushButton("Save curve")
-        self.button_save.clicked.connect(self.module.save_curve)
+        self.button_save.clicked.connect(self.save_curve_clicked)
 
         self.current_avg_label = CurrentAvgLabel()
 
@@ -125,6 +128,34 @@ class AcquisitionModuleWidget(ModuleWidget):
             else:
                 if str(self.button_continuous.text()).startswith("Pause"):
                     self.module.pause()
+
+    def save_curve_clicked(self):
+        """
+        Saves the current curve(s) and reports what was saved in the log and,
+        for a moment, on the save button.
+        """
+        curves = self.module.save_curve()
+        if not isinstance(curves, (list, tuple)):
+            curves = [curves]
+        curves = [curve for curve in curves if curve is not None]
+        dirname = getattr(CurveDB, "_dirname", None)  # only for the default CurveDB
+        for curve in curves:
+            if dirname is None:
+                self._logger.info("Saved curve %s '%s'", curve.pk, curve.name)
+            else:
+                filename = os.path.join(dirname, str(curve.pk) + CurveDB.file_extension)
+                self._logger.info("Saved curve %s '%s' to %s", curve.pk, curve.name, filename)
+        if curves:
+            text = "Saved #" + ", #".join(str(curve.pk) for curve in curves)
+        else:
+            self._logger.warning("No curve saved: no channel is selected.")
+            text = "Nothing saved"
+        self._flash_button_text(self.button_save, text, "Save curve")
+
+    def _flash_button_text(self, button, text, label, duration_ms=2000):
+        """Shows text on button for duration_ms, then restores label."""
+        button.setText(text)
+        QtCore.QTimer.singleShot(duration_ms, lambda: button.setText(label))
 
     def stop_clicked(self):
         # old_running_state = self.module.running_state
