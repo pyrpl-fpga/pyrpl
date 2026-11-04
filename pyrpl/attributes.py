@@ -32,12 +32,14 @@ from .widgets.attribute_widgets import (
     DataAttributeWidget,
     FilterAttributeWidget,
     FloatAttributeWidget,
+    FrequencyAttributeWidget,
     IntAttributeWidget,
     LedAttributeWidget,
     PlotAttributeWidget,
     SelectAttributeWidget,
     StringAttributeWidget,
     TextAttributeWidget,
+    TimeAttributeWidget,
 )
 
 logger = logging.getLogger(name=__name__)
@@ -651,7 +653,10 @@ class FrequencyProperty(FloatProperty):
     """
     An attribute for frequency values
     Same as FloatAttribute, except it cannot become negative.
+    The widget shows the value in Hz, kHz or MHz.
     """
+
+    _widget_class = FrequencyAttributeWidget
 
     def __init__(self, **kwargs):
         if "min" not in kwargs:
@@ -690,6 +695,15 @@ class FrequencyRegister(FloatRegister, FrequencyProperty):
         return FrequencyProperty.validate_and_normalize(
             self, obj, FloatRegister.validate_and_normalize(self, obj, value)
         )
+
+
+class TimeProperty(FloatProperty):
+    """
+    An attribute for time values in seconds. The widget shows the value in
+    us, ms or s.
+    """
+
+    _widget_class = TimeAttributeWidget
 
 
 class PhaseProperty(FloatProperty):

@@ -6,6 +6,25 @@ from qtpy import QtCore, QtGui, QtWidgets
 
 integer_types = (int,)
 
+# (name, size in the base unit) for widgets showing values in engineering units
+FREQUENCY_UNITS = (("Hz", 1.0), ("kHz", 1e3), ("MHz", 1e6))
+TIME_UNITS = (("µs", 1e-6), ("ms", 1e-3), ("s", 1.0))
+
+
+def best_unit_index(value, units):
+    """Index of the largest unit in which abs(value) is at least 1 (else the smallest unit)."""
+    index = 0
+    for i, (_name, factor) in enumerate(units):
+        if abs(value) >= factor * (1 - 1e-9):
+            index = i
+    return index
+
+
+def format_with_unit(value, units, digits=4):
+    """Formats value in the best-fitting unit, e.g. 7629.4 -> '7.629 kHz'."""
+    name, factor = units[best_unit_index(value, units)]
+    return f"{value / factor:.{digits}g} {name}"
+
 
 class NumberSpinBox(QtWidgets.QWidget):
     """
@@ -446,6 +465,81 @@ class FloatSpinBox(NumberSpinBox):
         """
         # example: -1.123e-23 has 7+decimals(3) letters
         return self.decimals + 7
+
+
+class UnitSpinBox(FloatSpinBox):
+    """
+    Float spin box with a separate box to select the unit (e.g. Hz, kHz, MHz)
+    in which the value is displayed and entered. The value itself is always
+    in the base unit (the unit with size 1). Changing the unit only rescales
+    the display; the value does not change. Until the user picks a unit, the
+    unit follows the value (e.g. kHz for 12.5e3).
+    """
+
+    units = ()  # sequence of (name, size in the base unit), set in subclasses
+    digits = 7  # significant digits shown
+
+    def __init__(self, label, **kwargs):
+        # needed before super().__init__(), which already displays a value
+        self.factor = 1.0
+        self._unit_chosen = False
+        super().__init__(label, **kwargs)
+
+    def make_layout(self):
+        super().make_layout()
+        self.unit = QtWidgets.QComboBox()
+        self.unit.addItems([name for name, _factor in self.units])
+        self.unit.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.unit.currentIndexChanged.connect(self.unit_changed)
+        self.lay.addWidget(self.unit)
+
+    def _text(self, value):
+        return f"{value / self.factor:.{self.digits}g}"
+
+    def _select_unit(self, index):
+        self.unit.blockSignals(True)
+        self.unit.setCurrentIndex(index)
+        self.unit.blockSignals(False)
+        self.factor = self.units[index][1]
+
+    def unit_changed(self, index):
+        """The user picked a unit: rescale the display, keep the value."""
+        self._unit_chosen = True
+        self.factor = self.units[index][1]
+        self.line.blockSignals(True)
+        self.line.setText(self._text(self._val))
+        self.line.blockSignals(False)
+
+    @property
+    def val(self):
+        text = str(self.line.text())
+        if text != self._text(self._val):
+            return float(text) * self.factor
+        return self._val  # keeps the precision beyond the displayed digits
+
+    @val.setter
+    def val(self, new_val):
+        self._val = self.saturate(new_val)
+        if not self._unit_chosen:
+            self._select_unit(best_unit_index(self._val, self.units))
+        self.line.blockSignals(True)
+        self.line.setText(self._text(self._val))
+        self.line.blockSignals(False)
+        self.value_changed.emit()
+        return new_val
+
+    @property
+    def max_num_letter(self):
+        # sign, decimal point and a possible exponent
+        return self.digits + 5
+
+
+class FrequencySpinBox(UnitSpinBox):
+    units = FREQUENCY_UNITS
+
+
+class TimeSpinBox(UnitSpinBox):
+    units = TIME_UNITS
 
 
 class ComplexSpinBox(FloatSpinBox):
