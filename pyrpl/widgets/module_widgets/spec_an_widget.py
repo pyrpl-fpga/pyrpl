@@ -227,7 +227,6 @@ class SpecAnWidget(AcquisitionModuleWidget):
             return
         x, y = datas
 
-        np.array((datas[0], datas[1][1]))
         self.win2._set_widget_value(datas)
 
         self.last_data = datas
