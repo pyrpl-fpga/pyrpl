@@ -297,3 +297,12 @@ class TestClass(TestPyrpl):
         curves = sa.save_curve()
         assert (curves[0].data[1] == sa.data_avg[0]).all()
         self.curves += curves  # curves will be deleted by teardownAll
+
+    def test_save_curve_iq(self):
+        sa = self.pyrpl.spectrumanalyzer
+        sa.setup(baseband=False, center=1e5, span=1e5, input="asg0", curve_name="iq test curve")
+        sa.single()
+        curve = sa.save_curve()
+        assert curve.params["name"] == "iq test curve"
+        assert (curve.data[1] == sa.data_avg).all()
+        self.curves.append(curve)  # curves will be deleted by teardownAll

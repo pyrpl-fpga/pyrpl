@@ -748,12 +748,10 @@ class SpectrumAnalyzer(AcquisitionModule):
         Saves the curve(s) that is (are) currently displayed in the gui in
         the db_system. Also, returns the list [curve_ch1, curve_ch2]...
         """
-        """
-        Saves the curve(s) that is (are) currently displayed in the gui in
-        the db_system. Also, returns the list [curve_ch1, curve_ch2]...
-        """
         if not self.baseband:
-            return super()._save_curve(self.data_x, self.data_avg, **self.setup_attributes)
+            d = self.setup_attributes
+            d.update({"name": self.curve_name})
+            return self._save_curve(self.data_x, self.data_avg, **d)
         else:
             d = self.setup_attributes
             curves = [None, None]
