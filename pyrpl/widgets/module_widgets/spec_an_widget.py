@@ -44,7 +44,6 @@ The following attributes can be manipulated by the SpectrumAnalyzer widget:
 
 import logging
 
-import numpy as np
 from qtpy import QtWidgets
 
 from ..attribute_widgets import DataWidget
