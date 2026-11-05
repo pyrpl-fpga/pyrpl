@@ -93,8 +93,30 @@ class TestModuleWidgets(TestPyrpl):
         display_unit, so e.g. loading a state also raised.
         """
         sa, widget = specan
+
+        def visible_curves():
+            return [i for i, curve in enumerate(widget.win2.curves) if curve.isVisible()]
+
+        def change_unit():
+            unit = "Vpk" if sa.display_unit != "Vpk" else "dB(Vpk^2)"
+            return dict(display_unit=unit)
+
+        # IQ trace, redrawn in baseband mode: still one curve
         sa.setup(baseband=False, center=1e5, span=1e5, input="asg0", trace_average=1)
         self._acquire_and_display(sa, widget)
-        other_unit = "Vpk" if sa.display_unit != "Vpk" else "dB(Vpk^2)"
-        sa.setup(baseband=True, span=1e6, input1_baseband="asg0", display_unit=other_unit)
+        n_points = len(sa.data_x)
+        sa.setup(baseband=True, span=1e6, input1_baseband="asg0", **change_unit())
         widget.unit_changed()  # the signal reaches it only through the Qt event loop
+        assert visible_curves() == [0]
+        assert len(widget.win2.curves[0].getData()[1]) == n_points
+
+        # baseband trace, redrawn in IQ mode: the selected baseband curves
+        sa.setup(
+            display_input1_baseband=True,
+            display_input2_baseband=False,
+            display_cross_amplitude=False,
+        )
+        self._acquire_and_display(sa, widget)
+        sa.setup(baseband=False, center=1e5, span=1e5, **change_unit())
+        widget.unit_changed()
+        assert visible_curves() == [0]
