@@ -9,7 +9,7 @@ from pyrpl.hardware_modules.iir import IIR
 from pyrpl.hardware_modules.pid import Pid
 from pyrpl.software_modules import NetworkAnalyzer
 from pyrpl.test.test_base import TestPyrpl
-from pyrpl.widgets.attribute_widgets import NumberAttributeWidget
+from pyrpl.widgets.attribute_widgets import DataWidget, NumberAttributeWidget
 
 logger = logging.getLogger(name=__name__)
 
@@ -96,3 +96,29 @@ class TestAttributeWidgets(TestPyrpl):
             setattr(mod, name, original_m_value)
             if original_i is not None:
                 mod.i = original_i
+
+    def test_data_widget_no_curve(self):
+        """
+        An empty list of curves (e.g. all spectrum analyzer curves deselected)
+        used to reach the magnitude transform as an empty Python list, where
+        abs() raised a TypeError.
+        """
+        widget = DataWidget()
+        x = np.linspace(1, 10, 10)
+
+        def visible():
+            return [i for i, curve in enumerate(widget.curves) if curve.isVisible()]
+
+        def magnitude(data):
+            return abs(data)  # like SpectrumAnalyzer.data_to_unit, fails on lists
+
+        widget._set_widget_value((x, [x, x + 1j]), transform_magnitude=magnitude)
+        assert visible() == [0, 1]
+        assert widget.plot_item_phase.isVisible()
+
+        widget._set_widget_value((x, []), transform_magnitude=magnitude)
+        assert visible() == []
+        assert not widget.plot_item_phase.isVisible()
+
+        widget._set_widget_value((x, [x]), transform_magnitude=magnitude)
+        assert visible() == [0]

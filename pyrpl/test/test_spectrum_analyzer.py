@@ -36,13 +36,20 @@ class TestClass(TestPyrpl):
         # executed
         assert self.pyrpl.spectrumanalyzer.running_state == "stopped"
 
-    def test_no_write_in_config(self):
+    @pytest.mark.parametrize("baseband", [True, False])
+    def test_no_write_in_config(self, baseband):
         """
         Make sure the spec an isn't continuously writing to config file,
-        even in running mode.
+        even in running mode. baseband is set explicitly since other tests
+        may leave the spec an in either mode. The first trace configures the
+        scope (and the iq module in IQ mode), which may be saved once, so it
+        is acquired before counting.
         :return:
         """
-        self.pyrpl.spectrumanalyzer.setup_attributes = dict(span=1e5, input="out1")
+        self.pyrpl.spectrumanalyzer.setup_attributes = dict(
+            span=1e5, input="out1", baseband=baseband
+        )
+        self.pyrpl.spectrumanalyzer.single()
         self.pyrpl.spectrumanalyzer.continuous()
         sleep(0.1)
         old = self.pyrpl.c._save_counter
