@@ -5,7 +5,24 @@ import numpy as np
 from ..attributes import FloatRegister
 from ..modules import HardwareModule
 from ..pyrpl_utils import time
-from .dsp import DSP_INPUTS
+from .dsp import DSP_INPUTS, dsp_addr_base
+
+
+class SamplerSignalRegister(FloatRegister):
+    """Current value of one DSP signal.
+
+    The register address follows the signal's routing code in the loaded FPGA
+    profile, which may differ from the default code in ``DSP_INPUTS``.
+    """
+
+    def __init__(self, signal, **kwargs):
+        self.signal = signal
+        address = 0x10 + DSP_INPUTS[signal] * 0x10000
+        super().__init__(address, **kwargs)
+
+    def get_value(self, obj):
+        address = dsp_addr_base(self.signal, obj) + 0x10 - obj.addr_base
+        return self.to_python(obj, obj._read(address))
 
 
 class Sampler(HardwareModule):
@@ -87,9 +104,9 @@ class Sampler(HardwareModule):
 
 
 # generate one attribute in Sampler for each DSP signal
-for inp, num in DSP_INPUTS.items():
+for inp in DSP_INPUTS:
     setattr(
         Sampler,
         inp,
-        FloatRegister(0x10 + num * 0x10000, bits=14, norm=2**13 - 1, doc="current value of " + inp),
+        SamplerSignalRegister(inp, bits=14, norm=2**13 - 1, doc="current value of " + inp),
     )

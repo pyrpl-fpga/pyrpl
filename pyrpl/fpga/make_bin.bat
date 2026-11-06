@@ -46,11 +46,29 @@ if not exist "%PROFILE_TCL%" (
     exit /b 2
 )
 
+REM Select the Zynq device of the target board (second argument):
+REM   z7010 (default) - STEMlab 125-14, xc7z010clg400-1
+REM   z7020           - STEMlab 125-14 Z7020 boards (e.g. PRO Z7020 Gen 2)
+REM z7010 builds keep their historical build\<profile> directory; other parts
+REM build into build\<part>\<profile>.
+set "FPGA_PART=%~2"
+if "%FPGA_PART%"=="" set "FPGA_PART=z7010"
+if /I "%FPGA_PART%"=="z7010" (
+    set "FPGA_PART=z7010"
+    set "BUILD_SUBDIR=build\%PROFILE%"
+) else if /I "%FPGA_PART%"=="z7020" (
+    set "FPGA_PART=z7020"
+    set "BUILD_SUBDIR=build\z7020\%PROFILE%"
+) else (
+    echo Unknown FPGA part "%FPGA_PART%". Use z7010 or z7020.
+    exit /b 2
+)
+
 REM build results
-set "OUT_DIR=%FPGA_DIR%build\%PROFILE%"
+set "OUT_DIR=%FPGA_DIR%%BUILD_SUBDIR%"
 set "FPGA_BIN=%OUT_DIR%\red_pitaya.bin"
 set "DISPLAY_OUT_DIR=%OUT_DIR%"
-if defined PYRPL_FPGA_PHYSICAL_DIR set "DISPLAY_OUT_DIR=%PYRPL_FPGA_PHYSICAL_DIR%\build\%PROFILE%"
+if defined PYRPL_FPGA_PHYSICAL_DIR set "DISPLAY_OUT_DIR=%PYRPL_FPGA_PHYSICAL_DIR%\%BUILD_SUBDIR%"
 set "DISPLAY_FPGA_BIN=%DISPLAY_OUT_DIR%\red_pitaya.bin"
 
 REM Vivado from Xilinx provides IP handling, FPGA compilation
@@ -67,9 +85,9 @@ REM Vivado's launcher records its initial working directory before loading Tcl.
 REM Start it in its installation directory; the Tcl script then anchors all
 REM project paths to its own location. This is also robust to launchers that
 REM remap user paths and keeps Vivado's installed Tcl apps discoverable.
-echo Starting Vivado profile "%PROFILE%"...
+echo Starting Vivado profile "%PROFILE%" for %FPGA_PART%...
 pushd "c:\Xilinx\Vivado\%VIVADO_VER%"
-call c:\Xilinx\Vivado\%VIVADO_VER%\bin\vivado.bat -nolog -nojournal -mode batch -source "%FPGA_DIR%red_pitaya_vivado.tcl" -tclargs "%PROFILE%" "%OUT_DIR%" > "%OUT_DIR%\fpga.log" 2>&1
+call c:\Xilinx\Vivado\%VIVADO_VER%\bin\vivado.bat -nolog -nojournal -mode batch -source "%FPGA_DIR%red_pitaya_vivado.tcl" -tclargs "%PROFILE%" "%OUT_DIR%" "%FPGA_PART%" > "%OUT_DIR%\fpga.log" 2>&1
 set "VIVADO_EXIT=%ERRORLEVEL%"
 popd
 if not "%VIVADO_EXIT%"=="0" (

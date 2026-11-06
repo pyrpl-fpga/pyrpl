@@ -85,7 +85,10 @@ module red_pitaya_top #(
    parameter PID_FILTERSTAGES = 0,
    parameter PID_DERIVATIVE_FILTER_SHIFT = 4,
    parameter IQ_VCO = 0,
-   parameter ARITHMETIC = 0
+   parameter ARITHMETIC = 0,
+   // 1: also forward system-bus region 5 (0x40500000) to the DSP, giving it
+   // register slots 16..31 (used by the "full" profile's DSP)
+   parameter DSP_HIGH_SLOTS = 0
 ) (
    // PS connections
    inout  [54-1: 0] FIXED_IO_mio       ,
@@ -253,11 +256,19 @@ assign ps_sys_rdata = sys_rdata[sys_addr[22:20]*32+:32];
 assign ps_sys_err   = |(sys_cs & sys_err);
 assign ps_sys_ack   = |(sys_cs & sys_ack);
 
-// unused system bus slave ports
+// region 5: DSP register slots 16..31 if DSP_HIGH_SLOTS, otherwise unused
 
-assign sys_rdata[5*32+:32] = 32'h0; 
+generate if (DSP_HIGH_SLOTS) begin : dsp_high_slots
+assign sys_rdata[5*32+:32] = sys_rdata[3*32+:32];
+assign sys_err  [5       ] = sys_err  [3       ];
+assign sys_ack  [5       ] = sys_ack  [3       ];
+end else begin : unused_region5
+assign sys_rdata[5*32+:32] = 32'h0;
 assign sys_err  [5       ] =  1'b0;
 assign sys_ack  [5       ] =  1'b1;
+end endgenerate
+
+// unused system bus slave ports
 
 assign sys_rdata[6*32+:32] = 32'h0; 
 assign sys_err  [6       ] =  1'b0;
@@ -550,8 +561,8 @@ red_pitaya_dsp #(
   .sys_addr        (  sys_addr                   ),  // address
   .sys_wdata       (  sys_wdata                  ),  // write data
   .sys_sel         (  sys_sel                    ),  // write byte select
-  .sys_wen         (  sys_wen[3]                 ),  // write enable
-  .sys_ren         (  sys_ren[3]                 ),  // read enable
+  .sys_wen         (  sys_wen[3] | (DSP_HIGH_SLOTS ? sys_wen[5] : 1'b0) ),  // write enable
+  .sys_ren         (  sys_ren[3] | (DSP_HIGH_SLOTS ? sys_ren[5] : 1'b0) ),  // read enable
   .sys_rdata       (  sys_rdata[ 3*32+31: 3*32]  ),  // read data
   .sys_err         (  sys_err[3]                 ),  // error indicator
   .sys_ack         (  sys_ack[3]                 )   // acknowledge signal

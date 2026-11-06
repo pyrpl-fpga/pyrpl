@@ -31,7 +31,14 @@ from scp import SCPException
 from . import hardware_modules as rp
 from . import redpitaya_client
 from .errors import ExpectedPyrplError
-from .fpga_profiles import get_fpga_profile
+from .fpga_profiles import (
+    DEFAULT_FPGA_PART,
+    FPGA_PARTS,
+    ZYNQ_PSS_IDCODE_ADDRESS,
+    get_fpga_profile,
+    normalize_fpga_part,
+    parse_fpga_part,
+)
 from .memory import MemoryTree
 from .pyrpl_utils import (
     get_unique_name_list_from_class_list,
@@ -52,6 +59,7 @@ defaultparameters = dict(
     reloadserver=False,  # reinstall the server at startup if not necessary?
     reloadfpga="auto",  # reload the fpga binfile at startup? True/False/'auto'
     fpga_profile="default",  # packaged FPGA hardware/software profile
+    fpga_part="auto",  # Zynq of the board: 'auto' (detect), 'z7010' or 'z7020'
     filename="fpga/red_pitaya.bin",  # old path is migrated to the selected profile
     dtbo_filename="fpga/red_pitaya.dtbo",  # old path is migrated to the selected profile
     # name of the binfile on the server and in the device tree overlay file
@@ -95,6 +103,7 @@ class RedPitaya:
             reloadserver=False,  # reinstall the server at startup if not necessary?
             reloadfpga='auto',  # reload the fpga bitfile at startup? True/False/'auto'
             fpga_profile='default',  # packaged FPGA hardware/software profile
+            fpga_part='auto',  # Zynq of the board: 'auto' (detect), 'z7010' or 'z7020'
             filename='fpga/red_pitaya.bin',  # migrated to the selected profile
             dtbo_filename='fpga/red_pitaya.dtbo', # migrated to the selected profile
             # name of the binfile on the server and in the device tree overlay file
@@ -168,9 +177,20 @@ class RedPitaya:
         self.cls_modules = tuple(
             getattr(rp, class_name) for class_name in self.fpga_profile.hardware_modules
         )
+        self._filename_explicit = "filename" in kwargs
+        self._dtbo_filename_explicit = "dtbo_filename" in kwargs
+        # The board is only known after connecting. Until then, use the
+        # configured part, or provisionally the original STEMlab 125-14 part
+        # (if the profile has an image for it) for 'auto'.
+        provisional_part = (
+            DEFAULT_FPGA_PART
+            if DEFAULT_FPGA_PART in self.fpga_profile.fpga_parts
+            else self.fpga_profile.fpga_parts[0]
+        )
+        self.fpga_part = self._configured_fpga_part() or provisional_part
         self._resolve_profile_files(
-            filename_explicit="filename" in kwargs,
-            dtbo_filename_explicit="dtbo_filename" in kwargs,
+            filename_explicit=self._filename_explicit,
+            dtbo_filename_explicit=self._dtbo_filename_explicit,
         )
         # get missing connection settings from gui/command line
         if self.parameters["hostname"] is None or self.parameters["hostname"] == "":
@@ -234,6 +254,7 @@ class RedPitaya:
         # start other stuff
         self.get_os_version()  # get os version for later use
         self._configure_os_compatibility()
+        self._configure_fpga_part()
 
         # Handle reloadfpga with auto option
         should_reload_fpga = self._should_reload_fpga()
@@ -247,8 +268,75 @@ class RedPitaya:
         self.logger.info(f"Successfully connected to Redpitaya with hostname {self.ssh.hostname}.")
         self.parent = self
 
+    def _configured_fpga_part(self):
+        """Return the part set by ``fpga_part``, or ``None`` for 'auto'."""
+        value = self.parameters.get("fpga_part", "auto")
+        if value in (None, "", "auto"):
+            return None
+        return normalize_fpga_part(value)
+
+    def _detect_fpga_part(self):
+        """Read the Zynq device from the board, or return ``None`` if unknown.
+
+        The PS exposes the device IDCODE in the SLCR PSS_IDCODE register. Red
+        Pitaya OS ships ``monitor`` to read physical memory; busybox
+        ``devmem`` is tried as a fallback.
+        """
+        address = f"0x{ZYNQ_PSS_IDCODE_ADDRESS:08X}"
+        try:
+            self.ssh.ask()  # clear buffer
+            result = self.ssh.ask(
+                f"/opt/redpitaya/bin/monitor {address} 2>/dev/null || devmem {address} 2>/dev/null"
+            )
+        except (AttributeError, OSError, RuntimeError) as error:
+            self.logger.debug("Could not read the Zynq IDCODE: %s", error)
+            return None
+        part = parse_fpga_part(result)
+        self.logger.debug("Zynq IDCODE readout %r -> FPGA part %s", result, part)
+        return part
+
+    def _configure_fpga_part(self):
+        """Select the bitstream matching the Zynq of the connected board."""
+        configured = self._configured_fpga_part()
+        detected = self._detect_fpga_part()
+        if configured is not None:
+            if detected is not None and detected != configured:
+                self.logger.warning(
+                    "fpga_part=%s is configured, but the board reports a %s (%s). "
+                    "Loading an image built for another part will fail; set "
+                    "fpga_part='auto' unless this detection is wrong.",
+                    configured,
+                    detected,
+                    FPGA_PARTS[detected],
+                )
+            part = configured
+        elif detected is not None:
+            part = detected
+        else:
+            part = DEFAULT_FPGA_PART
+            self.logger.warning(
+                "Could not detect the Zynq part of the Red Pitaya; assuming %s (%s). "
+                "Set fpga_part='z7020' for STEMlab 125-14 Z7020 boards.",
+                part,
+                FPGA_PARTS[part],
+            )
+        if part != self.fpga_part:
+            self.logger.info("Red Pitaya uses a %s (%s)", part, FPGA_PARTS[part])
+        else:
+            self.logger.debug("Red Pitaya uses a %s (%s)", part, FPGA_PARTS[part])
+        self.fpga_part = part
+        self._resolve_profile_files(
+            filename_explicit=self._filename_explicit,
+            dtbo_filename_explicit=self._dtbo_filename_explicit,
+        )
+        self.c["redpitaya"] = self.parameters
+
     def _resolve_profile_files(self, filename_explicit=False, dtbo_filename_explicit=False):
-        """Select packaged profile files while preserving explicit overrides."""
+        """Select packaged profile files while preserving explicit overrides.
+
+        The bitstream is the profile's image for ``self.fpga_part``. An explicit
+        ``filename`` bypasses that selection and must match the board itself.
+        """
 
         def is_managed_path(value, basename):
             if value in (None, ""):
@@ -259,9 +347,11 @@ class RedPitaya:
         if not filename_explicit and is_managed_path(
             self.parameters.get("filename"), "red_pitaya.bin"
         ):
-            self.parameters["filename"] = os.path.relpath(
-                self.fpga_profile.bitstream, os.path.dirname(__file__)
-            )
+            try:
+                bitstream = self.fpga_profile.bitstream_for(self.fpga_part)
+            except ValueError as error:
+                raise ExpectedPyrplError(str(error)) from error
+            self.parameters["filename"] = os.path.relpath(bitstream, os.path.dirname(__file__))
         if not dtbo_filename_explicit and is_managed_path(
             self.parameters.get("dtbo_filename"), "red_pitaya.dtbo"
         ):

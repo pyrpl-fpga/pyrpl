@@ -3,6 +3,14 @@
 #
 # Usage:
 # vivado -mode batch -source red_pitaya_vivado.tcl -tclargs default build/default
+# vivado -mode batch -source red_pitaya_vivado.tcl -tclargs default build/z7020/default z7020
+#
+# The optional third argument selects the Zynq device of the target board:
+#   z7010 (default): STEMlab 125-14, xc7z010clg400-1
+#   z7020:           STEMlab 125-14 Z7020 boards (e.g. PRO Z7020 Gen 2),
+#                    xc7z020clg400-1
+# Both devices share the CLG400 package and the Red Pitaya 125-14 pinout, so
+# the RTL, block design and constraints are identical for both.
 ################################################################################
 
 ################################################################################
@@ -59,7 +67,21 @@ file mkdir $path_sdk
 # setup an in memory project
 ################################################################################
 
-set part xc7z010clg400-1
+set fpga_part [lindex $argv 2]
+if {$fpga_part eq ""} {
+    set fpga_part z7010
+}
+# cfgmem_size_mb must hold the uncompressed bitstream (~2 MB for the z7010,
+# ~4 MB for the z7020).
+switch -- $fpga_part {
+    z7010   { set part xc7z010clg400-1; set cfgmem_size_mb 2 }
+    z7020   { set part xc7z020clg400-1; set cfgmem_size_mb 4 }
+    default { error "Unknown FPGA part '$fpga_part': expected z7010 or z7020" }
+}
+if {[info exists supported_fpga_parts] && [lsearch -exact $supported_fpga_parts $fpga_part] < 0} {
+    error "FPGA profile '$profile' only supports: $supported_fpga_parts"
+}
+puts "Building FPGA profile '$profile' for $fpga_part ($part)"
 
 # Some non-interactive Windows launchers cannot create Vivado's per-user Tcl
 # store. Ensure the bundled simulator app needed by project initialization is
@@ -262,7 +284,7 @@ write_bitstream -force $path_out/red_pitaya.bit
 
 set_property BITSTREAM.GENERAL.COMPRESS FALSE [current_design]
 write_bitstream -force $path_out/red_pitaya_uncompressed.bit
-write_cfgmem -force -format BIN -size 2 -interface SMAPx32 -disablebitswap -loadbit "up 0x0 $path_out/red_pitaya_uncompressed.bit" $path_out/red_pitaya.bin
+write_cfgmem -force -format BIN -size $cfgmem_size_mb -interface SMAPx32 -disablebitswap -loadbit "up 0x0 $path_out/red_pitaya_uncompressed.bit" $path_out/red_pitaya.bin
 
 ################################################################################
 # generate system definition

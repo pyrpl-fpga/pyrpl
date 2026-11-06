@@ -84,6 +84,48 @@ compatibility-only `legacy` profile skips that expensive step.
 | `legacy` | original 32-bit, 14-stage | 4 input stages | 3 PID, 3 IQ |
 | `no_iir` | none | 4 input stages | 3 PID, 3 IQ |
 | `iir32` | pipelined 32-bit, 14-stage | none | 2 PID, 3 IQ |
+| `full` (Z7020 only) | pipelined 32-bit, 14-stage | 4 input stages plus band-limited D | 3 PID, 3 IQ with VCOs, standalone CORDIC plus CORDICs in IQ0/IQ1, two-input arithmetic |
+
+## Zynq 7020 boards
+
+The STEMlab 125-14 Z7020 boards (for example the PRO Z7020 Gen 2) use the
+same CLG400 package and the same ADC, DAC, clock, LED, and expansion-connector
+pins as the Z7010 STEMlab 125-14; Red Pitaya builds both from the same pyrpl
+constraints. Only the Vivado part differs, and a bitstream built for one
+device cannot be loaded on the other. Pass the part as a second argument:
+
+```bat
+make_bin.bat default z7020
+make_bin.bat full z7020
+```
+
+`z7010` (the default) builds into `build\<profile>`, `z7020` into
+`build\z7020\<profile>`. A profile can declare `set supported_fpga_parts {...}`
+in its `profile.tcl`; `full` only supports `z7020`. Stage a Z7020 image with
+`python publish_fpga_profile.py <profile> --part z7020`. One profile directory
+under `bitstreams` holds the images of all parts (`red_pitaya.bin` for z7010,
+`red_pitaya_z7020.bin` for z7020) in the `bitstreams` entry of its manifest.
+
+At startup PyRPL reads the Zynq IDCODE of the board (SLCR `PSS_IDCODE`,
+0xF8000530, through Red Pitaya's `monitor` tool) and loads the profile's image
+for that part. Set `fpga_part='z7010'` or `'z7020'` to override detection;
+`available_fpga_profiles(part='z7020')` lists the profiles staged for a part.
+
+The Z7020 has three times the logic of the Z7010 (53,200 LUTs, 13,300
+slices, 220 DSPs, 140 block RAM tiles), so the `full` profile combines every
+optional feature. All historical routing codes (0-15) are in use, so its
+selectors are 5 bits wide and its two extra modules use new codes, with
+registers in system-bus region 5 (enabled by the top-level `DSP_HIGH_SLOTS`
+generic):
+
+| Module | Routing code | Register base |
+|--------|--------------|---------------|
+| `cordic` | 16 | `0x40500000` |
+| `arithmetic` | 17 | `0x40510000` |
+
+All other modules keep their usual codes and addresses. The manifest lists
+these codes under `hardware.dsp_codes`, and PyRPL resolves module addresses,
+input selectors, and sampler readouts from it.
 
 `pid_derivative` combines the no-IIR topology with the current PID RTL. Each of
 its three PIDs has the original four-stage input prefilter and one derivative

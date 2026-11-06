@@ -256,7 +256,7 @@ class DummyClient:  # pragma: no cover
                 and module not in self.fpga_profile.hardware.get("dsp_inputs", [])
             ):
                 continue
-            offset = addr - dsp_addr_base(module)
+            offset = addr - dsp_addr_base(module, self.fpga_profile)
             if module.startswith("pid"):
                 if offset == 0x210:  # DERIVATIVE
                     if self.fpga_profile is not None:

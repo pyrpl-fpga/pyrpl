@@ -1,9 +1,9 @@
 -------------------------------------
 | Tool Version : Vivado v.2024.2
-| Date         : Mon Oct 12 16:45:01 2026
+| Date         : Fri Nov  6 14:54:08 2026
 | Host         : PCLDY-ESGT-419
 | Design       : design_1
-| Device       : xc7z010-clg400-1--
+| Device       : xc7z020-clg400-1--
 -------------------------------------
 
 For more information on clockInfo.txt clock routing debug file see https://support.xilinx.com/s/article/000035660?language=en_US

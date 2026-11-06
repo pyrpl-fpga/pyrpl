@@ -40,6 +40,47 @@ DSP_INPUTS = OrderedDict(
     ]
 )
 
+# Register slots 0..15 occupy 0x40300000..0x403FFFFF. Profiles with more DSP
+# modules (see the "dsp_codes" manifest entry) place slots 16..31 in bus
+# region 5, starting at this address.
+DSP_ADDR_BASE = 0x40300000
+DSP_HIGH_SLOT_ADDR_BASE = 0x40500000
+
+
+def _fpga_profile(instance):
+    """Return the FPGA profile of a module, Red Pitaya or profile, or None."""
+    if instance is None:
+        return None
+    if hasattr(instance, "hardware") and hasattr(instance, "capabilities"):
+        return instance  # already an FpgaProfile
+    for path in ("fpga_profile", "_rp.fpga_profile"):
+        obj = instance
+        try:
+            for attribute in path.split("."):
+                obj = getattr(obj, attribute)
+        except (AttributeError, ExpectedPyrplError):
+            continue
+        return obj
+    try:
+        return instance.pyrpl.rp.fpga_profile
+    except (AttributeError, ExpectedPyrplError):
+        return None
+
+
+def dsp_code(name, profile=None):
+    """Routing code (== register slot) of a DSP signal.
+
+    ``profile`` may be an FpgaProfile or any object that knows its profile.
+    Profiles can move modules to other codes through ``hardware.dsp_codes``;
+    all other signals use the codes of ``DSP_INPUTS``.
+    """
+    profile = _fpga_profile(profile)
+    if profile is not None:
+        codes = profile.hardware.get("dsp_codes", {})
+        if name in codes:
+            return int(codes[name])
+    return DSP_INPUTS[name]
+
 
 def all_inputs_keys(instance):
     """collects all available logical inputs, composed of all
@@ -81,9 +122,10 @@ def all_inputs(instance):
     dsp inputs and all submodule inputs, such as lockbox signals etc."""
     # options is a mapping from option names to the setting of _input
     signals = OrderedDict()
+    profile = _fpga_profile(instance)
     for k in all_inputs_keys(instance):
         if k in DSP_INPUTS:
-            signals[k] = DSP_INPUTS[k]
+            signals[k] = dsp_code(k, profile)
         elif instance is not None:
             with contextlib.suppress(AttributeError):
                 signals[k] = recursive_getattr(instance.pyrpl, k + ".signal")()
@@ -155,10 +197,16 @@ def all_output_directs(instance):
     return sorted_dict(off=0, out1=1, out2=2, both=3, sort_by_values=True)
 
 
-def dsp_addr_base(name):
-    # find address from name
-    number = DSP_INPUTS[name]
-    return 0x40300000 + number * 0x10000
+def dsp_slot_addr_base(number):
+    """Base address of DSP register slot ``number``."""
+    if number < 16:
+        return DSP_ADDR_BASE + number * 0x10000
+    return DSP_HIGH_SLOT_ADDR_BASE + (number - 16) * 0x10000
+
+
+def dsp_addr_base(name, profile=None):
+    """Base address of the registers of DSP module ``name``."""
+    return dsp_slot_addr_base(dsp_code(name, profile))
 
 
 class PauseRegister(BoolRegister):
@@ -222,8 +270,8 @@ class DspModule(HardwareModule, SignalModule):
     """
 
     def __init__(self, rp, name):
-        self._number = DSP_INPUTS[name]
-        self.addr_base = dsp_addr_base(name)
+        self._number = dsp_code(name, rp)
+        self.addr_base = dsp_addr_base(name, rp)
         super().__init__(rp, name)
 
     _delay = 0  # delay of the module from input to output_signal (in cycles)
@@ -297,7 +345,7 @@ class DspModule(HardwareModule, SignalModule):
                 if isinstance(module, DspModule):
                     bit = module._number
                 elif isinstance(module, str):
-                    bit = DSP_INPUTS[module]
+                    bit = dsp_code(module, self)
                 elif isinstance(module, int):
                     bit = module
                 else:
