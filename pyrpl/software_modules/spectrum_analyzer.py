@@ -748,12 +748,10 @@ class SpectrumAnalyzer(AcquisitionModule):
         Saves the curve(s) that is (are) currently displayed in the gui in
         the db_system. Also, returns the list [curve_ch1, curve_ch2]...
         """
-        """
-        Saves the curve(s) that is (are) currently displayed in the gui in
-        the db_system. Also, returns the list [curve_ch1, curve_ch2]...
-        """
         if not self.baseband:
-            return super()._save_curve(self.data_x, self.data_avg, **self.setup_attributes)
+            d = self.setup_attributes
+            d.update({"name": self.curve_name})
+            return self._save_curve(self.data_x, self.data_avg, **d)
         else:
             d = self.setup_attributes
             curves = [None, None]
@@ -771,6 +769,29 @@ class SpectrumAnalyzer(AcquisitionModule):
                     self._save_curve(self.data_x, self.data_avg[2] + 1j * self.data_avg[3], **d)
                 )
             return curves
+
+    def _export_columns(self):
+        """Exports the displayed curve(s) in the display unit."""
+        unit = self.display_unit
+        rbw = self.attributes_last_run["rbw"]
+        names, columns = ["frequency (Hz)"], [self.data_x]
+        if not self.baseband:
+            names.append(f"spectrum ({unit})")
+            columns.append(self.data_to_display_unit(self.data_avg, rbw))
+        else:
+            spec1, spec2, cross_r, cross_i = self.data_avg
+            for ch, active, spec in [
+                (1, self.display_input1_baseband, spec1),
+                (2, self.display_input2_baseband, spec2),
+            ]:
+                if active:
+                    names.append(f"ch{ch} ({unit})")
+                    columns.append(self.data_to_display_unit(spec, rbw))
+            if self.display_cross_amplitude:
+                cross = cross_r + 1j * cross_i
+                names += [f"cross ({unit})", "cross phase (deg)"]
+                columns += [self.data_to_display_unit(cross, rbw), np.angle(cross, deg=True)]
+        return names, columns
 
     def equivalent_noise_bandwidth(self):
         """Returns the equivalent noise bandwidth of the current window. To

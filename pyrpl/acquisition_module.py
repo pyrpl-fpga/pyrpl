@@ -57,6 +57,7 @@ Example:
 
 from copy import copy
 
+import numpy as np
 from qtpy import QtCore
 
 from .async_utils import ZMQ_IPYTHON, Event, ensure_future, sleep_async, wait
@@ -153,6 +154,8 @@ class AcquisitionModule(Module):
             averaging
         stop(): stops the current acquisition and restarts the averaging.
         save_curve(): saves the currently averaged curve (or curves for scope)
+        export_curve(filename): writes the currently averaged data to a
+            comma-separated text file
 
     Attributes:
 
@@ -410,6 +413,45 @@ class AcquisitionModule(Module):
         self.attributes_last_run.update(name=self.curve_name)
         curve = self._save_curve(self.data_x, self.data_avg, **params)
         return curve
+
+    def export_curve(self, filename):
+        """
+        Writes the currently averaged data to the comma-separated text file
+        filename, for use in other programs. The header lines start with
+        '#': the settings of the last run, then the column names. Read it
+        back e.g. with numpy.loadtxt(filename, delimiter=",").
+        """
+        names, columns = self._export_columns()
+        lines = [f"pyrpl {self.name} export"]
+        lines += [f"{key}: {value}" for key, value in self.attributes_last_run.items()]
+        lines.append(",".join(names))
+        np.savetxt(
+            filename,
+            np.column_stack(columns),
+            fmt="%.12g",
+            delimiter=",",
+            header="\n".join(lines),
+        )
+        return filename
+
+    def _export_columns(self):
+        """
+        Returns (names, columns): the column names and the 1D arrays written
+        by export_curve(). Complex data are split into real and imaginary
+        parts. Derived classes override this for more meaningful columns.
+        """
+        names, columns = ["x"], [np.asarray(self.data_x)]
+        data = np.asarray(self.data_avg)
+        rows = data if data.ndim == 2 else [data]
+        for i, row in enumerate(rows):
+            name = "y" if len(rows) == 1 else f"y{i + 1}"
+            if np.iscomplexobj(row):
+                names += [name + " real", name + " imag"]
+                columns += [row.real, row.imag]
+            else:
+                names.append(name)
+                columns.append(row)
+        return names, columns
 
     def _clear(self):
         super()._clear()

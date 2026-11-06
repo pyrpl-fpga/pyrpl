@@ -225,18 +225,15 @@ class SpecAnWidget(AcquisitionModuleWidget):
     def display_curve(self, datas):
         if datas is None:
             return
-        x, y = datas
-
-        np.array((datas[0], datas[1][1]))
-        self.win2._set_widget_value(datas)
-
         self.last_data = datas
         freqs = datas[0]
 
         def to_units(x):
             return self.module.data_to_display_unit(x, self.module.attributes_last_run["rbw"])
 
-        if not self.module.baseband:  # iq mode, only 1 curve to display
+        # use the mode of the data, not the current one: after switching
+        # between iq and baseband mode, unit_changed() redraws older data
+        if np.ndim(datas[1]) == 1:  # iq mode, only 1 curve to display
             self.win2._set_widget_value((freqs, datas[1]), transform_magnitude=to_units)
         else:  # baseband mode: data is (spec1, spec2, real(cross), imag(cross))
             spec1, spec2, cross_r, cross_i = datas[1]

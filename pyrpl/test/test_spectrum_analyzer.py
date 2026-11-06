@@ -36,13 +36,20 @@ class TestClass(TestPyrpl):
         # executed
         assert self.pyrpl.spectrumanalyzer.running_state == "stopped"
 
-    def test_no_write_in_config(self):
+    @pytest.mark.parametrize("baseband", [True, False])
+    def test_no_write_in_config(self, baseband):
         """
         Make sure the spec an isn't continuously writing to config file,
-        even in running mode.
+        even in running mode. baseband is set explicitly since other tests
+        may leave the spec an in either mode. The first trace configures the
+        scope (and the iq module in IQ mode), which may be saved once, so it
+        is acquired before counting.
         :return:
         """
-        self.pyrpl.spectrumanalyzer.setup_attributes = dict(span=1e5, input="out1")
+        self.pyrpl.spectrumanalyzer.setup_attributes = dict(
+            span=1e5, input="out1", baseband=baseband
+        )
+        self.pyrpl.spectrumanalyzer.single()
         self.pyrpl.spectrumanalyzer.continuous()
         sleep(0.1)
         old = self.pyrpl.c._save_counter
@@ -297,3 +304,12 @@ class TestClass(TestPyrpl):
         curves = sa.save_curve()
         assert (curves[0].data[1] == sa.data_avg[0]).all()
         self.curves += curves  # curves will be deleted by teardownAll
+
+    def test_save_curve_iq(self):
+        sa = self.pyrpl.spectrumanalyzer
+        sa.setup(baseband=False, center=1e5, span=1e5, input="asg0", curve_name="iq test curve")
+        sa.single()
+        curve = sa.save_curve()
+        assert curve.params["name"] == "iq test curve"
+        assert (curve.data[1] == sa.data_avg).all()
+        self.curves.append(curve)  # curves will be deleted by teardownAll

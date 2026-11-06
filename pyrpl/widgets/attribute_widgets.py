@@ -12,7 +12,17 @@ import pyqtgraph as pg
 from qtpy import QtCore, QtWidgets
 
 from .. import pyrpl_utils
-from .spinbox import ComplexSpinBox, FloatSpinBox, IntSpinBox, NumberSpinBox
+from .spinbox import (
+    FREQUENCY_UNITS,
+    TIME_UNITS,
+    ComplexSpinBox,
+    FloatSpinBox,
+    FrequencySpinBox,
+    IntSpinBox,
+    NumberSpinBox,
+    TimeSpinBox,
+    format_with_unit,
+)
 
 
 # TODO: try to remove widget_name from here (again)
@@ -254,6 +264,22 @@ class FloatAttributeWidget(NumberAttributeWidget):
     SpinBox = FloatSpinBox
 
 
+class FrequencyAttributeWidget(FloatAttributeWidget):
+    """
+    Widget for frequencies: a value box and a unit box (Hz, kHz, MHz)
+    """
+
+    SpinBox = FrequencySpinBox
+
+
+class TimeAttributeWidget(FloatAttributeWidget):
+    """
+    Widget for times: a value box and a unit box (us, ms, s)
+    """
+
+    SpinBox = TimeSpinBox
+
+
 class ComplexAttributeWidget(FloatAttributeWidget):
     """
     Widget for complex values
@@ -455,7 +481,8 @@ class ListComboBox(QtWidgets.QWidget):
     # TODO: can be replaced by SelectAttributeWidget
     value_changed = QtCore.Signal()
 
-    def __init__(self, number, name, options, decimals=3):
+    def __init__(self, number, name, options, format_option=str):
+        """options are numbers, shown in the combo boxes as format_option(option)"""
         super().__init__()
         self.setToolTip(
             "First order filter frequencies \n"
@@ -465,26 +492,29 @@ class ListComboBox(QtWidgets.QWidget):
         self.lay = QtWidgets.QHBoxLayout()
         self.lay.setContentsMargins(0, 0, 0, 0)
         self.combos = []
-        self.options = options
-        self.decimals = decimals
+        self.options = list(options)
+        self.format_option = format_option
         for _i in range(number):
             combo = QtWidgets.QComboBox()
             self.combos.append(combo)
-            combo.addItems(self.options)
+            combo.addItems(self._labels())
             combo.currentIndexChanged.connect(self.value_changed)
             self.lay.addWidget(combo)
         self.setLayout(self.lay)
 
+    def _labels(self):
+        return [self.format_option(option) for option in self.options]
+
     def change_options(self, new_options):
-        self.options = new_options
+        self.options = list(new_options)
         for combo in self.combos:
             combo.blockSignals(True)
             combo.clear()
-            combo.addItems(new_options)
+            combo.addItems(self._labels())
             combo.blockSignals(False)
 
     def get_list(self):
-        return [float(combo.currentText()) for combo in self.combos]
+        return [float(self.options[combo.currentIndex()]) for combo in self.combos]
 
     def set_max_cols(self, n_cols):
         """
@@ -511,9 +541,8 @@ class ListComboBox(QtWidgets.QWidget):
         if not np.iterable(val):
             val = [val]
         for i, v in enumerate(val):
-            # v = str(int(v))
-            v = ("{:." + str(self.decimals) + "e}").format(float(v))
-            index = self.options.index(v)
+            # the option closest to v (normally an exact match)
+            index = int(np.argmin([abs(float(option) - float(v)) for option in self.options]))
             self.combos[i].setCurrentIndex(index)
 
 
@@ -522,8 +551,6 @@ class FilterAttributeWidget(BaseAttributeWidget):
     Property for list of floats (to be chosen in a list of valid_frequencies)
     The attribute descriptor needs to expose a function valid_frequencies(module)
     """
-
-    decimals = 3
 
     def __init__(self, module, attribute_name, widget_name=None):
         val = getattr(module, attribute_name)
@@ -536,20 +563,19 @@ class FilterAttributeWidget(BaseAttributeWidget):
 
     def _make_widget(self):
         """
-        Sets up the widget (here a QDoubleSpinBox)
+        Sets up the widget (a combo box per filter, frequencies in Hz/kHz/MHz)
         :return:
         """
-        self.widget = ListComboBox(self.number, "", self._format_options(), decimals=self.decimals)
+        self.widget = ListComboBox(self.number, "", self.options, self._format_option)
         self.widget.value_changed.connect(self.write_widget_value_to_attribute)
 
-    def _format_options(self):
-        return [
-            ("{:." + str(self.decimals) + "e}").format(float(option)) for option in self.options
-        ]
+    @staticmethod
+    def _format_option(option):
+        return format_with_unit(float(option), FREQUENCY_UNITS)
 
     def refresh_options(self, module):
         self.options = getattr(module.__class__, self.attribute_name).valid_frequencies(module)
-        self.widget.change_options(self._format_options())
+        self.widget.change_options(self.options)
 
     def _get_widget_value(self):
         return self.widget.get_list()
@@ -623,6 +649,42 @@ class SelectAttributeWidget(BaseAttributeWidget):
         # self.widget.addItems(new_options)
         # do not trust the new options, rather call options again
         self.widget.addItems(self.options)
+        self.widget_value = self.attribute_value
+        self.widget.blockSignals(False)
+
+
+class TimeSelectAttributeWidget(SelectAttributeWidget):
+    """
+    Multiple choice property with numerical options in seconds, shown in
+    us, ms or s.
+    """
+
+    units = TIME_UNITS
+
+    def _make_widget(self):
+        self.widget = QtWidgets.QComboBox()
+        self.widget.addItems(self._labels())
+        self.widget.currentIndexChanged.connect(self.write_widget_value_to_attribute)
+
+    @property
+    def values(self):
+        return list(self.attribute_descriptor.options(self.module).keys())
+
+    def _labels(self):
+        return [format_with_unit(float(value), self.units) for value in self.values]
+
+    def _get_widget_value(self):
+        return self.values[self.widget.currentIndex()]
+
+    def _set_widget_value(self, new_value):
+        # the option closest to new_value (normally an exact match)
+        distances = [abs(float(value) - float(new_value)) for value in self.values]
+        self.widget.setCurrentIndex(int(np.argmin(distances)))
+
+    def change_options(self, new_options=None):
+        self.widget.blockSignals(True)
+        self.widget.clear()
+        self.widget.addItems(self._labels())
         self.widget_value = self.attribute_value
         self.widget.blockSignals(False)
 
@@ -731,6 +793,11 @@ class DataWidget(pg.GraphicsLayoutWidget):
         if new_value is None:
             return
         x, y = new_value
+        if np.size(y) == 0:  # no curve to display, e.g. all deselected
+            for curve in self.curves:
+                curve.hide()
+            self._set_real(True)
+            return
         shape = np.shape(y)
         if len(shape) > 2:
             raise ValueError("Data cannot be larger than 2 dimensional")
