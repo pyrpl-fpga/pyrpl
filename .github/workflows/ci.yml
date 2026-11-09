@@ -51,7 +51,8 @@ jobs:
 
     - name: Run tests
       run: >
-        xvfb-run -a uv run --no-sync python -m pytest pyrpl/test/
+        xvfb-run -a uv run --no-sync python -m pytest
+        pyrpl/test/ pyrpl/test_async/ pyrpl/test_ipython_notebook/
         -m "not hardware or simulation" --timeout=300
         --cov=pyrpl --cov-report=xml
       env:

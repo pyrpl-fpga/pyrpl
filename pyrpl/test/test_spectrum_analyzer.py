@@ -80,6 +80,12 @@ class TestSpectrumAnalyzer(TestPyrpl):
         self.sa.continuous()
         sleep(0.1)
         assert self.sa.running_state == "running_continuous"
+        # The main window saves its dock layout every second when it changed:
+        # right after startup the first save would fall into the measurement
+        # (when this test runs first) although it is not done by the spectrum
+        # analyzer. Store the current layout first.
+        for widget in self.pyrpl.widgets:
+            widget.save_window_position()
         # record where each save during the measurement comes from, so that a
         # failure names the attribute that was written
         tree = self.pyrpl.c
@@ -174,8 +180,8 @@ class TestSpectrumAnalyzer(TestPyrpl):
 
         self.sa.setup(
             input1_baseband=self.iq,
-            span=10e6,
-            trace_average=50,
+            span=20e6,
+            trace_average=100,
             window="gaussian",
         )
         self.sa.stop()

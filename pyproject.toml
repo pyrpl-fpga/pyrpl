@@ -114,10 +114,18 @@ log_cli_level = "INFO"
 log_cli_format = "%(levelname)s %(name)s: %(message)s"
 
 # Test discovery (equivalent to traverse-namespace)
-testpaths = ["pyrpl/test"]
+testpaths = ["pyrpl/test", "pyrpl/test_async", "pyrpl/test_ipython_notebook"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+
+# Also declared in pyrpl/test/conftest.py, which is not loaded when only
+# pyrpl/test_async or pyrpl/test_ipython_notebook are run.
+markers = [
+    "hardware: uses the Red Pitaya session; needs a real Red Pitaya",
+    "simulation: a hardware test that also passes on a simulated (_FAKE_) Red Pitaya",
+    "requires_fpga(*capabilities): skip unless the selected FPGA profile provides them",
+]
 
 [tool.coverage.run]
 source = ["pyrpl"]
