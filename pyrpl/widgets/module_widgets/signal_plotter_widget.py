@@ -29,7 +29,9 @@ class SignalPlotterWidget(ModuleWidget):
         self.init_attribute_layout()
 
         body = QtWidgets.QHBoxLayout()
-        self.main_layout.addLayout(body)
+        # the plot takes the free height, the settings row stays compact
+        # (as in the scope widget)
+        self.main_layout.addLayout(body, stretch=10)
 
         self._updating_channels = False
         self.channel_list = QtWidgets.QListWidget()
