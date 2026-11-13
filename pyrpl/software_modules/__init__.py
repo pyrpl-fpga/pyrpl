@@ -37,6 +37,7 @@ from .module_managers import (
 )
 from .network_analyzer import NetworkAnalyzer
 from .pyrpl_config import PyrplConfig
+from .signal_plotter import SignalPlotter
 from .software_pid import RunningProperty, SoftwarePidController, SoftwarePidLoop
 from .spectrum_analyzer import SpectrumAnalyzer
 
@@ -76,6 +77,7 @@ __all__ = [
     "SpectrumAnalyzer",
     "PyrplConfig",
     "CurveViewer",
+    "SignalPlotter",
     "ModuleNotFound",
     "get_module",
     "LockboxModule",

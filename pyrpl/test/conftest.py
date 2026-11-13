@@ -30,7 +30,13 @@ def pytest_report_header(config):
 HardwareSession = namedtuple("HardwareSession", ["rp", "pyrpl", "read_time", "write_time"])
 
 # Test files that only need the RedPitaya driver, not the full Pyrpl app
-LIGHT_TEST_FILES = ["test_redpitaya.py", "test_pyqtgraph_benchmark.py", "test_registers.py"]
+LIGHT_TEST_FILES = [
+    "test_redpitaya.py",
+    "test_pyqtgraph_benchmark.py",
+    "test_registers.py",
+    "test_scpi_redpitaya.py",
+    "test_scpi_server.py",
+]
 SIMULATED_HOSTNAMES = ("_FAKE_", "_FAKE_REDPITAYA_")
 
 
