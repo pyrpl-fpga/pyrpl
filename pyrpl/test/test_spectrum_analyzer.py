@@ -391,6 +391,7 @@ class TestSpectrumAnalyzer(TestPyrpl):
         assert np.isfinite(detected_frequencies).all()
         assert np.max(peak_powers) > 0
 
+    @pytest.mark.simulation
     def test_save_curve(self):
         self.sa.setup(
             baseband=True,
@@ -412,4 +413,17 @@ class TestSpectrumAnalyzer(TestPyrpl):
         np.testing.assert_array_equal(
             curves[2].data[1], self.sa.data_avg[2] + 1j * self.sa.data_avg[3]
         )
+        for curve in curves:  # the settings of the run, including rbw
+            assert curve.params["rbw"] == self.sa.attributes_last_run["rbw"]
         self.curves.extend(curves)
+
+    @pytest.mark.simulation
+    def test_save_curve_iq(self):
+        sa = self.sa
+        sa.setup(baseband=False, center=1e5, span=1e5, input=self.asg, curve_name="iq test curve")
+        sa.single()
+        curve = sa.save_curve()
+        assert curve.params["name"] == "iq test curve"
+        assert (curve.data[1] == sa.data_avg).all()
+        assert curve.params["rbw"] == sa.attributes_last_run["rbw"]
+        self.curves.append(curve)  # curves will be deleted by teardownAll

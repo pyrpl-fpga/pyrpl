@@ -748,15 +748,17 @@ class SpectrumAnalyzer(AcquisitionModule):
         """
         Saves the curve(s) that is (are) currently displayed in the gui in
         the db_system. Also, returns the list [curve_ch1, curve_ch2]...
-        """
-        """
-        Saves the curve(s) that is (are) currently displayed in the gui in
-        the db_system. Also, returns the list [curve_ch1, curve_ch2]...
+
+        The curve parameters are the settings of the last run, including
+        the rbw, which is needed to convert the data (in Vpk^2) into a
+        spectral density.
         """
         if not self.baseband:
-            return super()._save_curve(self.data_x, self.data_avg, **self.setup_attributes)
+            d = dict(self.attributes_last_run)
+            d.update({"name": self.curve_name})
+            return self._save_curve(self.data_x, self.data_avg, **d)
         else:
-            d = self.setup_attributes
+            d = dict(self.attributes_last_run)
             curves = [None, None]
             sp1, sp2, cross_real, cross_imag = self.data_avg
             for ch, active in [
