@@ -36,6 +36,11 @@ The following attributes can be manipulated by the SpectrumAnalyzer widget:
 * :attr:`~pyrpl.software_modules.spectrum_analyzer.SpectrumAnalyzer.window`:
   The type of window used for the Fourier transform. See
   scipy.signal.get_window for a list of available options.
+* :attr:`~pyrpl.software_modules.spectrum_analyzer.SpectrumAnalyzer.correct_decimation`:
+  Whether to correct the spectrum for the scope's decimation filter (on by
+  default). Switch it off for broadband noise that extends beyond the
+  Nyquist frequency: the correction then makes the noise rise towards the
+  top of the band.
 * :attr:`~pyrpl.software_modules.spectrum_analyzer.SpectrumAnalyzer.acbandwidth`
   *(only available with* :code:`baseband=False` *)*: The cut-off frequency of
   the high-pass filter before frequency-shifting (=demodulation) of the input
@@ -106,7 +111,7 @@ class OtherAttributesWidget(QtWidgets.QWidget):
 
         self.v_layout1 = QtWidgets.QVBoxLayout()
         self.h_layout.addLayout(self.v_layout1)
-        for name in ["baseband", "acbandwidth"]:
+        for name in ["baseband", "acbandwidth", "correct_decimation"]:
             widget = aws[name]
             specan_widget.attribute_layout.removeWidget(widget)
             self.v_layout1.addWidget(widget)

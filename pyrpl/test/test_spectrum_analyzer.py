@@ -392,6 +392,20 @@ class TestSpectrumAnalyzer(TestPyrpl):
         assert np.max(peak_powers) > 0
 
     @pytest.mark.simulation
+    def test_correct_decimation(self):
+        """The decimation filter correction can be switched off."""
+        sa = self.sa
+        sa.setup(baseband=True, span=1.953125e6, correct_decimation=True)
+        assert sa._scope_decimation() > 1
+        f = sa.frequencies
+        nyquist = np.argmin(abs(f - f[-1]))
+        assert abs(sa.transfer_function_scope(f)[nyquist]) == pytest.approx(2 / np.pi, rel=0.01)
+        sa.correct_decimation = False
+        assert (sa.transfer_function_scope(f) == 1).all()
+        assert sa.setup_attributes["correct_decimation"] is False
+        sa.correct_decimation = True
+
+    @pytest.mark.simulation
     def test_save_curve(self):
         self.sa.setup(
             baseband=True,
