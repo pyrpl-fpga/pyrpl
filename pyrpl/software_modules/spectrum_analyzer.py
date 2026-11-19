@@ -770,6 +770,50 @@ class SpectrumAnalyzer(AcquisitionModule):
                 )
             return curves
 
+    def fit_sho(self, fmin=None, fmax=None, channel=1):
+        """
+        Fits a simple harmonic oscillator plus white noise to the last
+        acquired (averaged) spectrum, see :mod:`pyrpl.software_modules.sho_fit`.
+
+        :param fmin, fmax: fit range in Hz (default: the whole spectrum)
+        :param channel: 1 or 2, the input to fit in baseband mode (ignored
+            in iq mode)
+        :return: a ShoFitResult with f0 (Hz), q, the noise floor sn
+            (Vrms^2/Hz, or noise_vrms_per_sqrt_hz) and area_vrms, the rms
+            voltage of the oscillator signal without noise, with errors.
+
+        The fit uses one point per FFT bin (the zero-padded points in
+        between are interpolations), and the errors are scaled up by
+        sqrt(rbw / bin spacing), because the window correlates
+        neighbouring bins.
+        """
+        from .sho_fit import ShoFitError, fit_sho
+
+        if getattr(self, "current_avg", 0) < 1 or not hasattr(self, "data_avg"):
+            raise ShoFitError("no spectrum acquired yet")
+        rbw = self.attributes_last_run["rbw"]
+        data = self.data_avg
+        if np.ndim(data) == 1:  # iq mode
+            spectrum = data
+        else:  # baseband: (spectrum1, spectrum2, real(cross), imag(cross))
+            if channel not in (1, 2):
+                raise ValueError("channel must be 1 or 2")
+            spectrum = data[channel - 1]
+        freqs = self.data_x
+        psd = self.data_to_unit(spectrum, "Vrms^2/Hz", rbw)
+        bin_spacing = abs(freqs[1] - freqs[0]) * self.PADDING_FACTOR
+        with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+            return fit_sho(
+                freqs,
+                psd,
+                fmin=fmin,
+                fmax=fmax,
+                n_averages=self.current_avg,
+                rbw=rbw,
+                step=self.PADDING_FACTOR,
+                error_scale=np.sqrt(max(rbw / bin_spacing, 1.0)),
+            )
+
     def _export_columns(self):
         """Exports the displayed curve(s) in the display unit."""
         unit = self.display_unit
