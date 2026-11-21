@@ -3,9 +3,7 @@
 import numpy as np
 import pytest
 
-pytest.importorskip("scipy")
-
-from pyrpl.software_modules.sho_fit import fit_sho, sho_psd  # noqa: E402
+from pyrpl.software_modules.sho_fit import fit_sho, sho_psd
 
 TRUE = dict(f0=150e3, q=2000.0, s0=1e-16, sn=4e-15)  # peak 50 dB above the noise floor
 FREQS = np.linspace(110e3, 190e3, 8000)  # the noise floor is reached ~12 kHz from f0
@@ -74,3 +72,37 @@ def test_weak_peak_below_noise_floor():
     area = np.sqrt(np.pi / 2 * s0 * 150e3 * q)
     assert abs(r.area_vrms - area) < 4 * r.area_vrms_err
     assert abs(r.f0 - 150e3) < 4 * r.f0_err
+
+
+def test_q_cap_on_noise_spike():
+    """The linewidth cannot go below one point spacing (Q is capped): on
+    noise with a single spike, Q stays finite and is flagged as a lower
+    bound when it reaches the cap."""
+    rng = np.random.default_rng(5)
+    psd = TRUE["sn"] * rng.gamma(10, 1 / 10, FREQS.size)
+    psd[3000] *= 30  # a spike one bin wide
+    spacing = FREQS[1] - FREQS[0]
+    r = fit_sho(FREQS, psd, n_averages=10)
+    assert r.min_linewidth == pytest.approx(spacing)
+    assert r.linewidth >= spacing * (1 - 1e-9)
+    if r.linewidth_at_limit:
+        assert np.isnan(r.q_err)
+        assert np.isfinite(r.f0_err) and np.isfinite(r.area_vrms_err)
+    # without the cap the same spectrum gives a narrower peak
+    r0 = fit_sho(FREQS, psd, n_averages=10, min_linewidth=0)
+    assert not r0.linewidth_at_limit
+    assert r0.linewidth < spacing
+
+
+def test_narrow_peak_at_limit():
+    """A peak much narrower than a bin (needle in a haystack): f0 is found to
+    within a bin, the fit ends at the cap and Q is a lower bound."""
+    rng = np.random.default_rng(6)
+    spacing = FREQS[1] - FREQS[0]
+    q = TRUE["f0"] / (0.05 * spacing)
+    psd = sho_psd(FREQS, TRUE["f0"] + 0.5 * spacing, q, 1e-24, TRUE["sn"])
+    psd *= rng.gamma(10, 1 / 10, FREQS.size)
+    r = fit_sho(FREQS, psd, n_averages=10)
+    assert abs(r.f0 - TRUE["f0"]) < spacing
+    assert r.linewidth_at_limit
+    assert r.q <= q
