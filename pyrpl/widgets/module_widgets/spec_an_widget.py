@@ -306,7 +306,7 @@ class SpecAnWidget(AcquisitionModuleWidget):
         channel = self.combo_sho_channel.currentIndex() + 1
         try:
             result = self.module.fit_sho(fmin=fmin, fmax=fmax, channel=channel)
-        except Exception as e:  # e.g. no peak in the range, scipy missing
+        except Exception as e:  # e.g. too few points in the range
             self.clear_sho_fit()
             self.label_sho.setText(f"Fit failed: {e}")
             if log:
@@ -319,22 +319,34 @@ class SpecAnWidget(AcquisitionModuleWidget):
         self.draw_sho_fit()
         if log:
             # plain ASCII for consoles with a legacy code page (Windows)
-            ascii_text = text.replace("₀", "0").replace("±", "+-").replace("√", "sqrt")
+            ascii_text = (
+                text.replace("₀", "0")
+                .replace("≥", ">=")
+                .replace("≤", "<=")
+                .replace("±", "+-")
+                .replace("√", "sqrt")
+            )
             self.module._logger.info("SHO fit: %s", ascii_text.replace("µ", "u"))
         return result
 
     @staticmethod
     def sho_fit_text(result):
+        if result.linewidth_at_limit:  # Q only a lower bound
+            q_text = f"Q ≥ {result.q:.4g} (at resolution limit)"
+        else:
+            q_text = "Q = " + format_value_error(result.q, result.q_err, "", prefix=False)
         parts = [
             "f₀ = " + format_value_error(result.f0, result.f0_err, "Hz"),
-            "Q = " + format_value_error(result.q, result.q_err, "", prefix=False),
+            q_text,
             "noise = "
             + format_value_error(
                 result.noise_vrms_per_sqrt_hz, result.noise_vrms_per_sqrt_hz_err, "V/√Hz"
             ),
             "area = " + format_value_error(result.area_vrms, result.area_vrms_err, "Vrms"),
         ]
-        if result.resolution_limited:
+        if result.linewidth_at_limit:
+            parts.append("linewidth ≤ 1 bin: Q and area too low, narrow the span")
+        elif result.resolution_limited:
             parts.append("linewidth < 3 rbw: Q too low")
         return "   ".join(parts)
 

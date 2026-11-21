@@ -25,8 +25,14 @@ log space weights the peak and the noise floor fairly. The mean of the
 logarithm of such data is below the logarithm of the mean by
 ln(n) - digamma(n) (0.58 for n = 1), which is corrected for.
 
-Only scipy.optimize and scipy.special are used, and scipy is imported
-only when a fit is done (scipy is not a core dependency of pyrpl).
+Q is capped at f0 / (one FFT bin) by default: a measured peak cannot be
+narrower than the resolution, and the cap keeps the fit from collapsing onto
+a single noise spike. A fit that ends at the cap (e.g. a narrow resonance in
+a wide span) gives f0; its Q is then only a lower bound and its area is
+underestimated. Narrowing the span around f0 resolves the peak.
+
+Only numpy is used: a Levenberg-Marquardt least-squares fit with a trust
+region (step size limit) as in MINPACK, and a series for the digamma function.
 """
 
 from dataclasses import dataclass
@@ -59,6 +65,8 @@ class ShoFitResult:
     n_points: int  # number of points used in the fit
     n_averages: int  # number of averaged periodograms assumed
     rbw: float  # resolution bandwidth of the data (Hz), nan if unknown
+    min_linewidth: float = 0.0  # lower limit of the linewidth f0 / Q in the fit (Hz)
+    linewidth_at_limit: bool = False  # Q ended at its cap: only a lower bound
 
     @property
     def linewidth(self):
@@ -118,8 +126,109 @@ def _initial_guess(f, s):
     return f0, q, s0, max(sn, height * 1e-6)
 
 
+def _digamma(x):
+    """Digamma function for x > 0 (recurrence up to x >= 10, then the
+    asymptotic series; accurate to about 1e-10)."""
+    x = float(x)
+    result = 0.0
+    while x < 10:
+        result -= 1.0 / x
+        x += 1.0
+    inv2 = 1.0 / (x * x)
+    return result + np.log(x) - 0.5 / x - inv2 * (1 / 12 - inv2 * (1 / 120 - inv2 / 252))
+
+
+def _levenberg_marquardt(fun_jac, x0, max_iter=200, ftol=1e-8, xtol=1e-8, gtol=1e-8, project=None):
+    """
+    Minimises sum(r**2) for (r, J) = fun_jac(x), J = dr/dx.
+
+    Levenberg-Marquardt with a trust region, after More (1978) / MINPACK:
+    the parameters are scaled by the column norms of J; a step may not be
+    longer than the trust radius, which shrinks after steps that reduce the
+    sum of squares much less than predicted and grows after good steps.
+    Stops when the sum of squares or the parameters change by less than
+    ftol / xtol (relative), or when the residuals are orthogonal to all
+    columns of J to within gtol (a flat minimum or valley). project(x), if
+    given, maps each new x back into the allowed region (e.g. caps a
+    parameter).
+
+    :return: (x, r, J, success, message)
+    """
+    x = np.asarray(x0, dtype=float)
+    r, J = fun_jac(x)
+    cost = r @ r
+    if not np.isfinite(cost):
+        return x, r, J, False, "non-finite residuals at the start"
+    scale = np.maximum(np.linalg.norm(J, axis=0), 1e-12)
+    radius = 100.0 * max(np.linalg.norm(scale * x), 1.0)
+    lam = 0.0
+    for _ in range(max_iter):
+        column_norms = np.linalg.norm(J, axis=0)
+        scale = np.maximum(scale, column_norms)
+        A = J.T @ J
+        g = J.T @ r
+        r_norm = np.sqrt(cost)
+        if r_norm == 0 or np.max(np.abs(g) / np.maximum(column_norms * r_norm, 1e-300)) <= gtol:
+            return x, r, J, True, "converged (gradient)"
+        d2 = scale**2
+        # the undamped (Gauss-Newton) step if it lies within the trust
+        # region, else the smallest damping (from the last one on) that
+        # brings the scaled step within it
+        damping = 0.0
+        for _ in range(100):
+            try:
+                step = np.linalg.solve(A + damping * np.diag(d2), -g)
+            except np.linalg.LinAlgError:
+                step = None
+            if step is not None and np.linalg.norm(scale * step) <= radius:
+                break
+            damping = max(4 * damping, lam, 1e-8 * np.max(np.diag(A) / d2))
+        else:
+            return x, r, J, False, "no step within the trust region"
+        lam = damping
+        step_norm = np.linalg.norm(scale * step)
+        r_lin = r + J @ step
+        predicted = cost - r_lin @ r_lin
+        x_new = x + step
+        if project is not None:
+            x_new = project(x_new)
+            step = x_new - x
+            step_norm = np.linalg.norm(scale * step)
+            r_lin = r + J @ step
+            predicted = cost - r_lin @ r_lin
+        r_new, J_new = fun_jac(x_new)
+        cost_new = r_new @ r_new
+        actual = cost - cost_new if np.isfinite(cost_new) else -np.inf
+        rho = actual / predicted if predicted > 0 else -np.inf
+        if rho < 0.25:
+            radius = 0.5 * step_norm
+            lam = max(4 * lam, 1e-8 * np.max(np.diag(A) / d2))
+        elif rho > 0.75:
+            radius = max(radius, 2 * step_norm)
+            lam = lam / 4
+        if rho > 1e-4:  # accept the step
+            x, r, J, cost = x_new, r_new, J_new, cost_new
+            if (actual <= ftol * cost_new and predicted <= ftol * cost_new) or (
+                step_norm <= xtol * np.linalg.norm(scale * x)
+            ):
+                return x, r, J, True, "converged"
+        elif radius <= xtol * np.linalg.norm(scale * x):
+            return x, r, J, True, "converged (trust region at minimum)"
+    # still descending slowly, e.g. a peak narrowing onto a single noise
+    # spike: return the result (its uncertainties show that it is poor)
+    return x, r, J, True, "maximum number of iterations reached"
+
+
 def fit_sho(
-    frequencies, psd, fmin=None, fmax=None, n_averages=1, rbw=np.nan, step=1, error_scale=1.0
+    frequencies,
+    psd,
+    fmin=None,
+    fmax=None,
+    n_averages=1,
+    rbw=np.nan,
+    step=1,
+    error_scale=1.0,
+    min_linewidth=None,
 ):
     """
     Fits sho_psd() to a power spectral density.
@@ -135,11 +244,14 @@ def fit_sho(
     :param error_scale: factor applied to the fit uncertainties, e.g.
         sqrt(rbw / bin spacing) to account for neighbouring points being
         correlated through the window
+    :param min_linewidth: lower limit of the linewidth f0 / Q in Hz, i.e. an
+        upper limit of Q (default: the spacing of the fitted points, one FFT
+        bin; 0: no limit). It keeps the fit from collapsing onto a single
+        noise spike. A fit that ends at the limit has linewidth_at_limit
+        set: f0 is valid, Q is only a lower bound (q_err is nan) and the
+        area is underestimated; narrowing the span resolves the peak.
     :return: ShoFitResult
     """
-    from scipy.optimize import least_squares
-    from scipy.special import digamma
-
     f = np.asarray(frequencies, dtype=float)
     s = np.asarray(psd, dtype=float)
     if f.shape != s.shape:
@@ -156,32 +268,67 @@ def fit_sho(
     f0_g, q_g, s0_g, sn_g = _initial_guess(f, s)
     width_g = f0_g / q_g
     n = max(int(n_averages), 1)
-    log_bias = digamma(n) - np.log(n)  # <ln(estimate)> - ln(true PSD)
+    log_bias = _digamma(n) - np.log(n)  # <ln(estimate)> - ln(true PSD)
     log_s = np.log(s)
 
     def unpack(x):
         return f0_g + x[0] * width_g, np.exp(x[1]), np.exp(x[2]), np.exp(x[3])
 
-    def residuals(x):
-        f0, q, s0, sn = unpack(x)
-        return log_s - np.log(sho_psd(f, f0, q, s0, sn)) - log_bias
+    f2 = f**2
 
-    x0 = np.array([0.0, np.log(q_g), np.log(s0_g), np.log(sn_g)])
-    res = least_squares(residuals, x0, method="lm")
-    if not res.success:
-        raise ShoFitError(f"fit did not converge: {res.message}")
-    f0, q, s0, sn = unpack(res.x)
+    def residuals_and_jacobian(x):
+        f0, q, s0, sn = unpack(x)
+        detuning = f0**2 - f2
+        damping = f2 * f0**2 / q**2
+        denominator = detuning**2 + damping
+        peak = s0 * f0**4 / denominator
+        model = sn + peak
+        d_model = np.empty((len(f), 4))  # d model / d x
+        d_denominator_df0 = 4 * f0 * detuning + 2 * damping / f0
+        d_model[:, 0] = width_g * peak * (4 / f0 - d_denominator_df0 / denominator)
+        d_model[:, 1] = peak * 2 * damping / denominator
+        d_model[:, 2] = peak
+        d_model[:, 3] = sn
+        return log_s - np.log(model) - log_bias, -d_model / model[:, None]
+
+    if min_linewidth is None:
+        min_linewidth = float(np.median(np.diff(f)))
+    lw_min = max(float(min_linewidth), 0.0)
+
+    def ln_q_max(x):
+        f0 = f0_g + x[0] * width_g
+        return np.log(f0 / lw_min) if lw_min > 0 and f0 > 0 else np.inf
+
+    def cap_q(x):
+        x = x.copy()
+        x[1] = min(x[1], ln_q_max(x))
+        return x
+
+    x0 = cap_q(np.array([0.0, np.log(q_g), np.log(s0_g), np.log(sn_g)]))
+    with np.errstate(over="ignore", invalid="ignore", divide="ignore"):
+        x, fun, jac, success, message = _levenberg_marquardt(
+            residuals_and_jacobian, x0, project=cap_q
+        )
+    if not success:
+        raise ShoFitError(f"fit did not converge: {message}")
+    f0, q, s0, sn = unpack(x)
     if f0 <= 0:
         raise ShoFitError("fit gave a negative resonance frequency")
     q = abs(q)
 
-    # covariance of x = (d, ln Q, ln S0, ln Sn), scaled by the residual variance
-    dof = max(len(f) - len(x0), 1)
-    s2 = np.sum(res.fun**2) / dof
+    at_limit = bool(x[1] >= ln_q_max(x) - 1e-9)
+
+    # covariance of x = (d, ln Q, ln S0, ln Sn), scaled by the residual
+    # variance; at the limit, Q is held fixed (its row and column are zero)
+    free = [0, 2, 3] if at_limit else [0, 1, 2, 3]
+    dof = max(len(f) - len(free), 1)
+    s2 = np.sum(fun**2) / dof
+    cov = np.zeros((4, 4))
     try:
-        cov = np.linalg.inv(res.jac.T @ res.jac) * s2 * error_scale**2
+        jf = jac[:, free]
+        cov[np.ix_(free, free)] = np.linalg.inv(jf.T @ jf) * s2 * error_scale**2
     except np.linalg.LinAlgError:
-        cov = np.full((4, 4), np.nan)
+        cov[:] = np.nan
     err = np.sqrt(np.abs(np.diag(cov)))
 
     area = np.pi / 2 * s0 * f0 * q
@@ -196,7 +343,7 @@ def fit_sho(
         s0=s0,
         sn=sn,
         f0_err=err[0] * width_g,
-        q_err=err[1] * q,
+        q_err=np.nan if at_limit else err[1] * q,
         s0_err=err[2] * s0,
         sn_err=err[3] * sn,
         area_vrms=area_vrms,
@@ -206,4 +353,6 @@ def fit_sho(
         n_points=len(f),
         n_averages=n,
         rbw=float(rbw),
+        min_linewidth=lw_min,
+        linewidth_at_limit=at_limit,
     )
