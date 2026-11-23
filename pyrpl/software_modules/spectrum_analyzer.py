@@ -279,6 +279,7 @@ class SpectrumAnalyzer(AcquisitionModule):
         "rbw",
         # "points",
         "window",
+        "correct_decimation",
         "acbandwidth",
         "display_unit",
         "display_input1_baseband",
@@ -299,6 +300,7 @@ class SpectrumAnalyzer(AcquisitionModule):
         # "points",
         "window",
         "acbandwidth",
+        "correct_decimation",
         "display_unit",
         "curve_unit",
         "display_input1_baseband",
@@ -360,6 +362,20 @@ class SpectrumAnalyzer(AcquisitionModule):
 
     # attributes
     baseband = BoolProperty(default=True, call_setup=True)
+    correct_decimation = BoolProperty(
+        default=True,
+        call_setup=True,
+        doc="""
+        Divide the spectrum by the response of the scope's decimation filter
+        (a moving average, sinc(f / sampling rate)), which is applied when
+        the sampling rate is below 125 MHz. This gives the right amplitude
+        for signals within the band, e.g. a sine near the Nyquist frequency.
+        For broadband noise that extends beyond the Nyquist frequency, the
+        noise aliased into the band fills the dip of the filter, and the
+        correction makes the noise rise towards the top of the band (up to
+        +57 % in amplitude at Nyquist for white noise); switch it off for
+        such measurements.""",
+    )
     span = SpanFilterProperty(
         doc="""
         Span can only be given by 1./sampling_time where sampling
@@ -593,7 +609,7 @@ class SpectrumAnalyzer(AcquisitionModule):
     def transfer_function_scope(self, frequencies):
         # scope transfer function
         displaced_freqs = frequencies - self.center if not self.baseband else frequencies
-        if self._scope_decimation() > 1:
+        if self._scope_decimation() > 1 and self.correct_decimation:
             norm_freq = self._scope_decimation() * displaced_freqs / 125e6
             return np.sinc(norm_freq)
         else:
@@ -748,15 +764,17 @@ class SpectrumAnalyzer(AcquisitionModule):
         """
         Saves the curve(s) that is (are) currently displayed in the gui in
         the db_system. Also, returns the list [curve_ch1, curve_ch2]...
-        """
-        """
-        Saves the curve(s) that is (are) currently displayed in the gui in
-        the db_system. Also, returns the list [curve_ch1, curve_ch2]...
+
+        The curve parameters are the settings of the last run, including
+        the rbw, which is needed to convert the data (in Vpk^2) into a
+        spectral density.
         """
         if not self.baseband:
-            return super()._save_curve(self.data_x, self.data_avg, **self.setup_attributes)
+            d = dict(self.attributes_last_run)
+            d.update({"name": self.curve_name})
+            return self._save_curve(self.data_x, self.data_avg, **d)
         else:
-            d = self.setup_attributes
+            d = dict(self.attributes_last_run)
             curves = [None, None]
             sp1, sp2, cross_real, cross_imag = self.data_avg
             for ch, active in [

@@ -391,6 +391,21 @@ class TestSpectrumAnalyzer(TestPyrpl):
         assert np.isfinite(detected_frequencies).all()
         assert np.max(peak_powers) > 0
 
+    @pytest.mark.simulation
+    def test_correct_decimation(self):
+        """The decimation filter correction can be switched off."""
+        sa = self.sa
+        sa.setup(baseband=True, span=1.953125e6, correct_decimation=True)
+        assert sa._scope_decimation() > 1
+        f = sa.frequencies
+        nyquist = np.argmin(abs(f - f[-1]))
+        assert abs(sa.transfer_function_scope(f)[nyquist]) == pytest.approx(2 / np.pi, rel=0.01)
+        sa.correct_decimation = False
+        assert (sa.transfer_function_scope(f) == 1).all()
+        assert sa.setup_attributes["correct_decimation"] is False
+        sa.correct_decimation = True
+
+    @pytest.mark.simulation
     def test_save_curve(self):
         self.sa.setup(
             baseband=True,
@@ -412,4 +427,17 @@ class TestSpectrumAnalyzer(TestPyrpl):
         np.testing.assert_array_equal(
             curves[2].data[1], self.sa.data_avg[2] + 1j * self.sa.data_avg[3]
         )
+        for curve in curves:  # the settings of the run, including rbw
+            assert curve.params["rbw"] == self.sa.attributes_last_run["rbw"]
         self.curves.extend(curves)
+
+    @pytest.mark.simulation
+    def test_save_curve_iq(self):
+        sa = self.sa
+        sa.setup(baseband=False, center=1e5, span=1e5, input=self.asg, curve_name="iq test curve")
+        sa.single()
+        curve = sa.save_curve()
+        assert curve.params["name"] == "iq test curve"
+        assert (curve.data[1] == sa.data_avg).all()
+        assert curve.params["rbw"] == sa.attributes_last_run["rbw"]
+        self.curves.append(curve)  # curves will be deleted by teardownAll
